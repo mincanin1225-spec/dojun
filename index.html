@@ -509,10 +509,16 @@ async function ensureM(y,mo){const k=`${y}-${pad(mo)}`;if(months[k])return month
   months[k]={d,plan};return months[k]}
 const regenAll=()=>Object.keys(months).forEach(k=>{const[y,m]=k.split('-').map(Number);
   const v=months[k].d.variant||0,pl=genMonth(y,m,v);months[k].plan=pl;cachePlan(k,v,pl)});
+const isDel=on=>{const M=months[mk(on)];return !!(M&&M.d.del&&M.d.del[on])};
 function mText(on,i){const M=months[mk(on)];if(!M)return'';
-  const o=M.d.ov[on];if(o&&o[i])return o[i];const p=M.plan[on];return p?nMeal(p[i]):''}
+  const o=M.d.ov[on];if(o&&o[i])return o[i];
+  if(isDel(on))return'';
+  const p=M.plan[on];return p?nMeal(p[i]):''}
 function mObj(on,i){const M=months[mk(on)];if(!M)return null;
-  if(M.d.ov[on]&&M.d.ov[on][i])return null;const p=M.plan[on];return p?p[i]:null}
+  if(M.d.ov[on]&&M.d.ov[on][i])return null;
+  if(isDel(on))return null;
+  const p=M.plan[on];return p?p[i]:null}
+const hasAny=on=>!!(mText(on,0)||mText(on,1)||mText(on,2));
 const lg=on=>{const M=months[mk(on)];return(M&&M.d.logs[on])||{}};
 const saveM=async on=>{const k=mk(on);await store.set('m2:'+k,months[k].d)};
 
@@ -690,7 +696,10 @@ function vCal(){
     <div class="cal">${cells}</div>
     <div class="sec"><h2>오늘 ${P(today).getMonth()+1}/${P(today).getDate()}</h2>
       <button class="more" data-a="day:${today}">자세히 ›</button></div>
-    <div class="card">${['b','l','d'].map((s,i)=>{
+    <div class="card">${(isDel(today)&&!hasAny(today))?`<p class="hint" style="margin:0 0 10px">이 날은 비워뒀어요. 달력과 영양 계산에서 빠져 있습니다.</p>
+      <div class="btnrow" style="margin-top:0"><button class="btn pri" data-a="day:${today}">직접 적기</button>
+      <button class="btn" data-a="undelday:${today}">자동 식단 되살리기</button></div>`
+      :['b','l','d'].map((s,i)=>{
       const L=lg(today)[s]||{},m=mObj(today,i);
       return `<div class="meal"><div class="pic">${dishSVG(m)}</div><div class="bd">
         <div class="lb">${['아침','점심','저녁'][i]}</div>
@@ -843,13 +852,24 @@ function render(keep){
 
 /* ══════════ 시트 ══════════ */
 const sheet=$('sheet'),scrim=$('scrim');
-function open(h){sheet.innerHTML='<div class="grab"></div>'+h;sheet.classList.add('on');scrim.classList.add('on')}
-function close(){sheet.classList.remove('on');scrim.classList.remove('on')}
+let sheetOpen=false;
+function open(h){sheet.innerHTML='<div class="grab"></div>'+h;sheet.classList.add('on');scrim.classList.add('on');
+  sheet.scrollTop=0;
+  if(!sheetOpen){sheetOpen=true;try{history.pushState({app:'sheet'},'')}catch(e){}}}
+function closeNow(){sheet.classList.remove('on');scrim.classList.remove('on');sheetOpen=false}
+function close(){ if(sheetOpen){try{history.back();return}catch(e){}} closeNow() }
 scrim.onclick=close;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+/* 뒤로가기로 앱이 꺼지지 않게 */
+addEventListener('popstate',e=>{
+  if(sheetOpen){closeNow();return}
+  const st=e.state||{}, t=(st.app==='tab'&&st.tab)?st.tab:'cal';
+  if(t!==tab){tab=t;render()}
+});
 
 function sheetDay(on){
   const d=P(on),L=lg(on),A=stage(on),nt=dayNut(on);
+
   const meals=['아침','점심','저녁'].map((lb,i)=>{
     const m=mObj(on,i),r=recipe(on,i),l=L[['b','l','d'][i]]||{};
     return `<div class="card" style="margin-bottom:12px">
@@ -867,12 +887,22 @@ function sheetDay(on){
   const nutLine=nt?NUTS.slice(0,5).map(t=>`${t.n} ${nt[t.i]>=100?Math.round(nt[t.i]):nt[t.i].toFixed(1)}${t.u}`).join(' · '):'';
   open(`<h2>${d.getMonth()+1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일</h2>
     <div class="sub">${esc(ageTxt(on))} · ${A.label} · 하루 ${A.meals}끼 · 수유 ${A.milk}</div>
+    ${isDel(on)?`<div class="banner b-trial" style="margin-bottom:12px">
+      <h3>✏️ 직접 적는 날</h3>
+      <p>자동 식단을 비워둔 날이에요. 아래 <b>메뉴 직접 고치기</b> 칸에 실제로 만든 걸 적고 저장하면 그대로 남습니다.</p>
+      <div class="row"><button data-a="undelday:${on}">자동 식단으로 되돌리기</button></div></div>`:''}
     ${nutLine?`<div class="card" style="margin-bottom:12px"><div class="hint"><b style="color:var(--ink)">이 날 영양(추정)</b><br>${nutLine}</div></div>`:''}
     ${meals}
     <div class="card"><div class="hint">${esc(A.tex)}<br>간은 하지 않습니다. 고기·생선·계란은 속까지 완전히 익히고, 과일과 채소는 잇몸으로 뭉갤 수 있을 만큼 무르게. 먹는 동안에는 꼭 앉혀서 지켜봐 주세요.</div></div>
     <div class="btnrow"><button class="btn pri" data-a="savday:${on}">저장</button>
       <button class="btn" data-a="resetday:${on}">원래 메뉴로</button>
-      <button class="btn" data-a="close">닫기</button></div>`);
+      <button class="btn" data-a="close">닫기</button></div>
+    <div class="sec"><h2>이 날 비우기</h2></div>
+    <div class="card"><p class="hint" style="margin:0 0 10px">관리를 시작하기 전 날짜는 비워두면 달력과 영양 계산에서 빠집니다.</p>
+      <div class="btnrow" style="margin-top:0">
+        <button class="btn warn" data-a="delday:${on}">이 날 식단 지우기</button>
+        <button class="btn warn" data-a="delbefore:${on}">이 날 이전 모두 지우기</button>
+      </div></div>`);
 }
 function sheetFood(k){
   const x=byK[k],f=foods[k]||{},s=stat(k);
@@ -910,7 +940,10 @@ function download(name,text,type){
 document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-a]');if(!el)return;
   const [cmd,arg]=el.dataset.a.split(':');
-  if(cmd==='tab'){tab=arg;close();return render()}
+  if(cmd==='tab'){
+    if(sheetOpen){closeNow();try{history.replaceState({app:'tab',tab:arg},'')}catch(e){}}
+    else if(tab!==arg){try{history.pushState({app:'tab',tab:arg},'')}catch(e){}}
+    tab=arg;return render()}
   if(cmd==='close')return close();
   if(cmd==='today'){cursorM=today;await ensureM(+today.slice(0,4),+today.slice(5,7));return render()}
   if(cmd==='mon'){const y=+cursorM.slice(0,4),m=+cursorM.slice(5,7)+ +arg;const d=new Date(y,m-1,1);
@@ -947,14 +980,29 @@ document.addEventListener('click',async e=>{
   if(cmd==='savefood'){foods[arg]={...(foods[arg]||{s:stat(arg)}),memo:$('fM').value.trim()};
     await store.set('foods2',foods);close();render();return toast('저장했어요')}
   if(cmd==='savday'){
-    const M=months[mk(arg)],base=M.plan[arg],ov=[];let ch=0;
+    const M=months[mk(arg)],base=M.plan[arg],del=isDel(arg),ov=[];let ch=0;
     sheet.querySelectorAll('[data-menu]').forEach(x=>{const i=+x.dataset.menu,v=x.value.trim();
-      ov[i]=v;if(v!==(base?nMeal(base[i]):''))ch=1});
+      ov[i]=v;if(v!==(del?'':(base?nMeal(base[i]):'')))ch=1});
     if(ch)M.d.ov[arg]=ov;else delete M.d.ov[arg];
     sheet.querySelectorAll('[data-memo]').forEach(x=>{const s=x.dataset.memo,v=x.value.trim();
       const L=M.d.logs[arg]||(M.d.logs[arg]={}),cur=L[s]||(L[s]={});cur.memo=v;
       if(!cur.memo&&!cur.s)delete L[s];if(!Object.keys(L).length)delete M.d.logs[arg]});
     await saveM(arg);close();render();return toast('저장했어요')}
+  if(cmd==='delday'){const M=months[mk(arg)];M.d.del=M.d.del||{};M.d.del[arg]=1;
+    delete M.d.ov[arg];delete M.d.logs[arg];await saveM(arg);close();render();return toast('이 날 식단을 지웠어요')}
+  if(cmd==='undelday'){const M=months[mk(arg)];if(M.d.del)delete M.d.del[arg];
+    await saveM(arg);render();if(sheetOpen)sheetDay(arg);return toast('식단을 되살렸어요')}
+  if(cmd==='delbefore'){
+    const d0=P(arg);
+    if(!confirm(`${d0.getMonth()+1}월 ${d0.getDate()}일 이전의 식단과 기록을 모두 지울까요?`))return;
+    const y=+arg.slice(0,4),m=+arg.slice(5,7);
+    for(let k=0;k<3;k++){const dd=new Date(y,m-1-k,1);await ensureM(dd.getFullYear(),dd.getMonth()+1)}
+    const touched=new Set();
+    for(const key in months){const M=months[key];
+      for(const on in M.plan){ if(on<arg){M.d.del=M.d.del||{};M.d.del[on]=1;
+        delete M.d.ov[on];delete M.d.logs[on];touched.add(key)} }}
+    for(const key of touched)await store.set('m2:'+key,months[key].d);
+    close();render();return toast('이전 식단을 모두 지웠어요')}
   if(cmd==='resetday'){const M=months[mk(arg)];delete M.d.ov[arg];await saveM(arg);sheetDay(arg);render();return toast('원래 메뉴로 되돌렸어요')}
   if(cmd==='syncsave'){
     sync.url=$('syU').value.trim(); let c=$('syC').value.trim();
@@ -994,6 +1042,7 @@ $('avfile').onchange=e=>{
 /* ══════════ 시작 ══════════ */
 const idle=window.requestIdleCallback||(f=>setTimeout(f,120));
 async function boot(){
+  try{history.replaceState({app:'tab',tab:'cal'},'')}catch(e){}
   const s=await store.get('settings2');if(s)settings={...settings,...s};
   const f=await store.get('foods2');if(f)foods=f;
   const sh=await store.get('shop2');if(sh)shopChk=sh;
