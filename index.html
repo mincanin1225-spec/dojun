@@ -188,13 +188,9 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
-<div id="hb" style="position:fixed;top:6px;right:8px;z-index:999;background:rgba(74,64,56,.85);
-  color:#fff;font-size:11px;padding:3px 8px;border-radius:99px;pointer-events:none">v13</div>
-<button id="rescue" style="position:fixed;bottom:80px;right:10px;z-index:999;background:#BC6C5B;
-  color:#fff;border:0;border-radius:99px;padding:8px 14px;font-size:12px;font-weight:700;
-  box-shadow:0 4px 14px rgba(0,0,0,.25)">복구</button>
-<div id="errbox" style="position:fixed;top:34px;left:8px;right:8px;z-index:999;background:#8C2F1E;
-  color:#fff;font-size:11.5px;line-height:1.5;padding:10px 12px;border-radius:10px;display:none;
+<div id="errbox" onclick="this.style.display='none';this.textContent=''"
+  style="position:fixed;top:8px;left:8px;right:8px;z-index:999;background:#8C2F1E;
+  color:#fff;font-size:11.5px;line-height:1.5;padding:10px 12px;border-radius:12px;display:none;
   word-break:break-all;max-height:40vh;overflow:auto"></div>
 <div id="upd" style="position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
   z-index:50;background:#4A4038;color:#fff;font-size:13px;padding:11px 16px;display:none;
@@ -207,7 +203,8 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v14';
+const APP_VER='v15';
+var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
   set(k,v){localStorage.setItem('dj:'+k,JSON.stringify(v))}
@@ -687,8 +684,7 @@ function bar(){
   $('bar').innerHTML=`<div class="appbar">
     <div class="avatar" data-a="avatar">${avatar?`<img src="${avatar}" alt="">`:'🐣'}</div>
     <div class="nm"><h1>${esc(settings.name)} 밥상</h1>
-      <div class="age">${esc(ageTxt(today))} · ${stage(today).label}
-        <span style="color:var(--muted);font-weight:600">· ${APP_VER}</span></div></div>
+      <div class="age">${esc(ageTxt(today))} · ${stage(today).label}</div></div>
     <button class="pill" data-a="tab:set">설정</button></div>`;
   $('tabbar').innerHTML=TABS.map(([k,n,ic])=>`<button aria-selected="${tab===k}" data-a="tab:${k}">
     <svg viewBox="0 0 24 24" fill="none">${ICON[ic]}</svg>${n}</button>`).join('');
@@ -867,6 +863,14 @@ function vSet(){
         ${sync.url?'<button class="btn warn" data-a="syncoff">연결 끊기</button>':''}
       </div>
       <p class="hint" style="margin-top:10px">코드를 아는 사람은 이 기록을 볼 수 있으니 부부끼리만 공유하세요.</p>
+    </div>
+    <div class="sec"><h2>앱 정보</h2></div>
+    <div class="card">
+      <p class="hint" style="margin:0 0 10px">버전 <b style="color:var(--ink)">${APP_VER}</b>
+      · 마지막 동작 ${esc(lastTap)}<br>화면이 멈춘 것처럼 보이면 아래 복구를 눌러보세요. 기록은 지워지지 않습니다.</p>
+      <div class="btnrow" style="margin-top:0">
+        <button class="btn" data-a="checkver">최신 버전 확인</button>
+        <button class="btn" data-a="rescue">화면 복구</button></div>
     </div>
     <div class="sec"><h2>백업</h2></div>
     <div class="card"><p class="hint">기록은 이 기기의 앱 저장소에 있어요. 아래 칸의 내용을 복사해 두면 다른 곳에서 되살릴 수 있습니다.</p>
@@ -1075,6 +1079,21 @@ document.addEventListener('click',async e=>{
   if(cmd==='synccopy'){try{await navigator.clipboard.writeText($('syC').value);toast('코드를 복사했어요')}
     catch(e){toast('복사가 안 되면 직접 적어주세요')}return}
   if(cmd==='syncoff'){syncStop();sync={url:'',code:''};await store.set('sync',sync);render();return toast('연결을 끊었어요')}
+  if(cmd==='rescue'){
+    try{sheetOpen=false;sheetHist=false;sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
+      const eb=document.getElementById('errbox');eb.style.display='none';eb.textContent='';
+      window.scrollTo(0,0);render();return toast('화면을 복구했어요')}
+    catch(err){showErr('복구실패: '+err.message);return}}
+  if(cmd==='checkver'){
+    try{
+      const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
+      const t=await r.text(); const m=t.match(/const APP_VER='(v\d+)'/);
+      if(m&&m[1]!==APP_VER){document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
+        document.getElementById('upd').style.display='flex';
+        document.getElementById('updbtn').onclick=()=>location.replace(location.pathname+'?u='+Date.now());
+        return toast('새 버전이 있어요')}
+      return toast('최신 버전이에요')
+    }catch(e){return toast('확인하지 못했어요')}}
   if(cmd==='export'){const dump={settings,foods,shopChk,avatar,
       months:Object.fromEntries(Object.entries(months).map(([k,v])=>[k,v.d]))};
     $('sD').value=JSON.stringify(dump);return toast('아래 칸을 복사해 두세요')}
@@ -1161,9 +1180,6 @@ idle(()=>{try{
 }catch(e){}});
 
 /* ── 진단: 심장박동 · 오류표시 · 복구 ── */
-var hbN=0, lastTap='-';
-setInterval(function(){hbN++;var e=document.getElementById('hb');
-  if(e)e.textContent=APP_VER+' ·'+hbN+' ·'+lastTap;},1000);
 addEventListener('pointerdown',function(e){
   var el=(e.target&&e.target.closest)?e.target.closest('[data-a]'):null;
   lastTap=el?String(el.dataset.a).slice(0,14):((e.target&&e.target.tagName)||'?');
@@ -1173,13 +1189,5 @@ function showErr(msg){var b=document.getElementById('errbox');if(!b)return;
   b.textContent=(b.textContent?b.textContent+' / ':'')+String(msg).slice(0,300);}
 addEventListener('error',function(e){showErr('오류: '+(e.message||e.type)+' @'+(e.lineno||''))});
 addEventListener('unhandledrejection',function(e){showErr('실패: '+((e.reason&&e.reason.message)||e.reason))});
-document.getElementById('rescue').onclick=function(){
-  try{
-    sheetOpen=false;sheetHist=false;
-    sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
-    var b=document.getElementById('errbox');b.style.display='none';b.textContent='';
-    window.scrollTo(0,0);
-    render();toast('복구했어요');
-  }catch(err){showErr('복구실패: '+err.message)}
-};
+
 </script>
