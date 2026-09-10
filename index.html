@@ -202,10 +202,77 @@ const store={
     try{ return LS.get(k) }catch(e){ return null }
   },
   async set(k,v){
-    try{ if(window.storage){ await window.storage.set(k,JSON.stringify(v)); return } }catch(e){}
+    try{ if(window.storage){ await window.storage.set(k,JSON.stringify(v)) } }catch(e){}
     try{ LS.set(k,v) }catch(e){}
+    syncPush(k,v);
   }
 };
+
+/* ══════════ 가족 공유 (Firebase 실시간 데이터베이스) ══════════ */
+let sync={url:'',code:''}, es=null, online=false, rt=null;
+const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='avatar'||k.indexOf('m2:')===0;
+const rkOf=k=>k.replace(':','__'), kOf=rk=>rk.replace('__',':');
+const famURL=seg=>sync.url.replace(/\/+$/,'')+'/fam/'+sync.code+(seg?'/'+seg:'')+'.json';
+function newCode(){
+  const a=new Uint8Array(16); (crypto.getRandomValues?crypto:{getRandomValues:x=>x}).getRandomValues(a);
+  return [...a].map(b=>('0'+b.toString(16)).slice(-2)).join('');
+}
+function syncPush(k,v){
+  if(!online||!sync.url||!sync.code||!SYNCABLE(k))return;
+  try{fetch(famURL(rkOf(k)),{method:'PUT',body:JSON.stringify(v)}).catch(()=>{})}catch(e){}
+}
+function applyRemote(rk,val){
+  if(val==null)return;
+  const k=kOf(rk);
+  if(!SYNCABLE(k))return;
+  try{LS.set(k,val)}catch(e){}
+  try{if(window.storage)window.storage.set(k,JSON.stringify(val))}catch(e){}
+  if(k==='settings2'){const ob=settings.birth;settings={...settings,...val};if(ob!==settings.birth)Object.keys(months).forEach(x=>delete months[x])}
+  else if(k==='foods2'){foods=val;Object.keys(months).forEach(x=>delete months[x])}
+  else if(k==='shop2')shopChk=val;
+  else if(k==='avatar')avatar=val;
+  else if(k.indexOf('m2:')===0){const mk2=k.slice(3);
+    if(months[mk2]){const ov=months[mk2].d.variant||0;months[mk2].d=val;
+      if((val.variant||0)!==ov)delete months[mk2]}}
+}
+function scheduleRender(){clearTimeout(rt);rt=setTimeout(async()=>{
+  const y=+today.slice(0,4),m=+today.slice(5,7);
+  if(!months[`${y}-${pad(m)}`])await ensureM(y,m);
+  render(true)},250)}
+async function pushAllLocal(remote){
+  const keys=['settings2','foods2','shop2','avatar'];
+  try{for(let i=0;i<localStorage.length;i++){const kk=localStorage.key(i);
+    if(kk&&kk.indexOf('dj:m2:')===0)keys.push(kk.slice(3))}}catch(e){}
+  for(const k of keys){
+    if(remote&&remote[rkOf(k)]!==undefined)continue;
+    const v=LS.get(k); if(v!=null) syncPush(k,v);
+  }
+}
+function syncStop(){try{if(es)es.close()}catch(e){}es=null;online=false}
+function syncStart(){
+  syncStop();
+  if(!sync.url||!sync.code)return;
+  try{es=new EventSource(famURL(''))}catch(e){return}
+  const handle=ev=>{
+    let m;try{m=JSON.parse(ev.data)}catch(e){return}
+    if(m.path==='/'){
+      const d=m.data||{};
+      for(const rk in d)applyRemote(rk,d[rk]);
+      online=true; pushAllLocal(d);
+    }else{
+      const seg=m.path.replace(/^\//,'').split('/')[0];
+      if(m.path.split('/').length>2){ /* 부분 변경은 통째로 다시 받는다 */
+        fetch(famURL(seg)).then(r=>r.json()).then(v=>{applyRemote(seg,v);scheduleRender()}).catch(()=>{});
+        return;
+      }
+      applyRemote(seg,m.data);
+    }
+    scheduleRender();
+  };
+  es.addEventListener('put',handle);
+  es.addEventListener('patch',handle);
+  es.onerror=()=>{online=false;scheduleRender()};
+}
 
 /* ══════════ 재료 · 영양 (100g 기준 추정치) ══════════
    [kcal, 단백질g, 지방g, 탄수g, 철mg, 칼슘mg, 아연mg, 비타민A µgRAE, 비타민C mg] */
@@ -743,6 +810,22 @@ function vSet(){
     <div class="card"><p class="hint">휴대폰 브라우저에서 이 화면을 열고 <b>공유 → 홈 화면에 추가</b>를 누르면 아이콘이 생기고 전체 화면으로 열려요.
       알림은 브라우저가 꺼져 있으면 오지 않기 때문에, 장보기 알림은 휴대폰 캘린더에 넣는 방식을 씁니다.</p>
       <div class="btnrow"><button class="btn" data-a="ics">장보기 알림 캘린더에 넣기</button></div></div>
+    <div class="sec"><h2>가족 공유</h2></div>
+    <div class="card">
+      <p class="hint" style="margin:0 0 10px">두 폰에 같은 <b style="color:var(--ink)">가족 코드</b>를 넣으면 먹은 기록·메모·사진·재료 상태가 실시간으로 합쳐집니다.
+      ${online?'<b style="color:var(--mint)">지금 연결돼 있어요.</b>':'아직 연결되지 않았어요.'}</p>
+      <div class="fld"><label>데이터베이스 주소</label>
+        <input id="syU" value="${esc(sync.url)}" placeholder="https://○○-default-rtdb.firebasedatabase.app"></div>
+      <div class="fld"><label>가족 코드 (두 폰에 똑같이)</label>
+        <input id="syC" value="${esc(sync.code)}" placeholder="연결 누르면 자동으로 만들어집니다"></div>
+      <div class="btnrow">
+        <button class="btn pri" data-a="syncsave">연결</button>
+        <button class="btn" data-a="synccode">코드 새로 만들기</button>
+        <button class="btn" data-a="synccopy">코드 복사</button>
+        ${sync.url?'<button class="btn warn" data-a="syncoff">연결 끊기</button>':''}
+      </div>
+      <p class="hint" style="margin-top:10px">코드를 아는 사람은 이 기록을 볼 수 있으니 부부끼리만 공유하세요.</p>
+    </div>
     <div class="sec"><h2>백업</h2></div>
     <div class="card"><p class="hint">기록은 이 기기의 앱 저장소에 있어요. 아래 칸의 내용을 복사해 두면 다른 곳에서 되살릴 수 있습니다.</p>
       <div class="fld"><textarea id="sD" rows="4" placeholder="여기에 붙여넣고 불러오기"></textarea></div>
@@ -873,6 +956,16 @@ document.addEventListener('click',async e=>{
       if(!cur.memo&&!cur.s)delete L[s];if(!Object.keys(L).length)delete M.d.logs[arg]});
     await saveM(arg);close();render();return toast('저장했어요')}
   if(cmd==='resetday'){const M=months[mk(arg)];delete M.d.ov[arg];await saveM(arg);sheetDay(arg);render();return toast('원래 메뉴로 되돌렸어요')}
+  if(cmd==='syncsave'){
+    sync.url=$('syU').value.trim(); let c=$('syC').value.trim();
+    if(!c){c=newCode();}
+    sync.code=c;
+    await store.set('sync',sync); syncStart(); render();
+    return toast(sync.url?'연결하는 중이에요':'주소를 넣어주세요')}
+  if(cmd==='synccode'){$('syC').value=newCode();return toast('새 코드를 만들었어요')}
+  if(cmd==='synccopy'){try{await navigator.clipboard.writeText($('syC').value);toast('코드를 복사했어요')}
+    catch(e){toast('복사가 안 되면 직접 적어주세요')}return}
+  if(cmd==='syncoff'){syncStop();sync={url:'',code:''};await store.set('sync',sync);render();return toast('연결을 끊었어요')}
   if(cmd==='export'){const dump={settings,foods,shopChk,avatar,
       months:Object.fromEntries(Object.entries(months).map(([k,v])=>[k,v.d]))};
     $('sD').value=JSON.stringify(dump);return toast('아래 칸을 복사해 두세요')}
@@ -905,6 +998,7 @@ async function boot(){
   const f=await store.get('foods2');if(f)foods=f;
   const sh=await store.get('shop2');if(sh)shopChk=sh;
   const av=await store.get('avatar');if(av)avatar=av;
+  const sy=await store.get('sync');if(sy&&sy.url){sync=sy;syncStart()}
   const y=+today.slice(0,4),m=+today.slice(5,7);
   render();
   await ensureM(y,m);
