@@ -365,12 +365,15 @@ function genMonth(y,mo,variant){
       const meals=[],dp=[],ds=[],df=[],dv=[];let ok=1,pushed=0;
       for(let i=0;i<3;i++){
         let got=null;
-        const fc=Q.F.filter(f=>{
+        const fb=Q.F.filter(f=>{
           if(strictF?df.includes(f.k):df[df.length-1]===f.k)return false;
           if(strictF&&f.st&&df.some(k=>(byK[k]||{}).st))return false;
           return true});
+        let fc=rx<2?fb.filter(f=>hF.lastIndexOf(f.k)<hF.length-fw):fb;
+        if(!fc.length)fc=fb;
+        if(!fc.length)fc=Q.F;
         for(let t=0;t<600&&!got;t++){
-          let p=pk(rand,Q.P),form=pk(rand,Q.FM),vg=[pk(rand,Q.V),pk(rand,Q.V)],fr=pk(rand,fc.length?fc:Q.F);
+          let p=pk(rand,Q.P),form=pk(rand,Q.FM),vg=[pk(rand,Q.V),pk(rand,Q.V)],fr=pk(rand,fc);
           if(i===0&&tr){ if(tr.cat==='p')p=tr; else if(tr.cat==='v')vg[0]=tr; else fr=tr; }
           if(vg[0].k===vg[1].k)vg=[vg[0]];
           const sf=pk(rand,Q.SF);
@@ -395,7 +398,7 @@ function genMonth(y,mo,variant){
           if(av.some(v=>v.n===(fr.b||fr.n)))continue;
           if(i===2&&rx<1&&Q.P.some(x=>x.red)&&!dp.some(k=>(byK[k]||{}).red)&&!p.red)continue;
           const mn=p.k+form.k+vg[0].k+(vg[1]?vg[1].k:''),sn=sf.k+sv[0].k+(sv[1]?sv[1].k:'');
-          if(rx<2&&(hM.lastIndexOf(mn)>=hM.length-mw||hS.lastIndexOf(sn)>=hS.length-sw||hF.lastIndexOf(fr.k)>=hF.length-fw))continue;
+          if(rx<2&&(hM.lastIndexOf(mn)>=hM.length-mw||hS.lastIndexOf(sn)>=hS.length-sw))continue;
           const main={p,v:vg,f:form,fn:fName(form,ST)},side={f:sf,v:sv,p:sp};
           got={main,side,fruit:fr,trial:(i===0&&tr)?tr.k:null,mn,sn};
         }
