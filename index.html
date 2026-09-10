@@ -852,20 +852,31 @@ function render(keep){
 
 /* ══════════ 시트 ══════════ */
 const sheet=$('sheet'),scrim=$('scrim');
-let sheetOpen=false;
+let sheetOpen=false, sheetHist=false, skipPop=false;
 function open(h){sheet.innerHTML='<div class="grab"></div>'+h;sheet.classList.add('on');scrim.classList.add('on');
   sheet.scrollTop=0;
-  if(!sheetOpen){sheetOpen=true;try{history.pushState({app:'sheet'},'')}catch(e){}}}
-function closeNow(){sheet.classList.remove('on');scrim.classList.remove('on');sheetOpen=false}
-function close(){ if(sheetOpen){try{history.back();return}catch(e){}} closeNow() }
+  if(!sheetOpen){sheetOpen=true;
+    try{history.pushState({app:'sheet'},'');sheetHist=true}catch(e){sheetHist=false}}}
+function closeNow(){sheet.classList.remove('on');scrim.classList.remove('on');
+  sheet.innerHTML='';sheetOpen=false}
+/* 화면은 무조건 먼저 닫고, 뒤로가기 기록만 정리한다 */
+function close(){
+  const had=sheetHist; sheetHist=false;
+  closeNow();
+  if(had){skipPop=true;try{history.back()}catch(e){skipPop=false}
+    setTimeout(()=>{skipPop=false},400)}
+}
 scrim.onclick=close;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 /* 뒤로가기로 앱이 꺼지지 않게 */
 addEventListener('popstate',e=>{
-  if(sheetOpen){closeNow();return}
+  if(skipPop){skipPop=false;return}
+  if(sheetOpen){sheetHist=false;closeNow();return}
   const st=e.state||{}, t=(st.app==='tab'&&st.tab)?st.tab:'cal';
   if(t!==tab){tab=t;render()}
 });
+/* 혹시 덮개가 남아 있으면 어디를 눌러도 풀리게 */
+scrim.addEventListener('touchstart',()=>close(),{passive:true});
 
 function sheetDay(on){
   const d=P(on),L=lg(on),A=stage(on),nt=dayNut(on);
@@ -941,7 +952,7 @@ document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-a]');if(!el)return;
   const [cmd,arg]=el.dataset.a.split(':');
   if(cmd==='tab'){
-    if(sheetOpen){closeNow();try{history.replaceState({app:'tab',tab:arg},'')}catch(e){}}
+    if(sheetOpen){sheetHist=false;closeNow();try{history.replaceState({app:'tab',tab:arg},'')}catch(e){}}
     else if(tab!==arg){try{history.pushState({app:'tab',tab:arg},'')}catch(e){}}
     tab=arg;return render()}
   if(cmd==='close')return close();
