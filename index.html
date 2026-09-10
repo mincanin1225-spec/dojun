@@ -188,6 +188,14 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
+<div id="hb" style="position:fixed;top:6px;right:8px;z-index:999;background:rgba(74,64,56,.85);
+  color:#fff;font-size:11px;padding:3px 8px;border-radius:99px;pointer-events:none">v13</div>
+<button id="rescue" style="position:fixed;bottom:80px;right:10px;z-index:999;background:#BC6C5B;
+  color:#fff;border:0;border-radius:99px;padding:8px 14px;font-size:12px;font-weight:700;
+  box-shadow:0 4px 14px rgba(0,0,0,.25)">복구</button>
+<div id="errbox" style="position:fixed;top:34px;left:8px;right:8px;z-index:999;background:#8C2F1E;
+  color:#fff;font-size:11.5px;line-height:1.5;padding:10px 12px;border-radius:10px;display:none;
+  word-break:break-all;max-height:40vh;overflow:auto"></div>
 <div id="upd" style="position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
   z-index:50;background:#4A4038;color:#fff;font-size:13px;padding:11px 16px;display:none;
   align-items:center;gap:10px;justify-content:space-between">
@@ -199,7 +207,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v12';
+const APP_VER='v13';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
   set(k,v){localStorage.setItem('dj:'+k,JSON.stringify(v))}
@@ -1148,4 +1156,27 @@ idle(()=>{try{
   l.href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/manifest+json'}));
   document.head.appendChild(l);
 }catch(e){}});
+
+/* ── 진단: 심장박동 · 오류표시 · 복구 ── */
+var hbN=0, lastTap='-';
+setInterval(function(){hbN++;var e=document.getElementById('hb');
+  if(e)e.textContent=APP_VER+' ·'+hbN+' ·'+lastTap;},1000);
+addEventListener('pointerdown',function(e){
+  var el=(e.target&&e.target.closest)?e.target.closest('[data-a]'):null;
+  lastTap=el?String(el.dataset.a).slice(0,14):((e.target&&e.target.tagName)||'?');
+},true);
+function showErr(msg){var b=document.getElementById('errbox');if(!b)return;
+  b.style.display='block';
+  b.textContent=(b.textContent?b.textContent+' / ':'')+String(msg).slice(0,300);}
+addEventListener('error',function(e){showErr('오류: '+(e.message||e.type)+' @'+(e.lineno||''))});
+addEventListener('unhandledrejection',function(e){showErr('실패: '+((e.reason&&e.reason.message)||e.reason))});
+document.getElementById('rescue').onclick=function(){
+  try{
+    sheetOpen=false;sheetHist=false;
+    sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
+    var b=document.getElementById('errbox');b.style.display='none';b.textContent='';
+    window.scrollTo(0,0);
+    render();toast('복구했어요');
+  }catch(err){showErr('복구실패: '+err.message)}
+};
 </script>
