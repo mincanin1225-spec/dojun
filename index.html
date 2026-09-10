@@ -209,7 +209,7 @@ const store={
 };
 
 /* ══════════ 가족 공유 (Firebase 실시간 데이터베이스) ══════════ */
-let sync={url:'',code:''}, es=null, online=false, rt=null;
+let sync={url:'',code:''}, es=null, online=false, rt=null, syncFail=false;
 const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='avatar'||k.indexOf('m2:')===0;
 const rkOf=k=>k.replace(':','__'), kOf=rk=>rk.replace('__',':');
 const famURL=seg=>sync.url.replace(/\/+$/,'')+'/fam/'+sync.code+(seg?'/'+seg:'')+'.json';
@@ -222,9 +222,10 @@ function syncPush(k,v){
   try{fetch(famURL(rkOf(k)),{method:'PUT',body:JSON.stringify(v)}).catch(()=>{})}catch(e){}
 }
 function applyRemote(rk,val){
-  if(val==null)return;
+  if(val==null)return false;
   const k=kOf(rk);
-  if(!SYNCABLE(k))return;
+  if(!SYNCABLE(k))return false;
+  try{if(JSON.stringify(LS.get(k))===JSON.stringify(val))return false}catch(e){}
   try{LS.set(k,val)}catch(e){}
   try{if(window.storage)window.storage.set(k,JSON.stringify(val))}catch(e){}
   if(k==='settings2'){const ob=settings.birth;settings={...settings,...val};if(ob!==settings.birth)Object.keys(months).forEach(x=>delete months[x])}
@@ -234,6 +235,7 @@ function applyRemote(rk,val){
   else if(k.indexOf('m2:')===0){const mk2=k.slice(3);
     if(months[mk2]){const ov=months[mk2].d.variant||0;months[mk2].d=val;
       if((val.variant||0)!==ov)delete months[mk2]}}
+  return true;
 }
 function scheduleRender(){clearTimeout(rt);rt=setTimeout(async()=>{
   const y=+today.slice(0,4),m=+today.slice(5,7);
@@ -250,28 +252,37 @@ async function pushAllLocal(remote){
 }
 function syncStop(){try{if(es)es.close()}catch(e){}es=null;online=false}
 function syncStart(){
-  syncStop();
+  syncStop(); syncFail=false;
   if(!sync.url||!sync.code)return;
   try{es=new EventSource(famURL(''))}catch(e){return}
+  let fails=0;
   const handle=ev=>{
-    let m;try{m=JSON.parse(ev.data)}catch(e){return}
+    let m,changed=false;try{m=JSON.parse(ev.data)}catch(e){return}
+    fails=0;
     if(m.path==='/'){
       const d=m.data||{};
-      for(const rk in d)applyRemote(rk,d[rk]);
-      online=true; pushAllLocal(d);
+      for(const rk in d){if(applyRemote(rk,d[rk]))changed=true}
+      const was=online; online=true; if(!was)changed=true;
+      pushAllLocal(d);
     }else{
       const seg=m.path.replace(/^\//,'').split('/')[0];
-      if(m.path.split('/').length>2){ /* 부분 변경은 통째로 다시 받는다 */
-        fetch(famURL(seg)).then(r=>r.json()).then(v=>{applyRemote(seg,v);scheduleRender()}).catch(()=>{});
+      if(m.path.split('/').length>2){
+        fetch(famURL(seg)).then(r=>r.json()).then(v=>{if(applyRemote(seg,v))scheduleRender()}).catch(()=>{});
         return;
       }
-      applyRemote(seg,m.data);
+      changed=applyRemote(seg,m.data);
     }
-    scheduleRender();
+    if(changed)scheduleRender();
   };
   es.addEventListener('put',handle);
   es.addEventListener('patch',handle);
-  es.onerror=()=>{online=false;scheduleRender()};
+  es.onopen=()=>{fails=0};
+  /* 연결이 안 되면 화면을 계속 다시 그리지 않는다 */
+  es.onerror=()=>{
+    const was=online; online=false;
+    if(++fails>=4){syncStop();syncFail=true}
+    if(was||syncFail)scheduleRender();
+  };
 }
 
 /* ══════════ 재료 · 영양 (100g 기준 추정치) ══════════
@@ -822,13 +833,15 @@ function vSet(){
     <div class="sec"><h2>가족 공유</h2></div>
     <div class="card">
       <p class="hint" style="margin:0 0 10px">두 폰에 같은 <b style="color:var(--ink)">가족 코드</b>를 넣으면 먹은 기록·메모·사진·재료 상태가 실시간으로 합쳐집니다.
-      ${online?'<b style="color:var(--mint)">지금 연결돼 있어요.</b>':'아직 연결되지 않았어요.'}</p>
+      ${online?'<b style="color:var(--mint)">지금 연결돼 있어요.</b>'
+        :syncFail?'<b style="color:var(--berry)">연결에 실패했어요.</b> 주소와 코드를 확인하고, Firebase 규칙을 게시했는지 봐주세요.'
+        :sync.url?'연결하는 중이에요.':'아직 연결되지 않았어요.'}</p>
       <div class="fld"><label>데이터베이스 주소</label>
         <input id="syU" value="${esc(sync.url)}" placeholder="https://○○-default-rtdb.firebasedatabase.app"></div>
       <div class="fld"><label>가족 코드 (두 폰에 똑같이)</label>
         <input id="syC" value="${esc(sync.code)}" placeholder="연결 누르면 자동으로 만들어집니다"></div>
       <div class="btnrow">
-        <button class="btn pri" data-a="syncsave">연결</button>
+        <button class="btn pri" data-a="syncsave">${syncFail?'다시 연결':'연결'}</button>
         <button class="btn" data-a="synccode">코드 새로 만들기</button>
         <button class="btn" data-a="synccopy">코드 복사</button>
         ${sync.url?'<button class="btn warn" data-a="syncoff">연결 끊기</button>':''}
