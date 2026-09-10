@@ -207,7 +207,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v13';
+const APP_VER='v14';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
   set(k,v){localStorage.setItem('dj:'+k,JSON.stringify(v))}
@@ -249,6 +249,7 @@ function applyRemote(rk,val){
   else if(k==='shop2')shopChk=val;
   else if(k==='avatar')avatar=val;
   else if(k.indexOf('m2:')===0){const mk2=k.slice(3);
+    val.ov=val.ov||{};val.logs=val.logs||{};val.del=val.del||{};
     if(months[mk2]){const ov=months[mk2].d.variant||0;months[mk2].d=val;
       if((val.variant||0)!==ov)delete months[mk2]}}
   return true;
@@ -536,18 +537,20 @@ async function ensureM(y,mo){const k=`${y}-${pad(mo)}`;if(months[k])return month
   months[k]={d,plan};return months[k]}
 const regenAll=()=>Object.keys(months).forEach(k=>{const[y,m]=k.split('-').map(Number);
   const v=months[k].d.variant||0,pl=genMonth(y,m,v);months[k].plan=pl;cachePlan(k,v,pl)});
-const isDel=on=>{const M=months[mk(on)];return !!(M&&M.d.del&&M.d.del[on])};
-function mText(on,i){const M=months[mk(on)];if(!M)return'';
+function fixM(M){if(!M)return null;M.d=M.d||{};M.d.ov=M.d.ov||{};M.d.logs=M.d.logs||{};
+  M.d.del=M.d.del||{};M.plan=M.plan||{};return M}
+const isDel=on=>{const M=fixM(months[mk(on)]);return !!(M&&M.d.del[on])};
+function mText(on,i){const M=fixM(months[mk(on)]);if(!M)return'';
   const o=M.d.ov[on];if(o&&o[i])return o[i];
   if(isDel(on))return'';
   const p=M.plan[on];return p?nMeal(p[i]):''}
-function mObj(on,i){const M=months[mk(on)];if(!M)return null;
-  if(M.d.ov[on]&&M.d.ov[on][i])return null;
+function mObj(on,i){const M=fixM(months[mk(on)]);if(!M)return null;
+  const o=M.d.ov[on];if(o&&o[i])return null;
   if(isDel(on))return null;
   const p=M.plan[on];return p?p[i]:null}
 const hasAny=on=>!!(mText(on,0)||mText(on,1)||mText(on,2));
-const lg=on=>{const M=months[mk(on)];return(M&&M.d.logs[on])||{}};
-const saveM=async on=>{const k=mk(on);await store.set('m2:'+k,months[k].d)};
+const lg=on=>{const M=fixM(months[mk(on)]);return(M&&M.d.logs[on])||{}};
+const saveM=async on=>{const k=mk(on);if(months[k])await store.set('m2:'+k,fixM(months[k]).d)};
 
 /* ══════════ 영양 계산 ══════════ */
 function mealNut(on,i){
@@ -1035,7 +1038,7 @@ document.addEventListener('click',async e=>{
   if(cmd==='savefood'){foods[arg]={...(foods[arg]||{s:stat(arg)}),memo:$('fM').value.trim()};
     await store.set('foods2',foods);close();render();return toast('저장했어요')}
   if(cmd==='savday'){
-    const M=months[mk(arg)],base=M.plan[arg],del=isDel(arg),ov=[];let ch=0;
+    const M=fixM(months[mk(arg)]);if(!M)return;const base=M.plan[arg],del=isDel(arg),ov=[];let ch=0;
     sheet.querySelectorAll('[data-menu]').forEach(x=>{const i=+x.dataset.menu,v=x.value.trim();
       ov[i]=v;if(v!==(del?'':(base?nMeal(base[i]):'')))ch=1});
     if(ch)M.d.ov[arg]=ov;else delete M.d.ov[arg];
@@ -1046,9 +1049,9 @@ document.addEventListener('click',async e=>{
     await saveM(arg);
     setTimeout(()=>{close();render();toast('저장했어요')},160);
     return}
-  if(cmd==='delday'){const M=months[mk(arg)];M.d.del=M.d.del||{};M.d.del[arg]=1;
+  if(cmd==='delday'){const M=fixM(months[mk(arg)]);if(!M)return;M.d.del[arg]=1;
     delete M.d.ov[arg];delete M.d.logs[arg];await saveM(arg);close();render();return toast('이 날 식단을 지웠어요')}
-  if(cmd==='undelday'){const M=months[mk(arg)];if(M.d.del)delete M.d.del[arg];
+  if(cmd==='undelday'){const M=fixM(months[mk(arg)]);if(!M)return;delete M.d.del[arg];
     await saveM(arg);render();if(sheetOpen)sheetDay(arg);return toast('식단을 되살렸어요')}
   if(cmd==='delbefore'){
     const d0=P(arg);
@@ -1056,12 +1059,12 @@ document.addEventListener('click',async e=>{
     const y=+arg.slice(0,4),m=+arg.slice(5,7);
     for(let k=0;k<3;k++){const dd=new Date(y,m-1-k,1);await ensureM(dd.getFullYear(),dd.getMonth()+1)}
     const touched=new Set();
-    for(const key in months){const M=months[key];
-      for(const on in M.plan){ if(on<arg){M.d.del=M.d.del||{};M.d.del[on]=1;
+    for(const key in months){const M=fixM(months[key]);
+      for(const on in M.plan){ if(on<arg){M.d.del[on]=1;
         delete M.d.ov[on];delete M.d.logs[on];touched.add(key)} }}
     for(const key of touched)await store.set('m2:'+key,months[key].d);
     close();render();return toast('이전 식단을 모두 지웠어요')}
-  if(cmd==='resetday'){const M=months[mk(arg)];delete M.d.ov[arg];await saveM(arg);sheetDay(arg);render();return toast('원래 메뉴로 되돌렸어요')}
+  if(cmd==='resetday'){const M=fixM(months[mk(arg)]);if(!M)return;delete M.d.ov[arg];await saveM(arg);sheetDay(arg);render();return toast('원래 메뉴로 되돌렸어요')}
   if(cmd==='syncsave'){
     sync.url=$('syU').value.trim(); let c=$('syC').value.trim();
     if(!c){c=newCode();}
