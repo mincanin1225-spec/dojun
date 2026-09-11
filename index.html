@@ -203,7 +203,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v15';
+const APP_VER='v16';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -307,7 +307,7 @@ const N={
   pork:[145,21,6,0,.9,5,2,2,.5], salmon:[180,20,11,0,.5,12,.4,15,0],
   cod:[80,18,.7,0,.3,15,.4,10,1], shrimp:[95,20,1,0,1,60,1.3,15,0],
   tofu:[85,8.5,5,2,1.5,130,.8,0,0], lentil:[115,9,.4,20,3.3,19,1.3,0,1.5],
-  egg:[320,16,27,3.6,2.7,130,2.3,380,0],
+  egg:[320,16,27,3.6,2.7,130,2.3,380,0], cheese:[300,20,24,2,.2,600,2.5,200,0],
   zucchini:[20,1.2,.2,3.5,.4,16,.3,10,17], carrot:[35,.9,.2,8,.3,30,.2,835,6],
   onion:[40,1.1,.1,9,.2,23,.2,0,7], potato:[75,2,.1,17,.8,10,.3,0,15],
   sweetpotato:[110,1.3,.1,26,.6,25,.3,700,15], pumpkin:[45,1.5,.1,10,.5,20,.3,400,10],
@@ -353,7 +353,8 @@ const PROTEINS=[
   {k:'beef',n:'소고기',red:1,minM:6},{k:'chicken',n:'닭고기',minM:7},{k:'pork',n:'돼지고기',red:1,minM:8},
   {k:'salmon',n:'연어',fish:1,minM:8,al:1},{k:'cod',n:'대구살',fish:1,minM:8,al:1},
   {k:'shrimp',n:'새우',fish:1,minM:9,al:1},{k:'tofu',n:'두부',minM:7,al:1},
-  {k:'lentil',n:'렌틸콩',minM:9,al:1,with:'beef'},{k:'egg',n:'계란',sideOnly:1,minM:7,al:1}
+  {k:'lentil',n:'렌틸콩',minM:9,al:1,with:'beef'},{k:'egg',n:'계란',sideOnly:1,minM:7,al:1},
+  {k:'cheese',n:'아기 치즈',sideOnly:1,minM:9,al:1}
 ];
 const VEGS=[
   {k:'zucchini',n:'애호박',minM:6},{k:'carrot',n:'당근',minM:6},{k:'onion',n:'양파',minM:6},
@@ -381,7 +382,8 @@ const FORMS=[{k:'jinbap',n:'진밥',minM:6},{k:'bapjjim',n:'밥찜',minM:7},{k:'
 const SIDEFORMS=[
   {k:'eggjjim',n:'계란찜',p:'egg',nv:1,minM:7},{k:'tofujeon',n:'두부전',p:'tofu',nv:1,minM:9},
   {k:'tofubol',n:'두부볼',p:'tofu',nv:1,minM:9},{k:'mash',n:'매시',glue:'',nv:2,minM:6},
-  {k:'deulkkae',n:'들깨무침',fat:1,nv:1,minM:8},{k:'beefbokk',n:'소고기볶음',p:'beef',nv:1,minM:9}];
+  {k:'deulkkae',n:'들깨무침',fat:1,nv:1,minM:8},{k:'beefbokk',n:'소고기볶음',p:'beef',nv:1,minM:9},
+  {k:'cheesemash',n:'치즈매시',p:'cheese',nv:1,minM:9}];
 
 const ALL=[...PROTEINS.map(x=>({...x,cat:'p'})),...VEGS.map(x=>({...x,cat:'v'})),...FRUITS.map(x=>({...x,cat:'f'}))];
 const byK=Object.fromEntries(ALL.map(x=>[x.k,x]));
@@ -430,7 +432,7 @@ const stat=k=>(foods[k]&&foods[k].s)||(DEF_OK.includes(k)?'ok':'new');
 function pools(on){const m=ageM(on)??9;const u=x=>stat(x.k)==='ok'&&(x.minM||0)<=m;
   return{P:PROTEINS.filter(x=>!x.sideOnly&&u(x)),V:VEGS.filter(u),F:FRUITS.filter(u),
     FM:FORMS.filter(x=>x.minM<=m),SF:SIDEFORMS.filter(x=>x.minM<=m),
-    egg:u(byK.egg),tofu:stat('tofu')==='ok'&&byK.tofu.minM<=m,beef:u(byK.beef)}}
+    egg:u(byK.egg),tofu:stat('tofu')==='ok'&&byK.tofu.minM<=m,beef:u(byK.beef),cheese:u(byK.cheese)}}
 function trialOf(on){const m=ageM(on)??9;
   const l=ALL.filter(x=>stat(x.k)==='new'&&(x.minM||0)<=m&&!x.sideOnly);
   if(!l.length)return null;const d=dnum(on);if(((d%3)+3)%3!==0)return null;
@@ -446,12 +448,51 @@ function genMonth(y,mo,variant){
   const dim=new Date(y,mo,0).getDate(), rand=rng(y*1e4+mo*137+variant*7919+29);
   const hM=[],hS=[],hF=[],out={};
   for(let d=1;d<=dim;d++){
-    const on=`${y}-${pad(mo)}-${pad(d)}`, Q=pools(on), tr=trialOf(on), ST=stage(on);
+    const on=`${y}-${pad(mo)}-${pad(d)}`, tr=trialOf(on), ST=stage(on);
+    let Q=pools(on); if(isSimple())Q=weekPool(on,Q,variant);
     if(!Q.P.length||!Q.V.length||!Q.F.length||!Q.FM.length||!Q.SF.length){out[on]=null;continue}
     const strictF=Q.F.length>=3;
-    const fw=Math.max(0,Math.min(7,Q.F.length-1));
-    const mw=Math.max(0,Math.min(14,Q.P.length*Q.FM.length-1));
-    const sw=Math.max(0,Math.min(12,Q.SF.length*Q.V.length-1));
+    let fw=Math.max(0,Math.min(7,Q.F.length-1));
+    let mw=Math.max(0,Math.min(14,Q.P.length*Q.FM.length-1));
+    let sw=Math.max(0,Math.min(12,Q.SF.length*Q.V.length-1));
+    if(isSimple()){
+      const WM=weekMenu(on,pools(on),ST,variant);
+      if(WM){
+      const perms=[[0,1,2],[1,2,0],[2,0,1],[0,2,1],[2,1,0],[1,0,2]];
+      const dIdx=((dnum(on)%6)+6)%6;
+      let got=null;
+      for(let t=0;t<18&&!got;t++){
+        const pm=perms[(dIdx+t)%6], so=(dIdx+t)%3, fo=(dIdx+(t*2))%3;
+        const meals=[];let ok=1,eggN=0,tofuN=0,niN=0,crN=0;
+        for(let i=0;i<3;i++){
+          const mn=WM.mains[pm[i]], sd=WM.sides[(pm[i]+so)%3], fr=WM.fruits[(i+fo)%3];
+          if(sd.v.some(v=>mn.v.some(x=>x.k===v.k))){ok=0;break}
+          if(sd.p===mn.p.k){ok=0;break}
+          const av=mn.v.concat(sd.v);
+          if(av.some(v=>v.st)&&fr.st){ok=0;break}
+          if(av.some(v=>v.n===(fr.b||fr.n))){ok=0;break}
+          niN+=av.filter(v=>v.ni).length; crN+=av.filter(v=>v.cr).length;
+          if(sd.p==='egg')eggN++; if(sd.p==='tofu')tofuN++;
+          meals.push({main:mn,side:sd,fruit:fr,trial:null});
+        }
+        if(!ok||eggN>1||tofuN>1||niN>1||crN>2)continue;
+        if(!meals.some(m=>m.main.p.red||m.side.p==='beef'))continue;
+        got=meals;
+      }
+      if(got){
+        if(tr){ /* 새 재료는 아침에 소량으로 */
+          const m0=Object.assign({},got[0]);
+          if(tr.cat==='p')m0.main=Object.assign({},m0.main,{p:tr});
+          else if(tr.cat==='v')m0.main=Object.assign({},m0.main,{v:[tr,m0.main.v[1]]});
+          else m0.fruit=tr;
+          m0.trial=tr.k; got[0]=m0;
+        }
+        out[on]=got;
+        if(hM.length>20){hM.splice(0,hM.length-20);hS.splice(0,hS.length-20);hF.splice(0,hF.length-20)}
+        continue;
+      }
+      }
+    }
     let day=null;
     for(let rx=0;rx<3&&!day;rx++)for(let at=0;at<15&&!day;at++){
       const meals=[],dp=[],ds=[],df=[],dv=[];let ok=1,pushed=0;
@@ -472,6 +513,7 @@ function genMonth(y,mo,variant){
           if(sf.p==='egg'&&!Q.egg)continue;
           if(sf.p==='tofu'&&!Q.tofu)continue;
           if(sf.p==='beef'&&!Q.beef)continue;
+          if(sf.p==='cheese'&&!Q.cheese)continue;
           let sv=sf.nv===2?[pk(rand,Q.V),pk(rand,Q.V)]:[pk(rand,Q.V)];
           sv=sv.filter((v,ix)=>sv.findIndex(z=>z.k===v.k)===ix);
           const sp=sf.p||null;
@@ -507,10 +549,74 @@ function genMonth(y,mo,variant){
   }
   return out;
 }
+const isSimple=()=>settings.simple!==false;
+function pickSides(list,r){
+  /* 계란·두부는 하루 한 번까지라, 단백질 종류가 겹치지 않게 고른다 */
+  const g={};list.forEach(f=>{const k=f.p||'none';(g[k]=g[k]||[]).push(f)});
+  const keys=Object.keys(g), out=[];
+  const order=keys.filter(k=>k==='none').concat(keys.filter(k=>k!=='none')
+    .sort(()=>r()-0.5));
+  for(const k of order){if(out.length>=3)break;
+    const a=g[k];out.push(a[Math.floor(r()*a.length)])}
+  return out.length?out:list.slice(0,3);
+}
+function weekMenu(on,Q,ST,variant){
+  const r=rng(hash('menu|'+sunOf(on)+'|'+variant));
+  const take=(a0,n)=>{const a=a0.slice(),o=[];
+    while(a.length&&o.length<n)o.push(a.splice(Math.floor(r()*a.length),1)[0]);return o};
+  /* 단백질 3종 (붉은 고기 하나 포함) */
+  let P=take(Q.P,Math.min(3,Q.P.length));
+  if(!P.some(x=>x.red)){const rd=Q.P.filter(x=>x.red);if(rd.length)P[0]=rd[Math.floor(r()*rd.length)]}
+  if(P.length<3)P=P.concat(take(Q.P.filter(x=>P.indexOf(x)<0),3-P.length));
+  /* 후식 3종 (전분질은 하나까지) */
+  const fno=Q.F.filter(f=>!f.st), fst=Q.F.filter(f=>f.st);
+  let F=take(fno,2).concat(take(fst,1));
+  if(F.length<3)F=F.concat(take(Q.F.filter(x=>F.indexOf(x)<0),3-F.length));
+  F=F.slice(0,3);
+  /* 채소 5종: 과일과 겹치지 않게, 질산염 채소는 한 자리만 */
+  const fb=F.map(f=>f.b||f.n);
+  const pool=Q.V.filter(v=>fb.indexOf(v.n)<0);
+  const base=pool.length>=5?pool:Q.V;
+  let V=take(base.filter(v=>!v.st&&!v.cr&&!v.ni),3)
+    .concat(take(base.filter(v=>v.st),1)).concat(take(base.filter(v=>v.cr),1));
+  if(V.length<5)V=V.concat(take(base.filter(v=>V.indexOf(v)<0),5-V.length));
+  V=V.slice(0,5);
+  const ni=V.filter(v=>v.ni), rest=V.filter(v=>!v.ni);
+  V=rest.concat(ni);                 /* 질산염 채소를 뒤로 (한 번만 쓰이는 자리) */
+  const FM=take(Q.FM,Math.min(2,Q.FM.length));
+  const SF=pickSides(Q.SF,r);
+  const mains=[0,1,2].map(i=>({p:P[i%P.length],f:FM[i%FM.length],
+    v:[V[[0,2,4][i]%V.length],V[[1,3,0][i]%V.length]],fn:fName(FM[i%FM.length],ST)}));
+  const sides=[0,1,2].map(i=>({f:SF[i%SF.length],v:[V[[2,4,1][i]%V.length]],p:SF[i%SF.length].p||null}));
+  const fr3=[0,1,2].map(i=>F[i%F.length]).filter(Boolean);
+  if(!P.length||!V.length||!fr3.length||!FM.length||!SF.length)return null;
+  return {mains:mains,sides:sides,fruits:fr3};
+}
+function weekPool(on,Q,variant){
+  const r=rng(hash(sunOf(on)+'|'+variant));
+  const take=(a0,n)=>{const a=a0.slice(),o=[];
+    while(a.length&&o.length<n)o.push(a.splice(Math.floor(r()*a.length),1)[0]);return o};
+  const P=take(Q.P,Math.min(3,Q.P.length));
+  if(!P.some(x=>x.red)){const reds=Q.P.filter(x=>x.red);
+    if(reds.length)P[0]=reds[Math.floor(r()*reds.length)]}
+  /* 과일은 전분질(고구마·단호박)이 하루 하나만 되므로 최대 1개까지 */
+  const fno=Q.F.filter(f=>!f.st), fst=Q.F.filter(f=>f.st);
+  let F=[].concat(take(fno,2),take(fst,1));
+  if(F.length<Math.min(3,Q.F.length))F=take(Q.F,Math.min(3,Q.F.length));
+  /* 채소는 과일과 이름이 겹치지 않게, 전분 1·십자화과 1·나머지 3 */
+  const fb=F.map(f=>f.b||f.n);
+  const Vp=Q.V.filter(v=>fb.indexOf(v.n)<0);
+  const base=Vp.length>=4?Vp:Q.V;
+  const st=base.filter(v=>v.st), cr=base.filter(v=>v.cr), et=base.filter(v=>!v.st&&!v.cr);
+  let V=[].concat(take(st,1),take(cr,1),take(et,3));
+  if(V.length<4)V=take(base,Math.min(5,base.length));
+  return Object.assign({},Q,{P:P,V:V,F:F,
+    FM:take(Q.FM,Math.min(2,Q.FM.length)),SF:pickSides(Q.SF,r)});
+}
 const mk=on=>on.slice(0,7);
 const FORMK=Object.fromEntries(FORMS.map(x=>[x.k,x]));
 const SFK=Object.fromEntries(SIDEFORMS.map(x=>[x.k,x]));
-const sigNow=()=>(settings.birth||'')+'|'+ALL.map(x=>stat(x.k)[0]).join('');
+const sigNow=()=>(settings.birth||'')+'|'+(isSimple()?'S':'D')+'|'+ALL.map(x=>stat(x.k)[0]).join('');
 function packPlan(pl){const o={};
   for(const d in pl){const v=pl[d];
     o[d]=v?v.map(m=>[m.main.p.k,m.main.f.k,m.main.v.map(x=>x.k).join(','),
@@ -562,6 +668,7 @@ function mealNut(on,i){
   if(m.side.p==='egg')add('egg',17);
   if(m.side.p==='tofu')add('tofu',Math.round(A.tofu*.6));
   if(m.side.p==='beef')add('beef',Math.round(A.meat*.5));
+  if(m.side.p==='cheese')add('cheese',12);
   if(m.side.f.k==='deulkkae')add('deulkkae',1.5);
   add(m.fruit.k,A.fruit); add('oil',.7);
   return acc;
@@ -629,11 +736,13 @@ function recipe(on,i){
     tofubol:[`두부 ${Math.round(A.tofu*.6)}g과 다진 ${sv.map(v=>v.n).join(', ')}, 쌀가루 1작은술을 섞습니다.`,`동글게 빚어 찜기에서 8분 찝니다.`],
     mash:[`${sv.map(v=>`${v.n} ${A.veg}g`).join(', ')}을 무르게 쪄서 으깹니다.`,`모유나 분유물 1큰술로 농도를 맞춥니다.`],
     deulkkae:[`${sv.map(v=>v.n).join(', ')}를 데쳐 물기를 짜고 잘게 썹니다.`,`들깨가루 1/2작은술로 가볍게 무칩니다.`],
-    beefbokk:[`다진 소고기 ${Math.round(A.meat*.5)}g과 ${sv.map(v=>v.n).join(', ')}를 물 2큰술과 함께 볶듯 익힙니다.`]
+    beefbokk:[`다진 소고기 ${Math.round(A.meat*.5)}g과 ${sv.map(v=>v.n).join(', ')}를 물 2큰술과 함께 볶듯 익힙니다.`],
+    cheesemash:[`${sv.map(v=>`${v.n} ${A.veg}g`).join(', ')}을 무르게 쪄서 으깹니다.`,
+      `아기 치즈 1장을 잘게 찢어 따뜻할 때 섞어 완전히 녹입니다. 나트륨이 낮은 아기 전용 치즈로 쓰세요.`]
   }[sf.k];
   return{
     ings:[`밥 ${A.rice}g`,`${p.n} ${ap}g`,...mv.map(v=>`${v.n} ${A.veg}g`),
-      ...(sf.p==='egg'?['노른자 1개']:sf.p==='tofu'?[`두부 ${Math.round(A.tofu*.6)}g`]:sf.p==='beef'?[`소고기 ${Math.round(A.meat*.5)}g`]:[]),
+      ...(sf.p==='egg'?['노른자 1개']:sf.p==='tofu'?[`두부 ${Math.round(A.tofu*.6)}g`]:sf.p==='beef'?[`소고기 ${Math.round(A.meat*.5)}g`]:sf.p==='cheese'?['아기 치즈 1장']:[]),
       ...sv.map(v=>`${v.n} ${A.veg}g`),`${fr.b||fr.n} ${A.fruit}g`],
     main:[riceStep,prot,`${mv.map(v=>v.n).join(', ')}은 껍질을 벗겨 ${A.key==='early'?'곱게 갈아':'잘게 다져'} 익힙니다.`,fin,`불을 끄고 참기름이나 들기름 1~2방울을 떨어뜨립니다.`],
     side, fruit:[`${fr.b||fr.n} ${A.fruit}g을 ${fr.prep} 냅니다.`], tex:A.tex
@@ -652,6 +761,7 @@ function weekList(sun){
       if(m.side.p==='egg')add('계란','p',0);
       if(m.side.p==='tofu')add('두부','p',Math.round(A.tofu*.6));
       if(m.side.p==='beef')add('소고기','p',Math.round(A.meat*.5));
+      if(m.side.p==='cheese')add('아기 치즈','p',12);
       if(m.side.f.k==='deulkkae')add('들깨가루','e',0);
       add(m.fruit.b||m.fruit.n,m.fruit.st?'v':'f',A.fruit);
     }}
@@ -760,6 +870,16 @@ function vShop(){
       <button class="rd" data-a="wk:1">›</button></div>
       <button class="pill" data-a="uncheck">전체 해제</button></div>
     <p class="hint" style="margin:0 0 12px">이 주 21끼에 들어가는 재료예요. 손질 전 기준이라 조금 넉넉히 사시는 게 좋아요.</p>
+    ${(()=>{const c={};for(let i=0;i<7;i++){const on=addD(weekCur,i);
+        for(let j=0;j<3;j++){const m=mObj(on,j);if(!m)continue;
+          const k2=nMain(m.main);c[k2]=(c[k2]||0)+1}}
+      const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]);
+      if(!rows.length)return'';
+      return `<div class="catrow"><span class="catdot" style="background:var(--butter)"></span>
+        <b>이번 주 만들 것</b><span class="hint">${rows.length}가지</span></div>
+        <div class="card">${rows.map(x=>`<div class="shop"><div class="nm">${esc(x[0])}</div>
+          <div class="qt">${x[1]}회분</div></div>`).join('')}
+        <p class="hint" style="margin:10px 0 0">같은 메뉴는 한 번에 만들어 1회분씩 나눠 얼려두면 편해요.</p></div>`})()}
     ${body||'<div class="empty">이 주에는 식단이 없어요.</div>'}
     <div class="card" style="margin-top:16px">
       <h3 style="font-size:14px;font-weight:800;margin-bottom:6px">토요일마다 알림 받기</h3>
@@ -864,6 +984,15 @@ function vSet(){
       </div>
       <p class="hint" style="margin-top:10px">코드를 아는 사람은 이 기록을 볼 수 있으니 부부끼리만 공유하세요.</p>
     </div>
+    <div class="sec"><h2>식단 방식</h2></div>
+    <div class="card">
+      <div class="chips" style="margin-bottom:10px">
+        <button class="chip ${isSimple()?'ok':''}" data-a="mode:simple">단촐하게</button>
+        <button class="chip ${isSimple()?'':'ok'}" data-a="mode:varied">다양하게</button></div>
+      <p class="hint" style="margin:0">${isSimple()
+        ?'한 주에 단백질 3가지, 채소 5가지, 과일 3가지, 밥 형태 2가지만 씁니다. 같은 메뉴가 자주 겹쳐서 주말에 몰아 만들어 두기 좋아요.'
+        :'재료를 넓게 돌려 씁니다. 맛 경험은 넓어지지만 매번 다른 걸 만들어야 합니다.'}</p>
+    </div>
     <div class="sec"><h2>앱 정보</h2></div>
     <div class="card">
       <p class="hint" style="margin:0 0 10px">버전 <b style="color:var(--ink)">${APP_VER}</b>
@@ -938,9 +1067,14 @@ function sheetDay(on){
       <div class="dish"><div class="pic">${dishSVG(m)}</div><div class="bd">
         <div class="lb" style="font-size:11.5px;font-weight:800;color:var(--mint)">${lb}</div>
         <h3>${esc(mText(on,i)||'메뉴 없음')}</h3>
-        ${r?`<div class="chips">${r.ings.slice(0,5).map(x=>`<span class="chip sm">${esc(x)}</span>`).join('')}</div>`:''}
+        ${r?`<div class="chips">${r.ings.map(x=>`<span class="chip sm">${esc(x)}</span>`).join('')}</div>`:''}
       </div></div>
-      ${r?`<ol class="steps">${[...r.main.slice(0,4),`반찬 — ${r.side.join(' ')}`,`후식 — ${r.fruit[0]}`].map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}
+      ${r?`<div class="rgroup" style="margin-top:10px"><h4>주식 만들기</h4>
+        <ol class="steps">${r.main.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+        <div class="rgroup"><h4>반찬 만들기</h4>
+        <ol class="steps">${r.side.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+        <div class="rgroup"><h4>후식</h4>
+        <ol class="steps">${r.fruit.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>`:''}
       <div class="rec" style="margin-top:10px">${[['a','다 먹음'],['s','조금'],['l','남김']].map(([c,t])=>
         `<button class="${c}" aria-pressed="${l.s===c}" data-a="rec:${on}|${['b','l','d'][i]}|${c}">${t}</button>`).join('')}</div>
       <div class="fld"><input data-memo="${['b','l','d'][i]}" value="${esc(l.memo||'')}" placeholder="메모 — 반응, 컨디션, 남긴 이유"></div>
@@ -1079,6 +1213,11 @@ document.addEventListener('click',async e=>{
   if(cmd==='synccopy'){try{await navigator.clipboard.writeText($('syC').value);toast('코드를 복사했어요')}
     catch(e){toast('복사가 안 되면 직접 적어주세요')}return}
   if(cmd==='syncoff'){syncStop();sync={url:'',code:''};await store.set('sync',sync);render();return toast('연결을 끊었어요')}
+  if(cmd==='mode'){settings.simple=(arg==='simple');
+    await store.set('settings2',settings);
+    Object.keys(months).forEach(k=>delete months[k]);
+    const y=+today.slice(0,4),m=+today.slice(5,7);await ensureM(y,m);
+    render();return toast(arg==='simple'?'단촐하게 바꿨어요':'다양하게 바꿨어요')}
   if(cmd==='rescue'){
     try{sheetOpen=false;sheetHist=false;sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
       const eb=document.getElementById('errbox');eb.style.display='none';eb.textContent='';
