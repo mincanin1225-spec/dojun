@@ -179,6 +179,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 .loading{padding:80px 0;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{
+  .steps{display:block!important}
   .tabbar,.appbar,.btnrow,.mark,.arrow,.rd,#errbox,#upd,.scrim{display:none!important}
   body,#phone{background:#fff}
   #main{display:none}
@@ -213,7 +214,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v17';
+const APP_VER='v18';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -776,7 +777,7 @@ function batchPlan(sun){
     const o=e[1].o,n=e[1].n,p=o.p,ap=p.fish?A.fish:(p.k==='tofu'?A.tofu:A.meat);
     const ing=[`밥 ${A.rice*n}g`,`${p.n} ${ap*n}g`].concat(o.v.map(v=>`${v.n} ${A.veg*n}g`));
     if(p.with)ing.push(`${byK[p.with].n} ${Math.round(A.meat*.5*n)}g`);
-    return {name:e[0],n:n,ing:ing};});
+    return {name:e[0],n:n,ing:ing,o:o};});
   const sideRows=Object.entries(sides).sort((x,y)=>y[1].n-x[1].n).map(function(e){
     const o=e[1].o,n=e[1].n,ing=[];
     if(o.p==='egg')ing.push(`노른자 ${n}개`);
@@ -785,7 +786,7 @@ function batchPlan(sun){
     if(o.p==='cheese')ing.push(`아기 치즈 ${n}장`);
     if(o.f.k==='deulkkae')ing.push(`들깨가루 ${n}작은술`);
     o.v.forEach(v=>ing.push(`${v.n} ${A.veg*n}g`));
-    return {name:e[0],n:n,ing:ing};});
+    return {name:e[0],n:n,ing:ing,o:o};});
   const fruitRows=Object.entries(fruits).sort((x,y)=>y[1].n-x[1].n)
     .map(e=>({name:e[0],n:e[1].n,g:A.fruit*e[1].n}));
   return {A:A,meals:meals,mains:mainRows,sides:sideRows,fruits:fruitRows};
@@ -1142,19 +1143,71 @@ function sheetDay(on){
         <button class="btn warn" data-a="delbefore:${on}">이 날 이전 모두 지우기</button>
       </div></div>`);
 }
+let batchDone={}, batchOpen={}, curBatch=null;
+function bMainSteps(o,A,n){
+  const p=o.p, ap=(p.fish?A.fish:(p.k==='tofu'?A.tofu:A.meat))*n, R=A.rice*n;
+  const rice=A.key==='early'?`쌀 ${R}g을 곱게 갈아 물을 10배로 붓고 저어가며 끓인 뒤 체에 거릅니다.`
+    :A.key==='mid'?`쌀 ${R}g을 반쯤 갈아 물 6~7배로 무르게 죽을 끓입니다.`
+    :`밥 ${R}g에 채소육수 ${Math.round(R*1.2)}ml를 붓고 무르게 풀어줍니다.`;
+  const prot=p.k==='tofu'?`두부 ${ap}g은 끓는 물에 30초 데쳐 물기를 빼고 으깹니다.`
+    :p.fish?`${p.n} ${ap}g은 가시와 껍질을 완전히 제거하고 쪄서 잘게 부숩니다.`
+    :`${p.n} ${ap}g은 찬물에 20분 담가 핏물을 빼고 곱게 다져 끓는 물에 완전히 익힙니다.`;
+  const veg=`${o.v.map(v=>`${v.n} ${A.veg*n}g`).join(', ')}은 껍질을 벗겨 ${A.key==='early'?'곱게 갈아':'잘게 다져'} 익힙니다.`;
+  const fin={jinbap:'큰 냄비에 모두 넣고 중약불에서 10분쯤 저어가며 끓입니다.',
+    risotto:'재료를 넣고 5~6분 더 끓여 걸쭉하게 만듭니다.',
+    bapjjim:'재료를 섞어 내열 그릇에 나눠 담고 김 오른 찜기에서 12분간 찝니다.',
+    bapbol:'재료를 섞어 아이 한입 크기로 동글게 빚습니다.',
+    bapjeon:`쌀가루 ${n}작은술을 섞어 반죽하고 약불에서 앞뒤 2분씩 나눠 굽습니다.`,
+    deopbap:'재료를 볶아 걸쭉해지면 밥 위에 얹습니다.',
+    jumeokbap:'재료를 밥에 골고루 섞어 한입 크기로 뭉칩니다.'}[o.f.k];
+  return [rice,prot,veg,fin,`불을 끄고 참기름이나 들기름을 ${n}방울쯤 떨어뜨립니다.`,
+    `한 김 식혀 <b>1회분씩 ${n}개로 나눠</b> 담습니다.`];
+}
+function bSideSteps(o,A,n){
+  const vs=o.v.map(v=>`${v.n} ${A.veg*n}g`).join(', '), vn=o.v.map(v=>v.n).join(', ');
+  return {
+    eggjjim:[`노른자 ${n}개를 육수 ${60*n}ml와 섞어 체에 거릅니다.`,
+      `다진 ${vs}를 넣고 찜기에서 10분간 부드럽게 익힙니다.`],
+    tofujeon:[`두부 ${Math.round(A.tofu*.6)*n}g의 물기를 꼭 짜고 으깹니다.`,
+      `다진 ${vs}와 쌀가루 ${n}작은술을 섞어 반죽해 약불에서 앞뒤 2분씩 굽습니다.`],
+    tofubol:[`두부 ${Math.round(A.tofu*.6)*n}g과 다진 ${vs}, 쌀가루 ${n}작은술을 섞습니다.`,
+      `한입 크기로 빚어 찜기에서 10분간 찝니다.`],
+    mash:[`${vs}을 무르게 쪄서 으깹니다.`,`모유나 분유물 ${n}큰술로 농도를 맞춥니다.`],
+    deulkkae:[`${vs}를 데쳐 물기를 짜고 잘게 썹니다.`,`들깨가루 ${n}작은술로 가볍게 무칩니다.`],
+    beefbokk:[`다진 소고기 ${Math.round(A.meat*.5)*n}g과 ${vs}를 물 ${n}큰술과 함께 볶듯 익힙니다.`],
+    cheesemash:[`${vs}을 무르게 쪄서 으깹니다.`,
+      `아기 치즈 ${n}장을 잘게 찢어 따뜻할 때 섞어 완전히 녹입니다.`]
+  }[o.f.k]||[`${vn}를 부드럽게 익혀 냅니다.`];
+}
 function sheetBatch(sun){
   const b=batchPlan(sun),e=P(addD(sun,6));
   if(!b.meals){open(`<h2>만들기</h2><p class="hint">이 주에는 식단이 없어요.</p>
     <div class="btnrow"><button class="btn" data-a="close">닫기</button></div>`);return}
-  const box=(t,rows)=>rows.length?`<div class="sec"><h2>${t}</h2></div>
-    <div class="card">${rows.map(r=>`<div class="meal" style="display:block">
-      <div class="meal-top"><span class="meal-name" style="font-weight:700">${esc(r.name)}</span>
-        <span class="chip sm" style="flex:none">${r.n}회분</span></div>
-      <div class="chips" style="margin-top:7px">${r.ing.map(x=>`<span class="chip sm">${esc(x)}</span>`).join('')}</div>
-    </div>`).join('')}</div>`:'';
+  curBatch={sun:sun,b:b};
+  const done=batchDone[sun]||[];
+  const total=b.mains.length+b.sides.length;
+  const doneN=done.filter(x=>x.charAt(0)!=='f').length;
+  const box=(t,rows,pre)=>rows.length?`<div class="sec"><h2>${t}</h2></div>
+    <div class="card">${rows.map(function(r,i){
+      const id=pre+i, isDone=done.indexOf(id)>=0, isOpen=batchOpen[id];
+      const steps=pre==='m'?bMainSteps(r.o,b.A,r.n):bSideSteps(r.o,b.A,r.n);
+      return `<div class="meal" style="display:block${isDone?';opacity:.5':''}">
+        <div class="meal-top" data-a="bopen:${id}" style="cursor:pointer">
+          <span class="meal-name" style="font-weight:700${isDone?';text-decoration:line-through':''}">${esc(r.name)}</span>
+          <span class="chip sm" style="flex:none">${r.n}회분</span>
+          <span style="color:var(--muted);font-size:13px;flex:none">${isOpen?'▲':'▼'}</span></div>
+        <div class="chips" style="margin-top:7px">${r.ing.map(x=>`<span class="chip sm">${esc(x)}</span>`).join('')}</div>
+        ${isOpen?`<ol class="steps" style="margin-top:10px">${steps.map(x=>`<li>${x}</li>`).join('')}</ol>`:''}
+        <div class="btnrow" style="margin-top:9px">
+          <button class="btn${isDone?'':' pri'}" data-a="bdone:${id}">${isDone?'다시 만들기':'만들었어요'}</button>
+          <button class="btn" data-a="bopen:${id}">${isOpen?'접기':'만드는 법'}</button></div>
+      </div>`}).join('')}</div>`:'';
   open(`<h2>${weekLabel(sun)} 만들기</h2>
     <div class="sub">${P(sun).getMonth()+1}/${P(sun).getDate()} – ${e.getMonth()+1}/${e.getDate()} · ${b.meals}끼 · ${b.A.label}</div>
-    ${box('주식',b.mains)}${box('반찬',b.sides)}
+    <div class="card" style="margin-bottom:12px"><div class="progress" style="margin:0">
+      <div class="bar"><i class="a" style="width:${total?doneN/total*100:0}%"></i></div>
+      <span>${doneN}/${total} 완료</span></div></div>
+    ${box('주식',b.mains,'m')}${box('반찬',b.sides,'s')}
     <div class="sec"><h2>후식</h2></div>
     <div class="card">${b.fruits.map(f=>`<div class="shop">
       <div class="nm">${esc(f.name)}</div><div class="qt">${f.n}회 · 약 ${f.g}g</div></div>`).join('')}
@@ -1170,7 +1223,8 @@ function sheetBatch(sun){
       <li>먹일 때는 속까지 완전히 데우고 체온 정도로 식혀서 주세요. 데운 것은 다시 얼리지 않습니다.</li>
     </ol>
     <p class="hint" style="margin-top:10px">간은 하지 않습니다. 마무리에 참기름이나 들기름 1~2방울만.</p></div>
-    <div class="btnrow"><button class="btn pri" data-a="printbatch">인쇄 / PDF로 저장</button>
+    <div class="btnrow"><button class="btn" data-a="printbatch">인쇄 / PDF로 저장</button>
+      <button class="btn" data-a="breset">완료 표시 지우기</button>
       <button class="btn" data-a="close">닫기</button></div>`);
 }
 function sheetFood(k){
@@ -1292,6 +1346,14 @@ document.addEventListener('click',async e=>{
     const y=+today.slice(0,4),m=+today.slice(5,7);await ensureM(y,m);
     render();return toast(arg==='simple'?'단촐하게 바꿨어요':'다양하게 바꿨어요')}
   if(cmd==='batch'){sheetBatch(weekCur);return}
+  if(cmd==='bopen'){batchOpen[arg]=!batchOpen[arg];
+    const sc=sheet.scrollTop;sheetBatch(curBatch.sun);sheet.scrollTop=sc;return}
+  if(cmd==='bdone'){const sun=curBatch.sun;const l=batchDone[sun]||(batchDone[sun]=[]);
+    const i=l.indexOf(arg); if(i<0){l.push(arg);batchOpen[arg]=false} else l.splice(i,1);
+    await store.set('batch2',batchDone);
+    const sc=sheet.scrollTop;sheetBatch(sun);sheet.scrollTop=sc;return}
+  if(cmd==='breset'){batchDone[curBatch.sun]=[];await store.set('batch2',batchDone);
+    sheetBatch(curBatch.sun);return}
   if(cmd==='printbatch'){window.print();return}
   if(cmd==='rescue'){
     try{sheetOpen=false;sheetHist=false;sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
@@ -1353,6 +1415,7 @@ async function boot(){
   const s=await store.get('settings2');if(s)settings={...settings,...s};
   const f=await store.get('foods2');if(f)foods=f;
   const sh=await store.get('shop2');if(sh)shopChk=sh;
+  const bd=await store.get('batch2');if(bd)batchDone=bd;
   const av=await store.get('avatar');if(av)avatar=av;
   const sy=await store.get('sync');if(sy&&sy.url){sync=sy;syncStart()}
   const y=+today.slice(0,4),m=+today.slice(5,7);
