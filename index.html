@@ -214,7 +214,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v21';
+const APP_VER='v23';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -473,29 +473,53 @@ function genMonth(y,mo,variant){
     if(isSimple()){
       const WM=weekMenu(on,pools(on),ST,variant);
       if(WM){
-      const perms=[[0,1,2],[1,2,0],[2,0,1],[0,2,1],[2,1,0],[1,0,2]];
-      const dIdx=((dnum(on)%6)+6)%6;
+      const dIdx=((dnum(on)%7)+7)%7;
       let got=null;
-      for(let t=0;t<18&&!got;t++){
-        const pm=perms[(dIdx+t)%6], so=(dIdx+t)%3, fo=(dIdx+(t*2))%3;
-        const meals=[];let ok=1,eggN=0,tofuN=0,niN=0,crN=0;
-        for(let i=0;i<3;i++){
-          const mn=WM.mains[pm[i]], sd=WM.sides[(pm[i]+so)%3], fr=WM.fruits[(i+fo)%3];
-          if(sd.v.some(v=>mn.v.some(x=>x.k===v.k))){ok=0;break}
-          if(sd.p===mn.p.k){ok=0;break}
-          const av=mn.v.concat(sd.v);
-          if(av.some(v=>v.st)&&fr.st){ok=0;break}
-          if(av.some(v=>v.n===(fr.b||fr.n))){ok=0;break}
-          niN+=av.filter(v=>v.ni).length; crN+=av.filter(v=>v.cr).length;
-          if(sd.p==='egg')eggN++; if(sd.p==='tofu')tofuN++;
-          meals.push({main:mn,side:sd,fruit:fr,trial:null});
+      for(let pass=0;pass<2&&!got;pass++){
+        for(let t=0;t<6&&!got;t++){
+          const ms=(dIdx*3+t)%6, ss=(dIdx*2+t)%6, fo=(dIdx+t)%3;
+          const meals=[];let ok=1,eggN=0,tofuN=0,niN=0,crN=0;
+          const usedS=[],usedF=[];
+          for(let i=0;i<3;i++){
+            const mn=WM.mains[(ms+i)%6];
+            /* 이 주식에 맞는 반찬을 6종 중에서 고른다 */
+            let sd=null;
+            for(let k=0;k<6&&!sd;k++){
+              const c=WM.sides[(ss+i+k)%6];
+              if(usedS.indexOf(c)>=0)continue;
+              if(c.v.some(v=>mn.v.some(x=>x.k===v.k)))continue;
+              if(c.p===mn.p.k)continue;
+              if(c.p==='egg'&&eggN>=1)continue;
+              if(c.p==='tofu'&&tofuN>=1)continue;
+              const av0=mn.v.concat(c.v);
+              if(niN+av0.filter(v=>v.ni).length>1)continue;
+              if(crN+av0.filter(v=>v.cr).length>2)continue;
+              sd=c;
+            }
+            if(!sd){ok=0;break}
+            const av=mn.v.concat(sd.v);
+            /* 후식도 겹치지 않는 걸로 */
+            let fr=null;
+            for(let k=0;k<3&&!fr;k++){
+              const c=WM.fruits[(fo+i+k)%3];
+              if(usedF.indexOf(c)>=0)continue;
+              if(pass===0&&c.st&&av.some(v=>v.st))continue;
+              if(av.some(v=>v.n===(c.b||c.n)))continue;
+              fr=c;
+            }
+            if(!fr){ok=0;break}
+            usedS.push(sd);usedF.push(fr);
+            niN+=av.filter(v=>v.ni).length;crN+=av.filter(v=>v.cr).length;
+            if(sd.p==='egg')eggN++;if(sd.p==='tofu')tofuN++;
+            meals.push({main:mn,side:sd,fruit:fr,trial:null});
+          }
+          if(!ok)continue;
+          if(!meals.some(m=>m.main.p.red||m.side.p==='beef'))continue;
+          got=meals;
         }
-        if(!ok||eggN>1||tofuN>1||niN>1||crN>2)continue;
-        if(!meals.some(m=>m.main.p.red||m.side.p==='beef'))continue;
-        got=meals;
       }
       if(got){
-        if(tr){ /* 새 재료는 아침에 소량으로 */
+        if(tr){
           const m0=Object.assign({},got[0]);
           if(tr.cat==='p')m0.main=Object.assign({},m0.main,{p:tr});
           else if(tr.cat==='v')m0.main=Object.assign({},m0.main,{v:[tr,m0.main.v[1]]});
@@ -576,36 +600,58 @@ function pickSides(list,r){
   return out.length?out:list.slice(0,3);
 }
 function weekMenu(on,Q,ST,variant){
-  const r=rng(hash('menu|'+sunOf(on)+'|'+variant));
+  const r=rng(hash('menu6|'+monOf(on)+'|'+variant));
   const take=(a0,n)=>{const a=a0.slice(),o=[];
     while(a.length&&o.length<n)o.push(a.splice(Math.floor(r()*a.length),1)[0]);return o};
-  /* 단백질 3종 (붉은 고기 하나 포함) */
-  let P=take(Q.P,Math.min(3,Q.P.length));
-  if(!P.some(x=>x.red)){const rd=Q.P.filter(x=>x.red);if(rd.length)P[0]=rd[Math.floor(r()*rd.length)]}
-  if(P.length<3)P=P.concat(take(Q.P.filter(x=>P.indexOf(x)<0),3-P.length));
-  /* 후식 3종 (전분질은 하나까지) */
+  /* 주식 6종의 단백질 배분: 붉은고기 2, 생선 1, 나머지 3. 새우는 빈도가 높아지므로 제외 */
+  const reds=Q.P.filter(x=>x.red), fishes=Q.P.filter(x=>x.fish&&x.k!=='shrimp');
+  const others=Q.P.filter(x=>!x.red&&!x.fish);
+  let slots=[];
+  slots=slots.concat(take(reds,2));
+  slots=slots.concat(take(fishes,1));
+  slots=slots.concat(take(others,3));
+  slots=slots.filter(Boolean);
+  const restP=Q.P.filter(x=>x.k!=='shrimp'&&slots.indexOf(x)<0);
+  while(slots.length<6&&(restP.length||slots.length))
+    slots.push(restP.length?restP.splice(Math.floor(r()*restP.length),1)[0]:slots[slots.length%slots.length===0?0:0]);
+  if(!slots.length){slots=take(Q.P,Math.min(6,Q.P.length))}
+  while(slots.length<6)slots.push(slots[slots.length%Math.max(1,slots.length)]||Q.P[0]);
+  /* 섞어서 같은 단백질이 몰리지 않게 */
+  for(let i=slots.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t2=slots[i];slots[i]=slots[j];slots[j]=t2}
+  const P=slots;
+  if(!P.length||!P[0])return null;
+  /* 후식 3종 (전분질 하나까지) */
   const fno=Q.F.filter(f=>!f.st), fst=Q.F.filter(f=>f.st);
   let F=take(fno,2).concat(take(fst,1));
   if(F.length<3)F=F.concat(take(Q.F.filter(x=>F.indexOf(x)<0),3-F.length));
-  F=F.slice(0,3);
-  /* 채소 5종: 과일과 겹치지 않게, 질산염 채소는 한 자리만 */
+  F=F.slice(0,3); if(!F.length)return null;
+  while(F.length<3)F.push(F[F.length-1]);
+  /* 채소 7종: 과일과 안 겹치게, 전분 1 · 십자화과 1 · 질산염은 뒤로 */
   const fb=F.map(f=>f.b||f.n);
-  const pool=Q.V.filter(v=>fb.indexOf(v.n)<0);
-  const base=pool.length>=5?pool:Q.V;
-  let V=take(base.filter(v=>!v.st&&!v.cr&&!v.ni),3)
-    .concat(take(base.filter(v=>v.st),1)).concat(take(base.filter(v=>v.cr),1));
-  if(V.length<5)V=V.concat(take(base.filter(v=>V.indexOf(v)<0),5-V.length));
-  V=V.slice(0,5);
-  const ni=V.filter(v=>v.ni), rest=V.filter(v=>!v.ni);
-  V=rest.concat(ni);                 /* 질산염 채소를 뒤로 (한 번만 쓰이는 자리) */
-  const FM=take(Q.FM,Math.min(2,Q.FM.length));
-  const SF=pickSides(Q.SF,r);
-  const mains=[0,1,2].map(i=>({p:P[i%P.length],f:FM[i%FM.length],
-    v:[V[[0,2,4][i]%V.length],V[[1,3,0][i]%V.length]],fn:fName(FM[i%FM.length],ST)}));
-  const sides=[0,1,2].map(i=>({f:SF[i%SF.length],v:[V[[2,4,1][i]%V.length]],p:SF[i%SF.length].p||null}));
-  const fr3=[0,1,2].map(i=>F[i%F.length]).filter(Boolean);
-  if(!P.length||!V.length||!fr3.length||!FM.length||!SF.length)return null;
-  return {mains:mains,sides:sides,fruits:fr3};
+  const pool=Q.V.filter(v=>fb.indexOf(v.n)<0), base=pool.length>=6?pool:Q.V;
+  let V=take(base.filter(v=>!v.st&&!v.cr&&!v.ni),4)
+    .concat(take(base.filter(v=>v.st),1)).concat(take(base.filter(v=>v.cr),1))
+    .concat(take(base.filter(v=>v.ni),1));
+  V=V.concat(take(base.filter(v=>V.indexOf(v)<0),Math.max(0,7-V.length))).slice(0,7);
+  if(V.length<3)return null;
+  V=V.filter(v=>!v.ni).concat(V.filter(v=>v.ni));
+  const FM=take(Q.FM,Math.min(3,Q.FM.length));
+  /* 반찬 형태를 단백질 그룹이 돌아가도록 정렬 */
+  const g={}; Q.SF.forEach(f=>{const k=f.p||'none';(g[k]=g[k]||[]).push(f)});
+  const gk=Object.keys(g).filter(k=>k==='none').concat(Object.keys(g).filter(k=>k!=='none'));
+  const SFo=[]; for(let i=0;i<12&&SFo.length<6;i++){const k=gk[i%gk.length];
+    if(!g[k])continue; SFo.push(g[k][Math.floor(i/gk.length)%g[k].length]);}
+  if(!SFo.length)return null;
+  const mains=[];
+  for(let i=0;i<6;i++){const f=FM[i%FM.length];
+    const a=V[(i*2)%V.length]; let b2=V[(i*2+3)%V.length];
+    if(!b2||b2.k===a.k)b2=V[(i*2+1)%V.length];
+    const vv=(b2&&b2.k!==a.k)?[a,b2]:[a];
+    mains.push({p:P[i],f:f,fn:fName(f,ST),v:vv});}
+  const sides=[];
+  for(let i=0;i<6;i++){const sf=SFo[i%SFo.length];
+    sides.push({f:sf,v:[V[(i*3+1)%V.length]],p:sf.p||null});}
+  return {mains:mains,sides:sides,fruits:F};
 }
 function weekPool(on,Q,variant){
   const r=rng(hash(sunOf(on)+'|'+variant));
@@ -1069,7 +1115,7 @@ function vSet(){
         <button class="chip ${isSimple()?'ok':''}" data-a="mode:simple">단촐하게</button>
         <button class="chip ${isSimple()?'':'ok'}" data-a="mode:varied">다양하게</button></div>
       <p class="hint" style="margin:0">${isSimple()
-        ?'한 주에 단백질 3가지, 채소 5가지, 과일 3가지, 밥 형태 2가지만 씁니다. 같은 메뉴가 자주 겹쳐서 주말에 몰아 만들어 두기 좋아요.'
+        ?'한 주에 주식 6가지, 반찬 6가지, 후식 3가지만 만들어 돌려 씁니다. 메뉴당 3~4회분이라 주말에 몰아 만들어 두기 좋아요.'
         :'재료를 넓게 돌려 씁니다. 맛 경험은 넓어지지만 매번 다른 걸 만들어야 합니다.'}</p>
     </div>
     <div class="sec"><h2>앱 정보</h2></div>
