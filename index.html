@@ -56,7 +56,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 /* ---- calendar ---- */
 .wh{display:grid;grid-template-columns:repeat(7,1fr);margin:4px 0 6px}
 .wh span{text-align:center;font-size:11px;color:var(--muted);font-weight:600}
-.wh span:first-child{color:var(--berry)}
+.wh span:last-child{color:var(--berry)}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .day{background:#fff;border-radius:14px;aspect-ratio:1/1.18;padding:5px 3px 4px;display:flex;
   flex-direction:column;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(74,64,56,.05)}
@@ -214,7 +214,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v20';
+const APP_VER='v21';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -419,9 +419,11 @@ const isoOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const P=s=>new Date(s+'T00:00:00');
 const addD=(s,n)=>{const d=P(s);d.setDate(d.getDate()+n);return isoOf(d)};
 const WD='일월화수목금토';
+const WDH=['월','화','수','목','금','토','일'];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const dnum=s=>Math.floor(P(s).getTime()/864e5);
-const sunOf=s=>addD(s,-P(s).getDay());
+const monOf=s=>{const d=P(s).getDay();return addD(s,d===0?-6:1-d)};
+const sunOf=monOf;
 function rng(seed){let s=seed>>>0;return()=>{s|=0;s=(s+0x6D2B79F5)|0;let t=Math.imul(s^(s>>>15),1|s);
   t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296}}
 const pk=(r,a)=>a[Math.floor(r()*a.length)%a.length];
@@ -429,7 +431,9 @@ const pk=(r,a)=>a[Math.floor(r()*a.length)%a.length];
 /* ══════════ 상태 ══════════ */
 let settings={name:'도준이',birth:'2025-12-05'};
 let avatar=null, foods={}, shopChk={}, months={};
-let tab='cal', today=isoOf(new Date()), cursorM=today, weekCur=sunOf(today);
+let tab='cal', today=isoOf(new Date()), cursorM=today;
+let weekCur=(function(){const d=P(today).getDay();
+  return (d===0||d>=5)?addD(monOf(today),7):monOf(today)})();
 
 function ageM(on){const b=P(settings.birth),n=P(on);if(isNaN(b)||n<b)return null;
   let m=(n.getFullYear()-b.getFullYear())*12+(n.getMonth()-b.getMonth());
@@ -762,7 +766,7 @@ function recipe(on,i){
 
 /* ══════════ 장보기 ══════════ */
 function weekLabel(sun){
-  const th=P(addD(sun,4));
+  const th=P(addD(sun,3));
   return `${th.getMonth()+1}월 ${Math.ceil(th.getDate()/7)}주차`;
 }
 function batchPlan(sun){
@@ -873,7 +877,7 @@ function bar(){
 /* --- 식단(달력) --- */
 function vCal(){
   const y=+cursorM.slice(0,4),mo=+cursorM.slice(5,7);
-  const dim=new Date(y,mo,0).getDate(),first=new Date(y,mo-1,1).getDay();
+  const dim=new Date(y,mo,0).getDate(),fd=new Date(y,mo-1,1).getDay(),first=(fd+6)%7;
   let cells='';
   for(let i=0;i<first;i++)cells+='<div class="day blank"></div>';
   for(let d=1;d<=dim;d++){
@@ -885,8 +889,9 @@ function vCal(){
   }
   const day=P(today);
   const shopBanner=(day.getDay()>=5||day.getDay()===0)?`<div class="banner b-shop">
-      <h3>🛒 주말 장보기</h3><p>다음 주 식단에 필요한 재료를 미리 담아두면 평일이 훨씬 편해져요.</p>
-      <div class="row"><button data-a="tab:shop">장보기 목록 열기</button>
+      <h3>🛒 주말 준비</h3><p>토·일에 다음 주(월~일) 식단을 한 번에 만들어 두면 평일이 훨씬 편해져요.
+      장보기 탭이 이미 다음 주로 맞춰져 있습니다.</p>
+      <div class="row"><button data-a="tab:shop">장보기 · 만들기 열기</button>
       <button data-a="ics">캘린더에 알림 넣기</button></div></div>`:'';
   const tr=trialOf(today), trM=mObj(today,0);
   const trialBanner=(tr&&trM&&trM.trial)?`<div class="banner b-trial">
@@ -899,7 +904,7 @@ function vCal(){
     <div class="sec"><div class="nav">
       <button class="rd" data-a="mon:-1">‹</button><b>${y}년 ${mo}월</b><button class="rd" data-a="mon:1">›</button>
     </div><button class="pill" data-a="today">오늘</button></div>
-    <div class="wh">${[...WD].map(w=>`<span>${w}</span>`).join('')}</div>
+    <div class="wh">${WDH.map(w=>`<span>${w}</span>`).join('')}</div>
     <div class="cal">${cells}</div>
     <div class="sec"><h2>오늘 ${P(today).getMonth()+1}/${P(today).getDate()}</h2>
       <button class="more" data-a="day:${today}">자세히 ›</button></div>
@@ -950,9 +955,6 @@ function vShop(){
       return `<div class="catrow"><span class="catdot" style="background:var(--butter)"></span>
         <b>이번 주 만들 것</b><span class="hint">주식 ${b.mains.length} · 반찬 ${b.sides.length} · 후식 ${b.fruits.length}</span></div>
         <div class="card">
-          ${b.common.length?`<div class="hint" style="font-weight:700;color:var(--accent);margin:0 0 2px">공통 밑준비</div>`
-            +b.common.map(r=>`<div class="shop"><div class="nm">${esc(r.name)}</div>
-              <div class="qt">${r.g}g · ${r.menus.length}곳</div></div>`).join(''):''}
           ${grp('주식',b.mains,'회분')}
           ${grp('반찬',b.sides,'회분')}
           ${grp('후식',b.fruits,'회')}
