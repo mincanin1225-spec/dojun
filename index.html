@@ -214,7 +214,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v18';
+const APP_VER='v19';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -787,9 +787,38 @@ function batchPlan(sun){
     if(o.f.k==='deulkkae')ing.push(`들깨가루 ${n}작은술`);
     o.v.forEach(v=>ing.push(`${v.n} ${A.veg*n}g`));
     return {name:e[0],n:n,ing:ing,o:o};});
+  /* 여러 메뉴에 겹쳐 들어가는 재료 = 공통 밑준비 */
+  const use={};
+  const useAdd=(k,nm,g,menu)=>{const u=use[k]=use[k]||{k:k,name:nm,g:0,menus:[]};
+    u.g+=g; if(u.menus.indexOf(menu)<0)u.menus.push(menu)};
+  mainRows.forEach(function(r){const o=r.o,p=o.p;
+    useAdd(p.k,p.n,(p.fish?A.fish:(p.k==='tofu'?A.tofu:A.meat))*r.n,r.name);
+    o.v.forEach(v=>useAdd(v.k,v.n,A.veg*r.n,r.name));
+    if(p.with)useAdd(p.with,byK[p.with].n,Math.round(A.meat*.5*r.n),r.name);});
+  sideRows.forEach(function(r){const o=r.o;
+    if(o.p==='tofu')useAdd('tofu','두부',Math.round(A.tofu*.6)*r.n,r.name);
+    if(o.p==='beef')useAdd('beef','소고기',Math.round(A.meat*.5)*r.n,r.name);
+    o.v.forEach(v=>useAdd(v.k,v.n,A.veg*r.n,r.name));});
+  const LEAF=['chungkyung','vitamin','spinach','napa','cabbage'];
+  const prepOf=function(u){
+    const x=byK[u.k]||{};
+    if(u.k==='rice')return [`쌀을 씻어 밥 ${u.g}g 분량으로 무르게 짓습니다.`,`한 김 식혀 메뉴별로 나눠둡니다.`];
+    if(x.cat==='p'){
+      if(u.k==='tofu')return [`두부 ${u.g}g을 끓는 물에 30초 데칩니다.`,`물기를 꼭 빼고 으깨서 담아둡니다.`];
+      if(x.fish)return [`${u.name} ${u.g}g의 가시와 껍질을 완전히 제거합니다.`,`쪄서 잘게 부순 뒤 식혀 담아둡니다.`];
+      return [`${u.name} ${u.g}g을 찬물에 20분 담가 핏물을 뺍니다.`,`곱게 다져 끓는 물에 완전히 익히고 식혀 담아둡니다.`];
+    }
+    if(x.st)return [`${u.name} ${u.g}g을 껍질을 벗겨 무르게 찝니다.`,`으깨거나 잘게 다져 담아둡니다.`];
+    if(LEAF.indexOf(u.k)>=0)return [`${u.name} ${u.g}g을 데쳐 찬물에 헹굽니다.`,`물기를 꼭 짜고 아주 잘게 다져 담아둡니다.`];
+    if(u.k==='mushroom')return [`버섯 ${u.g}g은 기둥을 떼고 아주 잘게 다집니다.`,`살짝 익혀 담아둡니다.`];
+    return [`${u.name} ${u.g}g을 씻어 껍질을 벗깁니다.`,`잘게 다져 부드러워질 때까지 익히고 담아둡니다.`];
+  };
+  const commonRows=[{k:'rice',name:'밥',g:A.rice*meals,menus:['모든 주식']}]
+    .concat(Object.values(use).filter(u=>u.menus.length>=2).sort((x,y)=>y.menus.length-x.menus.length||y.g-x.g))
+    .map(u=>({name:u.name,g:u.g,menus:u.menus,steps:prepOf(u)}));
   const fruitRows=Object.entries(fruits).sort((x,y)=>y[1].n-x[1].n)
     .map(e=>({name:e[0],n:e[1].n,g:A.fruit*e[1].n}));
-  return {A:A,meals:meals,mains:mainRows,sides:sideRows,fruits:fruitRows};
+  return {A:A,meals:meals,common:commonRows,mains:mainRows,sides:sideRows,fruits:fruitRows};
 }
 function weekList(sun){
   const t={};
@@ -1185,8 +1214,24 @@ function sheetBatch(sun){
     <div class="btnrow"><button class="btn" data-a="close">닫기</button></div>`);return}
   curBatch={sun:sun,b:b};
   const done=batchDone[sun]||[];
-  const total=b.mains.length+b.sides.length;
-  const doneN=done.filter(x=>x.charAt(0)!=='f').length;
+  const total=b.common.length+b.mains.length+b.sides.length;
+  const doneN=done.length;
+  const cbox=b.common.length?`<div class="sec"><h2>공통 밑준비</h2>
+      <span class="more">먼저 해두면 편해요</span></div>
+    <div class="card">${b.common.map(function(r,i){
+      const id='c'+i,isDone=done.indexOf(id)>=0,isOpen=batchOpen[id];
+      return `<div class="meal" style="display:block${isDone?';opacity:.5':''}">
+        <div class="meal-top" data-a="bopen:${id}" style="cursor:pointer">
+          <span class="meal-name" style="font-weight:700${isDone?';text-decoration:line-through':''}">${esc(r.name)} ${r.g}g</span>
+          <span class="chip sm" style="flex:none">${r.menus.length}곳</span>
+          <span style="color:var(--muted);font-size:13px;flex:none">${isOpen?'▲':'▼'}</span></div>
+        <div class="meal-sub hint" style="margin-top:4px">${esc(r.menus.join(' · '))}</div>
+        ${isOpen?`<ol class="steps" style="margin-top:8px">${r.steps.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''}
+        <div class="btnrow" style="margin-top:9px">
+          <button class="btn${isDone?'':' pri'}" data-a="bdone:${id}">${isDone?'다시':'손질 끝'}</button>
+          <button class="btn" data-a="bopen:${id}">${isOpen?'접기':'손질법'}</button></div>
+      </div>`}).join('')}
+      <p class="hint" style="margin:10px 0 0">여기서 손질해 둔 재료를 아래 메뉴에 나눠 쓰면 됩니다.</p></div>`:'';
   const box=(t,rows,pre)=>rows.length?`<div class="sec"><h2>${t}</h2></div>
     <div class="card">${rows.map(function(r,i){
       const id=pre+i, isDone=done.indexOf(id)>=0, isOpen=batchOpen[id];
@@ -1207,16 +1252,15 @@ function sheetBatch(sun){
     <div class="card" style="margin-bottom:12px"><div class="progress" style="margin:0">
       <div class="bar"><i class="a" style="width:${total?doneN/total*100:0}%"></i></div>
       <span>${doneN}/${total} 완료</span></div></div>
-    ${box('주식',b.mains,'m')}${box('반찬',b.sides,'s')}
+    ${cbox}${box('주식',b.mains,'m')}${box('반찬',b.sides,'s')}
     <div class="sec"><h2>후식</h2></div>
     <div class="card">${b.fruits.map(f=>`<div class="shop">
       <div class="nm">${esc(f.name)}</div><div class="qt">${f.n}회 · 약 ${f.g}g</div></div>`).join('')}
       <p class="hint" style="margin:10px 0 0">후식은 미리 만들기보다 그날그날 손질하는 게 좋아요.</p></div>
     <div class="sec"><h2>만드는 순서</h2></div>
     <div class="card"><ol class="steps">
-      <li>밥을 <b>${b.A.rice*b.meals}g</b> 분량으로 한 번에 무르게 짓고 한 김 식힙니다.</li>
-      <li>고기와 생선은 핏물을 빼고 가시를 제거한 뒤 종류별로 한 번에 익혀 잘게 다집니다.</li>
-      <li>채소는 종류별로 씻어 껍질을 벗기고 다져서 따로 담아둡니다. 총량은 장보기 탭에 있습니다.</li>
+      <li><b>공통 밑준비</b>부터 끝냅니다. 여러 메뉴에 겹쳐 들어가는 재료라 한 번에 손질해 두면 나머지는 섞기만 하면 됩니다.</li>
+      <li>손질한 재료는 이름을 적어 통에 따로 담아둡니다.</li>
       <li>주식은 위 재료표대로 한 냄비에 통째로 만든 뒤 1회분씩 나눕니다.</li>
       <li>반찬도 같은 방식으로 만들어 1회분씩 나눕니다.</li>
       <li>3일 안에 먹을 것은 냉장, 나머지는 1회분씩 얼려 날짜를 적어둡니다. 한 달 안에 먹이세요.</li>
