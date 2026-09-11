@@ -178,6 +178,16 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 .empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 12px}
 .loading{padding:80px 0;text-align:center;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  .tabbar,.appbar,.btnrow,.mark,.arrow,.rd,#errbox,#upd,.scrim{display:none!important}
+  body,#phone{background:#fff}
+  #main{display:none}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+  .sheet{position:static!important;max-height:none!important;width:100%!important;
+    max-width:100%!important;transform:none!important;overflow:visible!important;
+    border-radius:0!important;padding:0!important;display:block!important}
+  .grab{display:none}
+}
 </style>
 
 <div id="phone">
@@ -203,7 +213,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v16';
+const APP_VER='v17';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -750,6 +760,36 @@ function recipe(on,i){
 }
 
 /* ══════════ 장보기 ══════════ */
+function weekLabel(sun){
+  const th=P(addD(sun,4));
+  return `${th.getMonth()+1}월 ${Math.ceil(th.getDate()/7)}주차`;
+}
+function batchPlan(sun){
+  const A=stage(addD(sun,3));
+  const mains={},sides={},fruits={};let meals=0;
+  for(let i=0;i<7;i++){const on=addD(sun,i);
+    for(let j=0;j<3;j++){const m=mObj(on,j);if(!m)continue;meals++;
+      const a=nMain(m.main);(mains[a]=mains[a]||{n:0,o:m.main}).n++;
+      const b2=nSide(m.side);(sides[b2]=sides[b2]||{n:0,o:m.side}).n++;
+      const c=m.fruit.b||m.fruit.n;(fruits[c]=fruits[c]||{n:0,o:m.fruit}).n++;}}
+  const mainRows=Object.entries(mains).sort((x,y)=>y[1].n-x[1].n).map(function(e){
+    const o=e[1].o,n=e[1].n,p=o.p,ap=p.fish?A.fish:(p.k==='tofu'?A.tofu:A.meat);
+    const ing=[`밥 ${A.rice*n}g`,`${p.n} ${ap*n}g`].concat(o.v.map(v=>`${v.n} ${A.veg*n}g`));
+    if(p.with)ing.push(`${byK[p.with].n} ${Math.round(A.meat*.5*n)}g`);
+    return {name:e[0],n:n,ing:ing};});
+  const sideRows=Object.entries(sides).sort((x,y)=>y[1].n-x[1].n).map(function(e){
+    const o=e[1].o,n=e[1].n,ing=[];
+    if(o.p==='egg')ing.push(`노른자 ${n}개`);
+    if(o.p==='tofu')ing.push(`두부 ${Math.round(A.tofu*.6)*n}g`);
+    if(o.p==='beef')ing.push(`소고기 ${Math.round(A.meat*.5)*n}g`);
+    if(o.p==='cheese')ing.push(`아기 치즈 ${n}장`);
+    if(o.f.k==='deulkkae')ing.push(`들깨가루 ${n}작은술`);
+    o.v.forEach(v=>ing.push(`${v.n} ${A.veg*n}g`));
+    return {name:e[0],n:n,ing:ing};});
+  const fruitRows=Object.entries(fruits).sort((x,y)=>y[1].n-x[1].n)
+    .map(e=>({name:e[0],n:e[1].n,g:A.fruit*e[1].n}));
+  return {A:A,meals:meals,mains:mainRows,sides:sideRows,fruits:fruitRows};
+}
 function weekList(sun){
   const t={};
   for(let i=0;i<7;i++){const on=addD(sun,i),A=stage(on);
@@ -869,6 +909,8 @@ function vShop(){
       <b>${P(weekCur).getMonth()+1}/${P(weekCur).getDate()} – ${e.getMonth()+1}/${e.getDate()}</b>
       <button class="rd" data-a="wk:1">›</button></div>
       <button class="pill" data-a="uncheck">전체 해제</button></div>
+    <div class="btnrow" style="margin:0 0 14px">
+      <button class="btn pri" data-a="batch">${weekLabel(weekCur)} 한 번에 만들기 ›</button></div>
     <p class="hint" style="margin:0 0 12px">이 주 21끼에 들어가는 재료예요. 손질 전 기준이라 조금 넉넉히 사시는 게 좋아요.</p>
     ${(()=>{const c={};for(let i=0;i<7;i++){const on=addD(weekCur,i);
         for(let j=0;j<3;j++){const m=mObj(on,j);if(!m)continue;
@@ -1100,6 +1142,37 @@ function sheetDay(on){
         <button class="btn warn" data-a="delbefore:${on}">이 날 이전 모두 지우기</button>
       </div></div>`);
 }
+function sheetBatch(sun){
+  const b=batchPlan(sun),e=P(addD(sun,6));
+  if(!b.meals){open(`<h2>만들기</h2><p class="hint">이 주에는 식단이 없어요.</p>
+    <div class="btnrow"><button class="btn" data-a="close">닫기</button></div>`);return}
+  const box=(t,rows)=>rows.length?`<div class="sec"><h2>${t}</h2></div>
+    <div class="card">${rows.map(r=>`<div class="meal" style="display:block">
+      <div class="meal-top"><span class="meal-name" style="font-weight:700">${esc(r.name)}</span>
+        <span class="chip sm" style="flex:none">${r.n}회분</span></div>
+      <div class="chips" style="margin-top:7px">${r.ing.map(x=>`<span class="chip sm">${esc(x)}</span>`).join('')}</div>
+    </div>`).join('')}</div>`:'';
+  open(`<h2>${weekLabel(sun)} 만들기</h2>
+    <div class="sub">${P(sun).getMonth()+1}/${P(sun).getDate()} – ${e.getMonth()+1}/${e.getDate()} · ${b.meals}끼 · ${b.A.label}</div>
+    ${box('주식',b.mains)}${box('반찬',b.sides)}
+    <div class="sec"><h2>후식</h2></div>
+    <div class="card">${b.fruits.map(f=>`<div class="shop">
+      <div class="nm">${esc(f.name)}</div><div class="qt">${f.n}회 · 약 ${f.g}g</div></div>`).join('')}
+      <p class="hint" style="margin:10px 0 0">후식은 미리 만들기보다 그날그날 손질하는 게 좋아요.</p></div>
+    <div class="sec"><h2>만드는 순서</h2></div>
+    <div class="card"><ol class="steps">
+      <li>밥을 <b>${b.A.rice*b.meals}g</b> 분량으로 한 번에 무르게 짓고 한 김 식힙니다.</li>
+      <li>고기와 생선은 핏물을 빼고 가시를 제거한 뒤 종류별로 한 번에 익혀 잘게 다집니다.</li>
+      <li>채소는 종류별로 씻어 껍질을 벗기고 다져서 따로 담아둡니다. 총량은 장보기 탭에 있습니다.</li>
+      <li>주식은 위 재료표대로 한 냄비에 통째로 만든 뒤 1회분씩 나눕니다.</li>
+      <li>반찬도 같은 방식으로 만들어 1회분씩 나눕니다.</li>
+      <li>3일 안에 먹을 것은 냉장, 나머지는 1회분씩 얼려 날짜를 적어둡니다. 한 달 안에 먹이세요.</li>
+      <li>먹일 때는 속까지 완전히 데우고 체온 정도로 식혀서 주세요. 데운 것은 다시 얼리지 않습니다.</li>
+    </ol>
+    <p class="hint" style="margin-top:10px">간은 하지 않습니다. 마무리에 참기름이나 들기름 1~2방울만.</p></div>
+    <div class="btnrow"><button class="btn pri" data-a="printbatch">인쇄 / PDF로 저장</button>
+      <button class="btn" data-a="close">닫기</button></div>`);
+}
 function sheetFood(k){
   const x=byK[k],f=foods[k]||{},s=stat(k);
   open(`<h2>${esc(x.n)}</h2>
@@ -1218,6 +1291,8 @@ document.addEventListener('click',async e=>{
     Object.keys(months).forEach(k=>delete months[k]);
     const y=+today.slice(0,4),m=+today.slice(5,7);await ensureM(y,m);
     render();return toast(arg==='simple'?'단촐하게 바꿨어요':'다양하게 바꿨어요')}
+  if(cmd==='batch'){sheetBatch(weekCur);return}
+  if(cmd==='printbatch'){window.print();return}
   if(cmd==='rescue'){
     try{sheetOpen=false;sheetHist=false;sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
       const eb=document.getElementById('errbox');eb.style.display='none';eb.textContent='';
