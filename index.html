@@ -78,7 +78,11 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 .meal .lb{font-size:11.5px;font-weight:800;color:var(--mint);margin-bottom:2px}
 .meal .tt{font-size:14px;line-height:1.45;font-weight:600}
 .meal .sub{font-size:11.5px;color:var(--muted);margin-top:3px}
-.rec{display:flex;gap:6px;margin-top:8px}
+.rec{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.rec button[aria-pressed="true"]{background:var(--mint);color:#fff}
+.day .dd i.good{background:var(--mint)}.day .dd i.normal{background:var(--butter)}.day .dd i.little,.day .dd i.refused{background:var(--berry)}
+.fld select{width:100%;font:inherit;background:#fff;color:var(--ink);border:1px solid var(--line);padding:10px;border-radius:13px}
+.inventory-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 0;border-top:1px solid var(--line2)}
 .rec button{border:1.5px solid var(--line);border-radius:99px;padding:4px 12px;font-size:12px;
   color:var(--ink2);font-weight:600}
 .rec button[aria-pressed="true"]{color:#fff;border-color:transparent}
@@ -214,7 +218,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v23';
+const APP_VER='v24';
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -234,7 +238,7 @@ const store={
 
 /* ══════════ 가족 공유 (Firebase 실시간 데이터베이스) ══════════ */
 let sync={url:'',code:''}, es=null, online=false, rt=null, syncFail=false;
-const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='avatar'||k.indexOf('m2:')===0;
+const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='inventory2'||k==='avatar'||k.indexOf('m2:')===0;
 const rkOf=k=>k.replace(':','__'), kOf=rk=>rk.replace('__',':');
 const famURL=seg=>sync.url.replace(/\/+$/,'')+'/fam/'+sync.code+(seg?'/'+seg:'')+'.json';
 function newCode(){
@@ -248,6 +252,7 @@ function syncPush(k,v){
 function applyRemote(rk,val){
   if(val==null)return false;
   const k=kOf(rk);
+  if(k==='inventory2'){return mergeInventory(val)}
   if(!SYNCABLE(k))return false;
   try{if(JSON.stringify(LS.get(k))===JSON.stringify(val))return false}catch(e){}
   try{LS.set(k,val)}catch(e){}
@@ -258,7 +263,7 @@ function applyRemote(rk,val){
   else if(k==='avatar')avatar=val;
   else if(k.indexOf('m2:')===0){const mk2=k.slice(3);
     val.ov=val.ov||{};val.logs=val.logs||{};val.del=val.del||{};
-    if(months[mk2]){const ov=months[mk2].d.variant||0;months[mk2].d=val;
+    if(months[mk2]){const ov=months[mk2].d.variant||0;months[mk2].d=val;if(val.fixedPlan)Object.assign(months[mk2].plan,unpackPlan(val.fixedPlan));
       if((val.variant||0)!==ov)delete months[mk2]}}
   return true;
 }
@@ -267,7 +272,7 @@ function scheduleRender(){clearTimeout(rt);rt=setTimeout(async()=>{
   if(!months[`${y}-${pad(m)}`])await ensureM(y,m);
   render(true)},250)}
 async function pushAllLocal(remote){
-  const keys=['settings2','foods2','shop2','avatar'];
+  const keys=['settings2','foods2','shop2','inventory2','avatar'];
   try{for(let i=0;i<localStorage.length;i++){const kk=localStorage.key(i);
     if(kk&&kk.indexOf('dj:m2:')===0)keys.push(kk.slice(3))}}catch(e){}
   for(const k of keys){
@@ -430,7 +435,9 @@ const pk=(r,a)=>a[Math.floor(r()*a.length)%a.length];
 
 /* ══════════ 상태 ══════════ */
 let settings={name:'도준이',birth:'2025-12-05'};
-let avatar=null, foods={}, shopChk={}, months={};
+let avatar=null, foods={}, shopChk={}, months={}, inventory={};
+let shopPart='weekday';
+const REACTIONS=[['good','잘 먹음'],['normal','보통'],['little','조금 먹음'],['refused','거부']];
 let tab='cal', today=isoOf(new Date()), cursorM=today;
 let weekCur=(function(){const d=P(today).getDay();
   return (d===0||d>=5)?addD(monOf(today),7):monOf(today)})();
@@ -446,7 +453,7 @@ const stat=k=>(foods[k]&&foods[k].s)||(DEF_OK.includes(k)?'ok':'new');
 
 function pools(on){const m=ageM(on)??9;const u=x=>stat(x.k)==='ok'&&(x.minM||0)<=m;
   return{P:PROTEINS.filter(x=>!x.sideOnly&&u(x)),V:VEGS.filter(u),F:FRUITS.filter(u),
-    FM:FORMS.filter(x=>x.minM<=m),SF:SIDEFORMS.filter(x=>x.minM<=m),
+    FM:FORMS.filter(x=>x.minM<=m),SF:SIDEFORMS.filter(x=>x.minM<=m&&(!x.p||u(byK[x.p]))),
     egg:u(byK.egg),tofu:stat('tofu')==='ok'&&byK.tofu.minM<=m,beef:u(byK.beef),cheese:u(byK.cheese)}}
 function trialOf(on){const m=ageM(on)??9;
   const l=ALL.filter(x=>stat(x.k)==='new'&&(x.minM||0)<=m&&!x.sideOnly);
@@ -459,19 +466,19 @@ const nMain=m=>`${m.p.n} ${m.v.map(v=>v.n).join(' ')} ${m.fn}`;
 const nSide=s=>s.f.glue===''?`${s.v.map(v=>v.n).join(' ')}${s.f.n}`:`${s.v.map(v=>v.n).join(' ')} ${s.f.n}`;
 const nMeal=x=>x?`${nMain(x.main)} / ${nSide(x.side)} / ${x.fruit.n}`:'';
 
-function genMonth(y,mo,variant){
+function genMonth(y,mo,variant,prefs=null){
   const dim=new Date(y,mo,0).getDate(), rand=rng(y*1e4+mo*137+variant*7919+29);
   const hM=[],hS=[],hF=[],out={};
   for(let d=1;d<=dim;d++){
     const on=`${y}-${pad(mo)}-${pad(d)}`, tr=trialOf(on), ST=stage(on);
-    let Q=pools(on); if(isSimple())Q=weekPool(on,Q,variant);
+    let Q=pools(on); if(isSimple())Q=weekPool(on,Q,variant,prefs);
     if(!Q.P.length||!Q.V.length||!Q.F.length||!Q.FM.length||!Q.SF.length){out[on]=null;continue}
     const strictF=Q.F.length>=3;
     let fw=Math.max(0,Math.min(7,Q.F.length-1));
     let mw=Math.max(0,Math.min(14,Q.P.length*Q.FM.length-1));
     let sw=Math.max(0,Math.min(12,Q.SF.length*Q.V.length-1));
     if(isSimple()){
-      const WM=weekMenu(on,pools(on),ST,variant);
+      const WM=weekMenu(on,pools(on),ST,variant,prefs);
       if(WM){
       const dIdx=((dnum(on)%7)+7)%7;
       let got=null;
@@ -515,6 +522,7 @@ function genMonth(y,mo,variant){
           }
           if(!ok)continue;
           if(!meals.some(m=>m.main.p.red||m.side.p==='beef'))continue;
+          if(!acceptRecordedMeals(rand,prefs,meals))continue;
           got=meals;
         }
       }
@@ -545,15 +553,15 @@ function genMonth(y,mo,variant){
         if(!fc.length)fc=fb;
         if(!fc.length)fc=Q.F;
         for(let t=0;t<600&&!got;t++){
-          let p=pk(rand,Q.P),form=pk(rand,Q.FM),vg=[pk(rand,Q.V),pk(rand,Q.V)],fr=pk(rand,fc);
+          let p=weightedPick(rand,prefs,Q.P),form=weightedPick(rand,prefs,Q.FM),vg=[weightedPick(rand,prefs,Q.V),weightedPick(rand,prefs,Q.V)],fr=weightedPick(rand,prefs,fc);
           if(i===0&&tr){ if(tr.cat==='p')p=tr; else if(tr.cat==='v')vg[0]=tr; else fr=tr; }
           if(vg[0].k===vg[1].k)vg=[vg[0]];
-          const sf=pk(rand,Q.SF);
+          const sf=weightedPick(rand,prefs,Q.SF);
           if(sf.p==='egg'&&!Q.egg)continue;
           if(sf.p==='tofu'&&!Q.tofu)continue;
           if(sf.p==='beef'&&!Q.beef)continue;
           if(sf.p==='cheese'&&!Q.cheese)continue;
-          let sv=sf.nv===2?[pk(rand,Q.V),pk(rand,Q.V)]:[pk(rand,Q.V)];
+          let sv=sf.nv===2?[weightedPick(rand,prefs,Q.V),weightedPick(rand,prefs,Q.V)]:[weightedPick(rand,prefs,Q.V)];
           sv=sv.filter((v,ix)=>sv.findIndex(z=>z.k===v.k)===ix);
           const sp=sf.p||null;
           if(sp===p.k)continue;
@@ -573,7 +581,9 @@ function genMonth(y,mo,variant){
           const mn=p.k+form.k+vg[0].k+(vg[1]?vg[1].k:''),sn=sf.k+sv[0].k+(sv[1]?sv[1].k:'');
           if(rx<2&&(hM.lastIndexOf(mn)>=hM.length-mw||hS.lastIndexOf(sn)>=hS.length-sw))continue;
           const main={p,v:vg,f:form,fn:fName(form,ST)},side={f:sf,v:sv,p:sp};
-          got={main,side,fruit:fr,trial:(i===0&&tr)?tr.k:null,mn,sn};
+          const candidate={main,side,fruit:fr,trial:(i===0&&tr)?tr.k:null,mn,sn};
+          if(!acceptRecordedMeals(rand,prefs,[candidate]))continue;
+          got=candidate;
         }
         if(!got){ok=0;break}
         dp.push(got.main.p.k);if(got.side.p)ds.push(got.side.p);df.push(got.fruit.k);
@@ -599,10 +609,10 @@ function pickSides(list,r){
     const a=g[k];out.push(a[Math.floor(r()*a.length)])}
   return out.length?out:list.slice(0,3);
 }
-function weekMenu(on,Q,ST,variant){
+function weekMenu(on,Q,ST,variant,prefs=null){
   const r=rng(hash('menu6|'+monOf(on)+'|'+variant));
   const take=(a0,n)=>{const a=a0.slice(),o=[];
-    while(a.length&&o.length<n)o.push(a.splice(Math.floor(r()*a.length),1)[0]);return o};
+    while(a.length&&o.length<n)o.push(a.splice(a.indexOf(weightedPick(r,prefs,a)),1)[0]);return o};
   /* 주식 6종의 단백질 배분: 붉은고기 2, 생선 1, 나머지 3. 새우는 빈도가 높아지므로 제외 */
   const reds=Q.P.filter(x=>x.red), fishes=Q.P.filter(x=>x.fish&&x.k!=='shrimp');
   const others=Q.P.filter(x=>!x.red&&!x.fish);
@@ -653,10 +663,10 @@ function weekMenu(on,Q,ST,variant){
     sides.push({f:sf,v:[V[(i*3+1)%V.length]],p:sf.p||null});}
   return {mains:mains,sides:sides,fruits:F};
 }
-function weekPool(on,Q,variant){
+function weekPool(on,Q,variant,prefs=null){
   const r=rng(hash(sunOf(on)+'|'+variant));
   const take=(a0,n)=>{const a=a0.slice(),o=[];
-    while(a.length&&o.length<n)o.push(a.splice(Math.floor(r()*a.length),1)[0]);return o};
+    while(a.length&&o.length<n)o.push(a.splice(a.indexOf(weightedPick(r,prefs,a)),1)[0]);return o};
   const P=take(Q.P,Math.min(3,Q.P.length));
   if(!P.some(x=>x.red)){const reds=Q.P.filter(x=>x.red);
     if(reds.length)P[0]=reds[Math.floor(r()*reds.length)]}
@@ -692,15 +702,17 @@ function unpackPlan(o){const pl={};
              side:{f:sf,v:a[4].split(',').map(k=>byK[k]),p:sf.p||null},
              fruit:byK[a[5]],trial:a[6]||null}})}
   return pl}
-function cachePlan(k,variant,pl){store.set('pc:'+k,{s:sigNow()+'#'+variant,p:packPlan(pl)})}
+const prefSig=d=>d&&d.reco?'|'+JSON.stringify(d.reco):'';
+function cachePlan(k,variant,pl){store.set('pc:'+k,{s:sigNow()+'#'+variant+prefSig(months[k]?.d),p:packPlan(pl)})}
 async function ensureM(y,mo){const k=`${y}-${pad(mo)}`;if(months[k])return months[k];
   let d=await store.get('m2:'+k);if(!d)d={variant:0,ov:{},logs:{}};d.ov=d.ov||{};d.logs=d.logs||{};
   const v=d.variant||0;let plan=null;
-  try{const c=await store.get('pc:'+k);if(c&&c.s===sigNow()+'#'+v)plan=unpackPlan(c.p)}catch(e){}
-  if(!plan){plan=genMonth(y,mo,v);cachePlan(k,v,plan)}
+  try{const c=await store.get('pc:'+k);if(c&&c.s===sigNow()+'#'+v+prefSig(d))plan=unpackPlan(c.p)}catch(e){}
+  if(!plan){plan=genMonth(y,mo,v,d.reco);if(d.fixedPlan)Object.assign(plan,unpackPlan(d.fixedPlan));months[k]={d,plan};cachePlan(k,v,plan)}
+  if(d.fixedPlan)Object.assign(plan,unpackPlan(d.fixedPlan));
   months[k]={d,plan};return months[k]}
 const regenAll=()=>Object.keys(months).forEach(k=>{const[y,m]=k.split('-').map(Number);
-  const v=months[k].d.variant||0,pl=genMonth(y,m,v);months[k].plan=pl;cachePlan(k,v,pl)});
+  const v=months[k].d.variant||0,pl=genMonth(y,m,v,months[k].d.reco);if(months[k].d.fixedPlan)Object.assign(pl,unpackPlan(months[k].d.fixedPlan));months[k].plan=pl;cachePlan(k,v,pl)});
 function fixM(M){if(!M)return null;M.d=M.d||{};M.d.ov=M.d.ov||{};M.d.logs=M.d.logs||{};
   M.d.del=M.d.del||{};M.plan=M.plan||{};return M}
 const isDel=on=>{const M=fixM(months[mk(on)]);return !!(M&&M.d.del[on])};
@@ -714,7 +726,11 @@ function mObj(on,i){const M=fixM(months[mk(on)]);if(!M)return null;
   const p=M.plan[on];return p?p[i]:null}
 const hasAny=on=>!!(mText(on,0)||mText(on,1)||mText(on,2));
 const lg=on=>{const M=fixM(months[mk(on)]);return(M&&M.d.logs[on])||{}};
-const saveM=async on=>{const k=mk(on);if(months[k])await store.set('m2:'+k,fixM(months[k]).d)};
+const saveM=async on=>{const k=mk(on),M=fixM(months[k]);if(!M)return;
+  if(M.d.logs[on]&&Object.keys(M.d.logs[on]).length&&M.plan[on]){
+    M.d.fixedPlan=M.d.fixedPlan||{};M.d.fixedPlan[on]=packPlan({[on]:M.plan[on]})[on];
+  }
+  await store.set('m2:'+k,M.d)};
 
 /* ══════════ 영양 계산 ══════════ */
 function mealNut(on,i){
@@ -815,10 +831,10 @@ function weekLabel(sun){
   const th=P(addD(sun,3));
   return `${th.getMonth()+1}월 ${Math.ceil(th.getDate()/7)}주차`;
 }
-function batchPlan(sun){
+function batchPlan(sun,count=7){
   const A=stage(addD(sun,3));
   const mains={},sides={},fruits={};let meals=0;
-  for(let i=0;i<7;i++){const on=addD(sun,i);
+  for(let i=0;i<count;i++){const on=addD(sun,i);
     for(let j=0;j<3;j++){const m=mObj(on,j);if(!m)continue;meals++;
       const a=nMain(m.main);(mains[a]=mains[a]||{n:0,o:m.main}).n++;
       const b2=nSide(m.side);(sides[b2]=sides[b2]||{n:0,o:m.side}).n++;
@@ -870,9 +886,9 @@ function batchPlan(sun){
     .map(e=>({name:e[0],n:e[1].n,g:A.fruit*e[1].n}));
   return {A:A,meals:meals,common:commonRows,mains:mainRows,sides:sideRows,fruits:fruitRows};
 }
-function weekList(sun){
+function weekList(sun,count=7){
   const t={};
-  for(let i=0;i<7;i++){const on=addD(sun,i),A=stage(on);
+  for(let i=0;i<count;i++){const on=addD(sun,i),A=stage(on);
     for(let j=0;j<3;j++){const m=mObj(on,j);if(!m)continue;
       const add=(n,c,g)=>{t[n]=t[n]||{c,g:0,n:0};t[n].g+=g;t[n].n++};
       const p=m.main.p;add(p.n,'p',p.fish?A.fish:p.k==='tofu'?A.tofu:A.meat);
@@ -888,13 +904,13 @@ function weekList(sun){
   return t;
 }
 function icsFor(sun){
-  const t=weekList(sun), items=Object.entries(t).map(([n,v])=>v.g?`${n} ${Math.ceil(v.g/10)*10}g`:n).join(', ');
-  const d=P(sun); d.setDate(d.getDate()-1); // 전 주 토요일
+  const items='일요일: 월~목 4일치 / 목요일: 금~일 3일치. 최신 식단과 재고는 앱에서 확인해 주세요.';
+  const d=P(sun); d.setDate(d.getDate()-1); // 제작일: 일요일
   const st=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T100000`;
   const en=`${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}T103000`;
   return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//dojun//meal//KO','BEGIN:VEVENT',
-    'DTSTART;TZID=Asia/Seoul:'+st,'DTEND;TZID=Asia/Seoul:'+en,'RRULE:FREQ=WEEKLY;BYDAY=SA',
-    'SUMMARY:이유식 장보기 — 다음 주 재료','BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY',
+    'DTSTART;TZID=Asia/Seoul:'+st,'DTEND;TZID=Asia/Seoul:'+en,'RRULE:FREQ=WEEKLY;BYDAY=SU,TH',
+    'SUMMARY:이유식 준비 — 일요일 4일치 · 목요일 3일치','BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY',
     'DESCRIPTION:장보기','END:VALARM',
     'DESCRIPTION:'+items.replace(/,/g,'\\,').slice(0,600),'END:VEVENT','END:VCALENDAR'].join('\r\n');
 }
@@ -935,7 +951,7 @@ function vCal(){
   }
   const day=P(today);
   const shopBanner=(day.getDay()>=5||day.getDay()===0)?`<div class="banner b-shop">
-      <h3>🛒 주말 준비</h3><p>토·일에 다음 주(월~일) 식단을 한 번에 만들어 두면 평일이 훨씬 편해져요.
+      <h3>🛒 주말 준비</h3><p>일요일에는 월~목 4일치, 목요일에는 금~일 3일치를 준비해요.
       장보기 탭이 이미 다음 주로 맞춰져 있습니다.</p>
       <div class="row"><button data-a="tab:shop">장보기 · 만들기 열기</button>
       <button data-a="ics">캘린더에 알림 넣기</button></div></div>`:'';
@@ -962,55 +978,30 @@ function vCal(){
       return `<div class="meal"><div class="pic">${dishSVG(m)}</div><div class="bd">
         <div class="lb">${['아침','점심','저녁'][i]}</div>
         <div class="tt">${esc(mText(today,i)||'메뉴 없음')}</div>
-        <div class="rec">${[['a','다 먹음'],['s','조금'],['l','남김']].map(([c,t])=>
+        <div class="rec">${REACTIONS.map(([c,t])=>
           `<button class="${c}" aria-pressed="${L.s===c}" data-a="rec:${today}|${s}|${c}">${t}</button>`).join('')}</div>
       </div></div>`}).join('')}</div>
     <div class="sec"><h2>이 시기 기준</h2></div>
     <div class="card"><div class="hint"><b style="color:var(--ink)">${stage(today).label}</b> · 하루 ${stage(today).meals}끼 · 수유 ${stage(today).milk}<br>
       ${esc(stage(today).tex)}<br>간·꿀 없이, 고기·생선·계란은 속까지 완전히 익혀서.</div>
-      <div class="btnrow"><button class="btn" data-a="reshuffle">이 달 메뉴 다시 뽑기</button></div></div>`;
+      <div class="btnrow"><button class="btn" data-a="reshuffle">기록 반영해 남은 메뉴 다시 뽑기</button></div></div>`;
 }
 
 /* --- 장보기 --- */
 function vShop(){
-  const t=weekList(weekCur),chk=shopChk[weekCur]||[];
-  const cats=[['p','단백질','var(--peach)'],['v','채소','var(--mint)'],['f','과일','var(--berry)'],['e','기타','var(--butter)']];
-  const e=P(addD(weekCur,6));
-  const body=cats.map(([c,nm,col])=>{
-    const rows=Object.entries(t).filter(([,v])=>v.c===c).sort((a,b)=>b[1].g-a[1].g);
-    if(!rows.length)return'';
-    return `<div class="catrow"><span class="catdot" style="background:${col}"></span><b>${nm}</b>
-      <span class="hint">${rows.length}가지</span></div>
-      <div class="card">${rows.map(([n,v])=>{const on=chk.includes(n);
-        return `<div class="shop${on?' on':''}" data-a="chk:${esc(n)}"><div class="bx"></div>
-        <div class="nm">${esc(n)}</div><div class="qt">${v.g?`약 ${Math.ceil(v.g/10)*10}g · ${v.n}회`:`${v.n}회`}</div></div>`}).join('')}</div>`;
-  }).join('');
-  return `<div class="sec"><div class="nav">
-      <button class="rd" data-a="wk:-1">‹</button>
-      <b>${P(weekCur).getMonth()+1}/${P(weekCur).getDate()} – ${e.getMonth()+1}/${e.getDate()}</b>
-      <button class="rd" data-a="wk:1">›</button></div>
-      <button class="pill" data-a="uncheck">전체 해제</button></div>
-    <div class="btnrow" style="margin:0 0 14px">
-      <button class="btn pri" data-a="batch">${weekLabel(weekCur)} 한 번에 만들기 ›</button></div>
-    <p class="hint" style="margin:0 0 12px">이 주 21끼에 들어가는 재료예요. 손질 전 기준이라 조금 넉넉히 사시는 게 좋아요.</p>
-    ${(()=>{const b=batchPlan(weekCur);
-      if(!b.meals)return'';
-      const grp=(t,rows,unit)=>rows.length?`<div class="hint" style="font-weight:700;color:var(--accent);margin:10px 0 2px">${t}</div>`
-        +rows.map(r=>`<div class="shop"><div class="nm">${esc(r.name)}</div>
-          <div class="qt">${r.n}${unit}</div></div>`).join(''):'';
-      return `<div class="catrow"><span class="catdot" style="background:var(--butter)"></span>
-        <b>이번 주 만들 것</b><span class="hint">주식 ${b.mains.length} · 반찬 ${b.sides.length} · 후식 ${b.fruits.length}</span></div>
-        <div class="card">
-          ${grp('주식',b.mains,'회분')}
-          ${grp('반찬',b.sides,'회분')}
-          ${grp('후식',b.fruits,'회')}
-        <p class="hint" style="margin:10px 0 0">같은 메뉴는 한 번에 만들어 1회분씩 나눠 얼려두면 편해요.</p></div>`})()}
-    ${body||'<div class="empty">이 주에는 식단이 없어요.</div>'}
-    <div class="card" style="margin-top:16px">
-      <h3 style="font-size:14px;font-weight:800;margin-bottom:6px">토요일마다 알림 받기</h3>
-      <p class="hint">휴대폰 캘린더에 매주 토요일 오전 10시 반복 일정을 넣어드려요. 이 목록도 메모로 함께 들어갑니다.</p>
-      <div class="btnrow"><button class="btn pri" data-a="ics">캘린더 파일 받기</button>
-        <button class="btn" data-a="copy">목록 복사</button></div></div>`;
+  const b=shopBatch(),t=shoppingNeeds(b),chk=shopChk[b.key]||[],end=P(addD(weekCur,6));
+  const rows=Object.entries(t).map(([n,v])=>`<div class="shop${chk.includes(n)?' on':''}" data-a="chk:${esc(n)}"><div class="bx"></div><div class="nm">${esc(n)}<div class="hint">필요 ${v.unknown?v.n+'회 · 수량 확인':Math.round(v.g)+'g'} · ${esc(v.note)}</div></div><div class="qt">${v.unknown?'확인 필요':v.missing?'<b>'+v.missing+'g 부족</b>':'충분해요'}</div></div>`).join('');
+  const bp=batchPlan(b.start,b.count);
+  return `<div class="sec"><div class="nav"><button class="rd" data-a="wk:-1">‹</button><b>${P(weekCur).getMonth()+1}/${P(weekCur).getDate()} – ${end.getMonth()+1}/${end.getDate()}</b><button class="rd" data-a="wk:1">›</button></div></div>
+    <div class="btnrow"><button class="btn ${shopPart==='weekday'?'pri':''}" data-a="shoppart:weekday">월~목 · 4일치</button><button class="btn ${shopPart==='weekend'?'pri':''}" data-a="shoppart:weekend">금~일 · 3일치</button></div>
+    <div class="sec"><h2>${b.label}</h2><button class="more" data-a="batch">만들기 ›</button></div>
+    <p class="hint">${b.count*3}끼 기준 · 자동 식단 ${bp.meals}끼 집계. 직접 적은 메뉴는 수량을 따로 확인해 주세요. 밥은 조리된 양, 나머지는 기존 레시피의 손질된 재료량 추정치예요.</p>
+    ${shopPart==='weekend'?'<p class="hint">금~일은 익숙한 재료의 새로운 형태를 경험하는 날로 활용해요.</p>':''}
+    <div class="card">${rows||'<p class="hint">계산할 식단이 없어요.</p>'}</div>
+    <div class="btnrow"><button class="btn" data-a="copy">목록 복사</button><button class="btn" data-a="uncheck">체크 해제</button></div>
+    <div class="sec"><h2>우리집 재고</h2><button class="btn pri" data-a="invedit">재료 추가</button></div>
+    <p class="hint">재고 수정은 식단을 바꾸지 않아요. 개·팩은 손질 후 1개·1팩당 g을 입력해야 부족분에서 뺄 수 있어요.</p>
+    <div class="card">${Object.entries(inventory).filter(([,v])=>v.qty>0).map(([k,v])=>`<div class="inventory-row"><div><b>${esc(invName(k))}</b><div>${v.qty}${esc(v.unit)} · ${esc(v.location)}</div><div class="hint">${esc(v.memo||'')}</div></div><button class="btn" data-a="invedit:${k}">수정·사용</button></div>`).join('')||'<p class="hint">집에 있는 재료와 남은 양을 넣어 주세요.</p>'}</div>`;
 }
 
 /* --- 영양 --- */
@@ -1200,8 +1191,9 @@ function sheetDay(on){
         <ol class="steps">${r.side.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
         <div class="rgroup"><h4>후식</h4>
         <ol class="steps">${r.fruit.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>`:''}
-      <div class="rec" style="margin-top:10px">${[['a','다 먹음'],['s','조금'],['l','남김']].map(([c,t])=>
+      <div class="rec" style="margin-top:10px">${REACTIONS.map(([c,t])=>
         `<button class="${c}" aria-pressed="${l.s===c}" data-a="rec:${on}|${['b','l','d'][i]}|${c}">${t}</button>`).join('')}</div>
+      ${feedbackFields(on,i,l,m)}
       <div class="fld"><input data-memo="${['b','l','d'][i]}" value="${esc(l.memo||'')}" placeholder="메모 — 반응, 컨디션, 남긴 이유"></div>
       <div class="fld"><label>메뉴 직접 고치기</label><textarea class="mi" rows="2" data-menu="${i}">${esc(mText(on,i))}</textarea></div>
     </div>`}).join('');
@@ -1261,11 +1253,11 @@ function bSideSteps(o,A,n){
       `아기 치즈 ${n}장을 잘게 찢어 따뜻할 때 섞어 완전히 녹입니다.`]
   }[o.f.k]||[`${vn}를 부드럽게 익혀 냅니다.`];
 }
-function sheetBatch(sun){
-  const b=batchPlan(sun),e=P(addD(sun,6));
+function sheetBatch(sun,count=7){
+  const b=batchPlan(sun,count),e=P(addD(sun,count-1));
   if(!b.meals){open(`<h2>만들기</h2><p class="hint">이 주에는 식단이 없어요.</p>
     <div class="btnrow"><button class="btn" data-a="close">닫기</button></div>`);return}
-  curBatch={sun:sun,b:b};
+  curBatch={sun:sun,b:b,count};
   const done=batchDone[sun]||[];
   const total=b.common.length+b.mains.length+b.sides.length;
   const doneN=done.length;
@@ -1343,7 +1335,8 @@ let tt;const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('on');
 async function setRec(on,s,c){
   const M=months[mk(on)],L=M.d.logs[on]||(M.d.logs[on]={}),cur=L[s]||(L[s]={});
   cur.s=cur.s===c?null:c;
-  if(!cur.s&&!cur.memo)delete L[s];
+  captureMeal(on,s,cur);
+  if(!hasLog(cur))delete L[s];
   if(!Object.keys(L).length)delete M.d.logs[on];
   await saveM(on);render();
   if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]'))sheetDay(on);
@@ -1360,6 +1353,11 @@ function download(name,text,type){
 document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-a]');if(!el)return;
   const [cmd,arg]=el.dataset.a.split(':');
+  if(cmd==='shoppart'){shopPart=arg;return render()}
+  if(cmd==='invedit')return sheetInventory(arg);
+  if(cmd==='invsave')return saveInventoryForm(arg);
+  if(cmd==='invzero'){$('invQty').value=0;return}
+  if(cmd==='invadjust'){$('invQty').value=Math.max(0,(Number($('invQty').value)||0)+Number(arg));return}
   if(cmd==='tab'){
     if(sheetOpen){sheetHist=false;closeNow();try{history.replaceState({app:'tab',tab:arg},'')}catch(e){}}
     else if(tab!==arg){try{history.pushState({app:'tab',tab:arg},'')}catch(e){}}
@@ -1372,25 +1370,28 @@ document.addEventListener('click',async e=>{
     for(let i=0;i<7;i++){const on=addD(weekCur,i);await ensureM(+on.slice(0,4),+on.slice(5,7))}
     return render()}
   if(cmd==='day'){await ensureM(+arg.slice(0,4),+arg.slice(5,7));return sheetDay(arg)}
-  if(cmd==='rec'){e.stopPropagation();const[on,s,c]=arg.split('|');return setRec(on,s,c)}
+  if(cmd==='rec'){e.stopPropagation();const[on,s,c]=arg.split('|');if(sheetOpen&&sheet.querySelector('[data-offered]')&&!saveFeedbackFields(on))return;return setRec(on,s,c)}
   if(cmd==='fd'){const[k,s]=arg.split('|');return setFood(k,s)}
   if(cmd==='fdopen')return sheetFood(arg);
-  if(cmd==='chk'){const l=shopChk[weekCur]||(shopChk[weekCur]=[]);
+  if(cmd==='chk'){const l=shopChk[shopBatch().key]||(shopChk[shopBatch().key]=[]);
     const i=l.indexOf(arg);i<0?l.push(arg):l.splice(i,1);await store.set('shop2',shopChk);return render()}
-  if(cmd==='uncheck'){shopChk[weekCur]=[];await store.set('shop2',shopChk);return render()}
+  if(cmd==='uncheck'){shopChk[shopBatch().key]=[];await store.set('shop2',shopChk);return render()}
   if(cmd==='allok'){ALL.forEach(x=>{if(stat(x.k)==='new')foods[x.k]={s:'ok',at:today}});
     await store.set('foods2',foods);regenAll();render();return toast('모두 도입 완료로 바꿨어요')}
   if(cmd==='reshuffle'){const k=cursorM.slice(0,7);months[k].d.variant=(months[k].d.variant||0)+1;
     const[y,m]=k.split('-').map(Number);const v=months[k].d.variant;
-    months[k].plan=genMonth(y,m,v);cachePlan(k,v,months[k].plan);
+    const previous=months[k].plan;months[k].d.fixedPlan=months[k].d.fixedPlan||{};
+    for(const on of Object.keys(previous))if(on<today||Object.keys(months[k].d.logs[on]||{}).length)Object.assign(months[k].d.fixedPlan,packPlan({[on]:previous[on]}));
+    months[k].d.reco=buildPreferences();
+    months[k].plan=genMonth(y,m,v,months[k].d.reco);Object.assign(months[k].plan,unpackPlan(months[k].d.fixedPlan));cachePlan(k,v,months[k].plan);
     await store.set('m2:'+k,months[k].d);render();return toast('메뉴를 새로 뽑았어요')}
   if(cmd==='clearlogs'){if(!confirm('이 달의 먹은 기록을 모두 지울까요?'))return;
     const k=cursorM.slice(0,7);months[k].d.logs={};await store.set('m2:'+k,months[k].d);render();return toast('지웠어요')}
   if(cmd==='ics'){const t=icsFor(addD(weekCur,7));
     if(!download('이유식-장보기-알림.ics',t,'text/calendar')){open('<h2>캘린더 알림</h2><div class="fld"><textarea rows="8">'+esc(t)+'</textarea></div><p class="hint">이 내용을 .ics 파일로 저장해 캘린더에 넣어주세요.</p><div class="btnrow"><button class="btn" data-a="close">닫기</button></div>')}
     else toast('파일을 열어 캘린더에 추가하세요');return}
-  if(cmd==='copy'){const t=weekList(weekCur);
-    const txt=Object.entries(t).map(([n,v])=>v.g?`${n} 약 ${Math.ceil(v.g/10)*10}g`:n).join('\n');
+  if(cmd==='copy'){const b=shopBatch(),t=shoppingNeeds(b);
+    const txt=b.label+' 장보기\n'+Object.entries(t).map(([n,v])=>`${n}: ${v.unknown?'수량 확인':v.missing+'g 부족'}${v.note?' ('+v.note+')':''}`).join('\n');
     try{await navigator.clipboard.writeText(txt);toast('복사했어요')}catch(err){
       open('<h2>장보기 목록</h2><div class="fld"><textarea rows="12">'+esc(txt)+'</textarea></div><div class="btnrow"><button class="btn" data-a="close">닫기</button></div>')}
     return}
@@ -1400,13 +1401,15 @@ document.addEventListener('click',async e=>{
   if(cmd==='savefood'){foods[arg]={...(foods[arg]||{s:stat(arg)}),memo:$('fM').value.trim()};
     await store.set('foods2',foods);close();render();return toast('저장했어요')}
   if(cmd==='savday'){
+    if(!saveFeedbackFields(arg))return;
     const M=fixM(months[mk(arg)]);if(!M)return;const base=M.plan[arg],del=isDel(arg),ov=[];let ch=0;
     sheet.querySelectorAll('[data-menu]').forEach(x=>{const i=+x.dataset.menu,v=x.value.trim();
+      if(v!==mText(arg,i)){const log=M.d.logs[arg]?.[['b','l','d'][i]];if(log){delete log.mealKey;delete log.formKey;delete log.formReaction;delete log.ingredients}}
       ov[i]=v;if(v!==(del?'':(base?nMeal(base[i]):'')))ch=1});
     if(ch)M.d.ov[arg]=ov;else delete M.d.ov[arg];
     sheet.querySelectorAll('[data-memo]').forEach(x=>{const s=x.dataset.memo,v=x.value.trim();
       const L=M.d.logs[arg]||(M.d.logs[arg]={}),cur=L[s]||(L[s]={});cur.memo=v;
-      if(!cur.memo&&!cur.s)delete L[s];if(!Object.keys(L).length)delete M.d.logs[arg]});
+      if(!hasLog(cur))delete L[s];if(!Object.keys(L).length)delete M.d.logs[arg]});
     blurAll();
     await saveM(arg);
     setTimeout(()=>{close();render();toast('저장했어요')},160);
@@ -1442,15 +1445,15 @@ document.addEventListener('click',async e=>{
     Object.keys(months).forEach(k=>delete months[k]);
     const y=+today.slice(0,4),m=+today.slice(5,7);await ensureM(y,m);
     render();return toast(arg==='simple'?'단촐하게 바꿨어요':'다양하게 바꿨어요')}
-  if(cmd==='batch'){sheetBatch(weekCur);return}
+  if(cmd==='batch'){const b=shopBatch();sheetBatch(b.start,b.count);return}
   if(cmd==='bopen'){batchOpen[arg]=!batchOpen[arg];
-    const sc=sheet.scrollTop;sheetBatch(curBatch.sun);sheet.scrollTop=sc;return}
+    const sc=sheet.scrollTop;sheetBatch(curBatch.sun,curBatch.count);sheet.scrollTop=sc;return}
   if(cmd==='bdone'){const sun=curBatch.sun;const l=batchDone[sun]||(batchDone[sun]=[]);
     const i=l.indexOf(arg); if(i<0){l.push(arg);batchOpen[arg]=false} else l.splice(i,1);
     await store.set('batch2',batchDone);
     const sc=sheet.scrollTop;sheetBatch(sun);sheet.scrollTop=sc;return}
   if(cmd==='breset'){batchDone[curBatch.sun]=[];await store.set('batch2',batchDone);
-    sheetBatch(curBatch.sun);return}
+    sheetBatch(curBatch.sun,curBatch.count);return}
   if(cmd==='printbatch'){window.print();return}
   if(cmd==='rescue'){
     try{sheetOpen=false;sheetHist=false;sheet.className='sheet';scrim.className='scrim';sheet.innerHTML='';
@@ -1467,13 +1470,14 @@ document.addEventListener('click',async e=>{
         return toast('새 버전이 있어요')}
       return toast('최신 버전이에요')
     }catch(e){return toast('확인하지 못했어요')}}
-  if(cmd==='export'){const dump={settings,foods,shopChk,avatar,
+  if(cmd==='export'){const dump={settings,foods,shopChk,inventory,avatar,
       months:Object.fromEntries(Object.entries(months).map(([k,v])=>[k,v.d]))};
     $('sD').value=JSON.stringify(dump);return toast('아래 칸을 복사해 두세요')}
   if(cmd==='import'){try{const o=JSON.parse($('sD').value);
       if(o.settings){settings=o.settings;await store.set('settings2',settings)}
       if(o.foods){foods=o.foods;await store.set('foods2',foods)}
       if(o.shopChk){shopChk=o.shopChk;await store.set('shop2',shopChk)}
+      if(o.inventory){inventory=cleanInventory(o.inventory);await store.set('inventory2',inventory)}
       if(o.avatar){avatar=o.avatar;await store.set('avatar',avatar)}
       if(o.months)for(const[k,v]of Object.entries(o.months))await store.set('m2:'+k,v);
       Object.keys(months).forEach(k=>delete months[k]);await boot();
@@ -1505,6 +1509,141 @@ $('avfile').onchange=e=>{
   fr.readAsDataURL(f);e.target.value='';
 };
 
+/* v24: 재고는 재료별로 공유하고 추천 입력은 다시 뽑을 때 고정한다. */
+const invKey=k=>k==='ssStick'?'sweetpotato':k==='pkPiece'?'pumpkin':k;
+const invName=k=>k==='rice'?'밥 (조리 후)':k==='deulkkae'?'들깨가루':(byK[k]?.b||byK[k]?.n||k);
+const inventoryKeys=()=>['rice',...new Set(ALL.map(x=>invKey(x.k))),'deulkkae'];
+function cleanInventory(raw){
+  const out={};
+  for(const k of inventoryKeys()){
+    const v=raw?.[k];if(!v||!Number.isFinite(v.qty)||v.qty<0||!['g','개','팩'].includes(v.unit))continue;
+    out[k]={qty:v.qty,unit:v.unit,location:['냉장','냉동','실온'].includes(v.location)?v.location:'냉장',
+      gramsPerUnit:Number.isFinite(v.gramsPerUnit)&&v.gramsPerUnit>0?v.gramsPerUnit:null,
+      memo:String(v.memo||'').slice(0,200),updatedAt:Number.isFinite(v.updatedAt)?v.updatedAt:0};
+  }
+  return out;
+}
+function persistInventoryLocal(){
+  LS.set('inventory2',inventory);
+  try{if(window.storage)Promise.resolve(window.storage.set('inventory2',JSON.stringify(inventory))).catch(()=>{})}catch(e){}
+}
+function pushInventoryItem(k){
+  if(!online||!sync.url||!sync.code)return;
+  fetch(famURL('inventory2/'+k),{method:'PUT',body:JSON.stringify(inventory[k])}).then(r=>{if(!r.ok)toast('재고 공유 대기 중 · 연결 후 다시 시도해요')}).catch(()=>toast('재고 공유 대기 중'));
+}
+function mergeInventory(raw){
+  const remote=cleanInventory(raw),before=JSON.stringify(inventory);
+  for(const k of Object.keys(remote)){
+    if(!inventory[k]||remote[k].updatedAt>=inventory[k].updatedAt)inventory[k]=remote[k];
+  }
+  persistInventoryLocal();
+  // At the root event online becomes true after applyRemote; flush via microtask.
+  Promise.resolve().then(()=>{for(const k of Object.keys(inventory))if(!remote[k]||inventory[k].updatedAt>remote[k].updatedAt)pushInventoryItem(k)});
+  return before!==JSON.stringify(inventory);
+}
+function sheetInventory(k){
+  const v=inventory[k]||{qty:0,unit:'g',location:'냉장',memo:''};
+  open(`<h2>${k?'재고 수정 · 사용량 반영':'우리집 재고 추가'}</h2>
+    <div class="fld"><label for="invKey">재료</label><select id="invKey" ${k?'disabled':''}>${inventoryKeys().map(x=>`<option value="${x}" ${x===k?'selected':''}>${esc(invName(x))}</option>`).join('')}</select></div>
+    <div class="fld"><label for="invQty">현재 남은 양</label><input id="invQty" type="number" min="0" step="0.1" value="${v.qty}"></div>
+    <div class="fld"><label for="invUnit">단위</label><select id="invUnit">${['g','개','팩'].map(x=>`<option ${x===v.unit?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="fld"><label for="invGram">1개·1팩당 손질 후 g (아는 경우만)</label><input id="invGram" type="number" min="0.1" step="0.1" value="${v.gramsPerUnit||''}" placeholder="모르면 비워 두세요"></div>
+    <div class="fld"><label for="invLoc">보관 위치</label><select id="invLoc">${['냉장','냉동','실온'].map(x=>`<option ${x===v.location?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="fld"><label for="invMemo">메모</label><input id="invMemo" maxlength="200" value="${esc(v.memo)}"></div>
+    <p class="hint">조리에 쓴 만큼 현재량을 줄여 저장해 주세요. 빠른 버튼은 위에서 선택한 단위로 계산해요.</p>
+    <div class="btnrow"><button class="btn" data-a="invadjust:-10">−10</button><button class="btn" data-a="invadjust:10">+10</button><button class="btn" data-a="invadjust:50">+50</button><button class="btn" data-a="invzero">전부 사용</button></div>
+    <div class="btnrow"><button class="btn pri" data-a="invsave:${k||''}">저장</button><button class="btn" data-a="close">닫기</button></div>`);
+}
+function saveInventoryForm(k){
+  k=k||$('invKey').value;
+  const raw=$('invQty').value,q=Number(raw),g=$('invGram').value.trim(),gpu=g?Number(g):null;
+  if(!raw||!Number.isFinite(q)||q<0||(g&&(!Number.isFinite(gpu)||gpu<=0)))return toast('남은 양과 단위 무게를 확인해 주세요');
+  inventory[k]={qty:q,unit:$('invUnit').value,gramsPerUnit:gpu,location:$('invLoc').value,memo:$('invMemo').value.trim(),updatedAt:Math.max(Date.now(),(inventory[k]?.updatedAt||0)+1)};
+  persistInventoryLocal();pushInventoryItem(k);close();render();toast(online?'재고를 저장했어요':'기기에 저장했어요 · 연결되면 가족과 공유해요');
+}
+function shopBatch(){const weekend=shopPart==='weekend',start=addD(weekCur,weekend?4:0);
+  return{start,count:weekend?3:4,key:'batch|'+start,label:weekend?'목요일 준비 · 금~일 3일치':'일요일 준비 · 월~목 4일치'};}
+function shoppingNeeds(b){
+  const t=weekList(b.start,b.count);
+  // Include cooked rice explicitly; do not pretend cooked grams are raw rice grams.
+  let rice=0;for(let d=0;d<b.count;d++){const on=addD(b.start,d);for(let i=0;i<3;i++)if(mObj(on,i))rice+=stage(on).rice}
+  if(rice)t['밥 (조리 후)']={c:'e',g:rice,n:0};
+  for(const[n,v]of Object.entries(t)){
+    const k=inventoryKeys().find(k=>invName(k)===n),stock=inventory[k];
+    const grams=stock?(stock.unit==='g'?stock.qty:stock.gramsPerUnit?stock.qty*stock.gramsPerUnit:null):0;
+    v.unknown=!v.g;v.missing=Math.ceil(Math.max(0,v.g-(grams||0)));
+    v.note=stock?`재고 ${stock.qty}${stock.unit}${grams===null?' · g 환산 필요':''}`:'재고 미등록';
+  }
+  return t;
+}
+const reactionScore=s=>({good:1,normal:0,little:-.5,refused:-1,a:1,s:-.5,l:-.5}[s]);
+function hasLog(v){return !!(v.s||v.memo||v.offered_g!==undefined||v.eaten_g!==undefined||v.formReaction||Object.keys(v.ingredients||{}).length)}
+function mealFingerprint(m){return m?[m.main.p.k,m.main.f.k,m.main.v.map(v=>v.k).sort().join(','),m.side.f.k,m.side.v.map(v=>v.k).sort().join(','),m.fruit.k].join('|'):null}
+function captureMeal(on,slot,log){const m=mObj(on,['b','l','d'].indexOf(slot));
+  if(m&&!log.mealKey){log.mealKey=mealFingerprint(m);log.formKey=m.main.f.k}
+}
+function feedbackFields(on,i,l,m){
+  const slot=['b','l','d'][i],keys=m?[...new Set([m.main.p.k,...m.main.v.map(x=>x.k),...m.side.v.map(x=>x.k),m.side.p,m.fruit.k].filter(Boolean).map(invKey))]:[];
+  const options=value=>'<option value="">기록 안 함</option>'+REACTIONS.map(([k,n])=>`<option value="${k}" ${value===k?'selected':''}>${n}</option>`).join('');
+  return `${l.s&&['a','s','l'].includes(l.s)?'<p class="hint">이전 반응: '+({a:'다 먹음',s:'조금',l:'남김'}[l.s])+'</p>':''}
+    <div style="display:flex;gap:10px"><div class="fld"><label for="off-${slot}">제공량(g)</label><input id="off-${slot}" data-offered="${slot}" type="number" min="0" step="0.1" placeholder="예: 150" value="${esc(l.offered_g??'')}"></div>
+    <div class="fld"><label for="eat-${slot}">실제 섭취량(g)</label><input id="eat-${slot}" data-eaten="${slot}" type="number" min="0" step="0.1" placeholder="예: 80" value="${esc(l.eaten_g??'')}"></div></div>
+    ${l.offered_g>0&&l.eaten_g!==undefined?`<p class="hint">섭취율 ${Math.round(l.eaten_g/l.offered_g*100)}% · 제공량을 다 먹이는 것이 목표는 아니에요.</p>`:''}
+    ${m?`<details><summary>재료·조리형태 반응 따로 기록</summary><p class="hint">확실히 관찰한 항목만 선택해 주세요. 전체 메뉴를 거부해도 재료를 싫어한다고 판단하지 않아요.</p>
+    <div class="fld"><label for="form-${slot}">${esc(m.main.fn)} 형태</label><select id="form-${slot}" data-formreaction="${slot}">${options(l.formReaction)}</select></div>
+    ${keys.map(k=>`<div class="fld"><label for="ing-${slot}-${k}">${esc(invName(k))}</label><select id="ing-${slot}-${k}" data-ingredient="${slot}|${k}">${options(l.ingredients?.[k])}</select></div>`).join('')}</details>`:''}`;
+}
+function saveFeedbackFields(on){
+  const pending={};
+  for(const el of sheet.querySelectorAll('[data-offered]')){
+    const slot=el.dataset.offered,o=el.value.trim(),e=sheet.querySelector(`[data-eaten="${slot}"]`).value.trim();
+    if((o&&(!Number.isFinite(+o)||+o<0))||(e&&(!o||!Number.isFinite(+e)||+e<0||+e>+o))){toast('섭취량은 제공량 이하로 입력해 주세요');return false}
+    const cur={...(lg(on)[slot]||{})};
+    if(o)cur.offered_g=+o;else delete cur.offered_g;
+    if(e)cur.eaten_g=+e;else delete cur.eaten_g;
+    const f=sheet.querySelector(`[data-formreaction="${slot}"]`);
+    if(f){cur.formReaction=f.value;cur.ingredients={};
+      sheet.querySelectorAll('[data-ingredient]').forEach(x=>{const[s,k]=x.dataset.ingredient.split('|');if(s===slot&&x.value)cur.ingredients[k]=x.value})}
+    const memo=sheet.querySelector(`[data-memo="${slot}"]`);if(memo)cur.memo=memo.value.trim();
+    captureMeal(on,slot,cur);pending[slot]=cur;
+  }
+  if(Object.keys(pending).length){const M=fixM(months[mk(on)]),L=M.d.logs[on]||(M.d.logs[on]={});
+    for(const[slot,v]of Object.entries(pending)){if(hasLog(v))L[slot]=v;else delete L[slot]}}
+  return true;
+}
+function buildPreferences(){
+  const data={},sums={},counts={};
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('dj:m2:'))data[k.slice(6)]=LS.get(k.slice(3))}}catch(e){}
+  for(const[k,v]of Object.entries(months))data[k]=v.d;
+  const add=(k,v,w)=>{sums[k]=(sums[k]||0)+v*w;counts[k]=(counts[k]||0)+w};
+  for(const d of Object.values(data))for(const[on,logs]of Object.entries(d?.logs||{})){
+    const age=dnum(today)-dnum(on);if(!Number.isFinite(age)||age<0||age>90)continue;const w=Math.pow(.5,age/30);
+    for(const l of Object.values(logs||{})){
+      if(l.formKey&&REACTIONS.some(([x])=>x===l.formReaction))add('form:'+l.formKey,reactionScore(l.formReaction),w);
+      for(const[k,v]of Object.entries(l.ingredients||{}))if(REACTIONS.some(([x])=>x===v))add('ingredient:'+invKey(k),reactionScore(v),w);
+      let score=reactionScore(l.s);
+      if(Number.isFinite(l.offered_g)&&l.offered_g>0&&Number.isFinite(l.eaten_g)&&l.eaten_g>=0&&l.eaten_g<=l.offered_g){const intake=2*l.eaten_g/l.offered_g-1;score=score===undefined?intake:(score+intake)/2}
+      if(l.mealKey&&score!==undefined)add('meal:'+l.mealKey,score,w);
+    }
+  }
+  const weights={};for(const k in sums)weights[k]=Math.round(sums[k]/(counts[k]+2)*1000)/1000;
+  // Inventory bonus is bounded; eligibility and nutrition checks still decide which candidates are possible.
+  const stock={};for(const[k,v]of Object.entries(inventory))if(v.qty>0)stock[k]=.12;
+  return{weights,stock};
+}
+function weightedPick(r,prefs,list){
+  if(!prefs)return pk(r,list);
+  const weights=list.map(x=>Math.exp(1.5*(prefs.weights?.[(byK[x.k]?'ingredient:'+invKey(x.k):'form:'+x.k)]||0)+(byK[x.k]?prefs.stock?.[invKey(x.k)]||0:0)));
+  let point=r()*weights.reduce((a,b)=>a+b,0);
+  for(let i=0;i<list.length;i++){point-=weights[i];if(point<0)return list[i]}
+  return list[list.length-1];
+}
+function acceptRecordedMeals(r,prefs,meals){
+  if(!prefs)return true;
+  const values=meals.map(m=>prefs.weights?.['meal:'+mealFingerprint(m)]||0),score=values.reduce((a,b)=>a+b,0)/values.length;
+  return score>=0||r()<Math.max(.2,1+score);
+}
+
 /* ══════════ 시작 ══════════ */
 const idle=window.requestIdleCallback||(f=>setTimeout(f,120));
 async function boot(){
@@ -1512,6 +1651,7 @@ async function boot(){
   const s=await store.get('settings2');if(s)settings={...settings,...s};
   const f=await store.get('foods2');if(f)foods=f;
   const sh=await store.get('shop2');if(sh)shopChk=sh;
+  inventory=cleanInventory(await store.get('inventory2')||{});
   const bd=await store.get('batch2');if(bd)batchDone=bd;
   const av=await store.get('avatar');if(av)avatar=av;
   const sy=await store.get('sync');if(sy&&sy.url){sync=sy;syncStart()}
@@ -1565,3 +1705,4 @@ addEventListener('error',function(e){showErr('오류: '+(e.message||e.type)+' @'
 addEventListener('unhandledrejection',function(e){showErr('실패: '+((e.reason&&e.reason.message)||e.reason))});
 
 </script>
+
