@@ -1,0 +1,56 @@
+const vm=require('vm'),fs=require('fs'),assert=require('assert/strict');
+let html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8'),source=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^boot\(\);/m,'');
+const elements={},db=new Map();const el=()=>({innerHTML:'',style:{},classList:{add(){},remove(){},contains(){return false}},addEventListener(){},querySelector(){return null},querySelectorAll(){return []}});
+const ctx={console,Date,Math,JSON,Object,Array,Set,Map,Number,String,Uint8Array,Promise,localStorage:{getItem:k=>db.get(k)||null,setItem:(k,v)=>db.set(k,v),key:i=>[...db.keys()][i],get length(){return db.size}},document:{getElementById:k=>elements[k]||(elements[k]=el()),addEventListener(){}},window:{},addEventListener(){},setTimeout(){},clearTimeout(){},setInterval(){},history:{replaceState(){},pushState(){}},crypto:require('crypto').webcrypto};
+vm.createContext(ctx);vm.runInContext(source,ctx);
+const core=async()=>{
+  await ensureM(2026,9);const before=JSON.stringify(months['2026-09'].plan);
+  const first=Object.keys(months['2026-09'].plan).find(k=>months['2026-09'].plan[k]);
+  const m=mObj(first,0),M=months['2026-09'];
+  M.d.logs[first]={b:{s:'a',memo:'legacy'}};await saveM(first);
+  const old=buildPreferences();if(Object.keys(old.weights).length)throw Error('legacy inferred ingredients');
+  M.d.logs[today]={b:{s:'refused',offered_g:150,eaten_g:0,mealKey:mealFingerprint(m),formKey:m.main.f.k,formReaction:'refused',ingredients:{pumpkin:'good'}}};
+  await saveM(today);const prefs=buildPreferences();
+  if(prefs.weights['ingredient:beef']!==undefined)throw Error('whole refusal inferred beef');
+  if(!(prefs.weights['ingredient:pumpkin']>0&&prefs.weights['form:'+m.main.f.k]<0))throw Error('separate preferences wrong');
+  if(JSON.stringify(M.plan)!==before)throw Error('logging changed plan');
+  inventory={beef:{qty:180,unit:'g',location:'냉동',updatedAt:1},potato:{qty:3,unit:'개',location:'실온',gramsPerUnit:null,updatedAt:1}};
+  persistInventoryLocal();weekCur='2026-09-14';shopPart='weekday';
+  const b=shopBatch();if(b.count!==4||b.start!=='2026-09-14')throw Error('weekday batch');
+  const needs=shoppingNeeds(b);if(needs['소고기']&&needs['소고기'].missing!==Math.ceil(Math.max(0,needs['소고기'].g-180)))throw Error('stock subtraction');
+  shopPart='weekend';if(shopBatch().count!==3||shopBatch().start!=='2026-09-18')throw Error('weekend batch');
+  mergeInventory({beef:{qty:10,unit:'g',location:'냉동',updatedAt:0},carrot:{qty:80,unit:'g',location:'냉장',updatedAt:5}});
+  if(inventory.beef.qty!==180||inventory.carrot.qty!==80||inventory.potato.qty!==3)throw Error('inventory merge clobbered');
+  if(cleanInventory({beef:{qty:-1,unit:'g'}}).beef)throw Error('invalid inventory accepted');
+  const oldPacked=JSON.stringify(packPlan(genMonth(2026,9,0)));
+  if(oldPacked!==JSON.stringify(packPlan(genMonth(2026,9,0,null))))throw Error('no prefs determinism');
+  const pl=genMonth(2026,9,3,prefs);
+  let mealCount=0;for(const[on,ms]of Object.entries(pl)){if(!ms)continue;for(const m of ms){mealCount++;if(stat(m.main.p.k)==='avoid')throw Error('excluded protein');if(m.side.p&&stat(m.side.p)!=='ok')throw Error('unintroduced side protein');if(m.main.f.minM>ageM(on))throw Error('form age')}}
+  return{mealCount,weights:prefs.weights};
+};
+(async()=>{console.log(await vm.runInContext('('+core.toString()+')()',ctx));
+ await vm.runInContext(`(async()=>{
+ const k='2026-09',M=months[k];M.d.reco=buildPreferences();M.d.variant=4;M.plan=genMonth(2026,9,4,M.d.reco);Object.assign(M.plan,unpackPlan(M.d.fixedPlan||{}));cachePlan(k,4,M.plan);await saveM('2026-09-14');
+ const packed=JSON.stringify(packPlan(M.plan));delete months[k];await ensureM(2026,9);
+ if(JSON.stringify(packPlan(months[k].plan))!==packed)throw Error('reload differs');
+ LS.set('pc:'+k,null);delete months[k];await ensureM(2026,9);if(JSON.stringify(packPlan(months[k].plan))!==packed)throw Error('cache miss differs');
+
+ M.plan=genMonth(2026,9,5,M.d.reco);Object.assign(M.plan,unpackPlan(M.d.fixedPlan));
+ if(JSON.stringify(packPlan({[today]:M.plan[today]})[today])!==JSON.stringify(M.d.fixedPlan[today]))throw Error('logged meal changed');
+ // Unit conversion is explicit, unknown grams never subtract arbitrary amounts.
+ const oldList=weekList;weekList=()=>({'소고기':{g:220,n:3},'감자':{g:100,n:2},'두부':{g:250,n:2},'계란':{g:0,n:2}});
+ inventory=cleanInventory({beef:{qty:180,unit:'g'},potato:{qty:3,unit:'개'},tofu:{qty:1,unit:'팩',gramsPerUnit:200}});
+ const needs=shoppingNeeds(shopBatch());if(needs['소고기'].missing!==40||needs['감자'].missing!==100||needs['두부'].missing!==50||!needs['계란'].unknown)throw Error('unit conversion');weekList=oldList;
+ if(!vShop().includes('우리집 재고'))throw Error('shop render');sheetDay(today);if(!sheet.innerHTML.includes('실제 섭취량'))throw Error('day render');sheetInventory('beef');if(!sheet.innerHTML.includes('현재 남은 양'))throw Error('inventory render');
+
+ const offered={dataset:{offered:'b'},value:'150'},eaten={value:'151'};
+ sheet.querySelectorAll=q=>q==='[data-offered]'?[offered]:[];
+ sheet.querySelector=q=>q.startsWith('[data-eaten')?eaten:null;
+ const logsBefore=JSON.stringify(months[mk(today)].d.logs);
+ if(saveFeedbackFields(today)!==false||JSON.stringify(months[mk(today)].d.logs)!==logsBefore)throw Error('invalid intake mutated logs');
+ eaten.value='0';if(!saveFeedbackFields(today)||lg(today).b.eaten_g!==0)throw Error('zero intake lost');
+ offered.value='';eaten.value='40';if(saveFeedbackFields(today)!==false)throw Error('intake without offered accepted');
+ console.log('PASS: cache hit/miss, logged-meal preservation, explicit unit conversions, view functions and intake validation');
+ })()`,ctx);
+ console.log('PASS: inventory merge, batch totals, preference separation, no spontaneous plan changes, zero-intake score, eligibility');
+})().catch(e=>{console.error(e);process.exit(1)});
