@@ -3,6 +3,8 @@ name: v30 tests
 on:
   pull_request:
     branches: ["main"]
+  push:
+    branches: ["v30-freezer-prep"]
 
 jobs:
   node-tests:
