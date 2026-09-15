@@ -1,8 +1,6 @@
-name: v25 tests
+name: v26 tests
 
 on:
-  push:
-    branches: ["chatgpt/ppeuni-v25"]
   pull_request:
     branches: ["main"]
 
@@ -14,7 +12,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Existing v24 core tests
+      - name: Preserved v24 core tests
         run: node tests/core.cjs
       - name: v25 prep and cube inventory tests
         run: node tests/ppeuni-core.cjs
+      - name: v26 default entry wiring
+        run: node tests/v26-entry.cjs
