@@ -1,4 +1,4 @@
-name: v27 tests
+name: v28 tests
 
 on:
   pull_request:
@@ -12,11 +12,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Preserved v24 core tests
+      - name: Preserved original app core tests
         run: node tests/core.cjs
       - name: v25 prep and cube inventory tests
         run: node tests/ppeuni-core.cjs
-      - name: v27 stock-shopping-prep logic
+      - name: management stock-shopping-prep logic
         run: node tests/ops-v27.cjs
-      - name: v27 default entry wiring
+      - name: original app plus management extension wiring
         run: node tests/v27-entry.cjs
