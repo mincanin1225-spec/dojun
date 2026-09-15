@@ -7,14 +7,14 @@
 
   const iso=d=>{
     if(typeof d==='string')return d.slice(0,10);
-    const x=new Date(d); if(Number.isNaN(x.getTime()))throw new Error('invalid date');
+    const x=new Date(d);if(Number.isNaN(x.getTime()))throw new Error('invalid date');
     const y=x.getFullYear(),m=String(x.getMonth()+1).padStart(2,'0'),day=String(x.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   };
   const parse=s=>{const [y,m,d]=iso(s).split('-').map(Number);return new Date(y,m-1,d)};
   const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return iso(d)};
   const ageMonths=(birth,on)=>{
-    const b=parse(birth),d=parse(on); if(d<b)return null;
+    const b=parse(birth),d=parse(on);if(d<b)return null;
     let n=(d.getFullYear()-b.getFullYear())*12+d.getMonth()-b.getMonth();
     if(d.getDate()<b.getDate())n--;
     return Math.max(0,n);
@@ -28,6 +28,14 @@
       {id:'second',prepDate:addDays(mon,3),start:addDays(mon,4),end:addDays(mon,6),count:3,label:'2차 준비 · 목요일 → 금~일'}
     ];
   };
+  const nextSaturday=on=>{const d=parse(on),delta=(6-d.getDay()+7)%7;return addDays(on,delta)};
+  const prepCycleFromSaturday=sat=>{
+    sat=iso(sat);
+    const first={id:'first',prepDate:addDays(sat,1),start:addDays(sat,2),end:addDays(sat,5),count:4,label:'1차 준비 · 일요일 → 월~목'};
+    const second={id:'second',prepDate:addDays(sat,5),start:addDays(sat,6),end:addDays(sat,8),count:3,label:'2차 준비 · 목요일 → 금~일'};
+    return {id:sat,stockCheckDate:sat,shoppingDate:sat,first,second,windows:[first,second]};
+  };
+  const nextPrepCycle=on=>prepCycleFromSaturday(nextSaturday(on));
   const num=(v,name,min=0)=>{v=Number(v);if(!Number.isFinite(v)||v<min)throw new Error(`${name} invalid`);return v};
   const cleanBatch=b=>{
     if(!b||!String(b.ingredient||'').trim())throw new Error('ingredient required');
@@ -97,6 +105,20 @@
       return{ingredient,needG,stockG,missingG,remake};
     });
   }
+  function completePrepWindowOnce(state,plan,start,count,batchKey,opts={}){
+    const prepared={...(state.prepared||{})};
+    if(prepared[batchKey])return{...state,prepared,alreadyDone:true};
+    const list=buildPrepList(plan,start,count,state.batches||[],opts),missing=list.filter(x=>x.missingG>1e-9);
+    if(missing.length)return{...state,prepared,alreadyDone:false,blocked:true,missing};
+    let batches=(state.batches||[]).map(cleanBatch),shortages=[];
+    const meals=mealsInRange(plan,start,count,opts);
+    meals.forEach(({date,slot,meal})=>meal.ingredients.forEach(x=>{
+      const r=consumeFIFO(batches,x.name,x.grams,`prep:${batchKey}:${date}|${slot}`);batches=r.batches;
+      if(r.shortageG>0)shortages.push({ingredient:x.name,grams:r.shortageG,date,slot});
+    }));
+    prepared[batchKey]={completedAt:new Date().toISOString(),start:iso(start),count,shortages};
+    return{...state,batches,prepared,alreadyDone:false,blocked:false,shortages};
+  }
   function completeMealOnce(state,date,slot,meal,opts={}){
     meal=assertOperationalMeal(meal,opts);const key=planMealKey(date,slot),done={...(state.done||{})};
     if(done[key])return{...state,done,alreadyDone:true};
@@ -105,5 +127,11 @@
     done[key]={completedAt:new Date().toISOString(),source:meal.source,sourceRef:meal.sourceRef,shortages};
     return{...state,batches,done,alreadyDone:false,shortages};
   }
-  return{iso,parse,addDays,ageMonths,ppeuniStageForAge,mondayOf,prepWindowsForWeek,cleanBatch,batchAvailableG,stockFor,consumeFIFO,remakeSuggestion,planMealKey,assertVerifiedMeal,assertOperationalMeal,mealsInRange,buildPrepList,completeMealOnce};
+  function markMealDoneOnce(done,date,slot,meal,opts={}){
+    meal=assertOperationalMeal(meal,opts);const key=planMealKey(date,slot),out={...(done||{})};
+    if(out[key])return{done:out,alreadyDone:true};
+    out[key]={completedAt:new Date().toISOString(),source:meal.source,sourceRef:meal.sourceRef};
+    return{done:out,alreadyDone:false};
+  }
+  return{iso,parse,addDays,ageMonths,ppeuniStageForAge,mondayOf,prepWindowsForWeek,nextSaturday,prepCycleFromSaturday,nextPrepCycle,cleanBatch,batchAvailableG,stockFor,consumeFIFO,remakeSuggestion,planMealKey,assertVerifiedMeal,assertOperationalMeal,mealsInRange,buildPrepList,completePrepWindowOnce,completeMealOnce,markMealDoneOnce};
 });
