@@ -10,7 +10,6 @@
   const basePush=pushInventoryItem;
 
   const readBackup=()=>{try{const v=JSON.parse(localStorage.getItem(BACKUP_KEY)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return{}}};
-  const isCustom=(k,v)=>!!(v?.custom===true||readBackup()[k]?.custom===true);
   const saveBackup=()=>{const out={};for(const [k,v] of Object.entries(inventory||{}))if(v?.custom===true)out[k]=v;localStorage.setItem(BACKUP_KEY,JSON.stringify(out))};
   const restoreBackup=()=>{const b=readBackup();for(const [k,v] of Object.entries(b)){if(!inventory[k]||(Number(v.updatedAt)||0)>=(Number(inventory[k]?.updatedAt)||0))inventory[k]=v}};
   const cleanCustomName=s=>String(s||'').trim().replace(/\s+/g,' ');
@@ -43,7 +42,7 @@
   }
   vShop=function(){return enhanceStock(baseView())};
 
-  function syncDirect(){const s=document.getElementById('mg32Key'),w=document.getElementById('mg34DirectWrap');if(w)w.style.display=s?.value===DIRECT?'':''==='x'?'':'none';if(w&&s?.value===DIRECT)w.style.display=''}
+  function syncDirect(){const s=document.getElementById('mg32Key'),w=document.getElementById('mg34DirectWrap');if(w)w.style.display=s?.value===DIRECT?'':'none'}
   document.addEventListener('change',e=>{if(e.target?.id==='mg32Key')syncDirect()},true);
 
   function addCustom(name){
@@ -68,8 +67,8 @@
     const s=document.getElementById('mg32Key'),key=s?.value||'';
     if(key!==DIRECT&&!inventory?.[key]?.custom)return;
     if(key===DIRECT){
-      const name=cleanCustomName(document.getElementById('mg34Name')?.value);const r=addCustom(name);
-      if(r?.builtin){return}
+      const name=cleanCustomName(document.getElementById('mg34Name')?.value),r=addCustom(name);
+      if(r?.builtin)return;
       e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();return;
     }
     e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addCustom(key);
