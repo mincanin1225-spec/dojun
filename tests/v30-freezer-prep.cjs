@@ -2,6 +2,7 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v30.js'),'utf8');
+new Function(patch);
 assert(index.includes('legacy-management-v30.js?v=20260915-v30'),'v30 patch must load after v29');
 assert(patch.includes('총량형 냉동재고'),'frozen total stock must be visible separately');
 assert(patch.includes('큐브형'),'cube stock must be visibly distinguished');
