@@ -4,8 +4,8 @@ const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-outing-v37.js'),'utf8');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
 new Function(patch);
-assert(index.includes('legacy-outing-v37.js?v=20260916-v37'),'v37 polish patch must load after outing v36');
-assert(index.includes('manifest.webmanifest?v=20260916-v37'),'install manifest must be linked');
+assert(/legacy-outing-v37\.js\?v=\d{8}-v[\w-]+/.test(index),'v37 polish patch must remain loaded after outing v36');
+assert(/manifest\.webmanifest\?v=\d{8}-v[\w-]+/.test(index),'install manifest must be linked with a fresh cache key');
 assert(manifest.name==='도준이육성게임'&&manifest.short_name==='도준이육성게임','installed app name must be Dojun Growth Game');
 assert(patch.includes("const NAVER_LIST_URL='https://naver.me/xfboSqg8'"),'saved Naver list shortcut must be wired');
 assert(patch.includes('네이버지도 연결'),'outing screen must expose Naver Maps bridge');
@@ -15,4 +15,4 @@ assert(patch.includes('overflow-wrap:anywhere'),'long place names must not break
 assert(patch.includes('.outing-actions{display:grid'),'action buttons must use a stable responsive grid');
 assert(patch.includes('@media(max-width:390px)'),'small-phone layout override must exist');
 assert(patch.includes('outing-coords'),'raw lat/lng fields must be tucked into an advanced details section');
-console.log('PASS: v37 polishes outing UI, Naver Maps bridge and install metadata without changing outing data storage');
+console.log('PASS: v37 polish remains compatible with newer outing sync shells');

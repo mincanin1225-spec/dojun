@@ -1,0 +1,15 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-outing-v38.js'),'utf8');
+new Function(patch);
+assert(index.includes('legacy-outing-v38.js?v=20260916-v38'),'v38 Naver live view must load last');
+assert(patch.includes("const NAVER_SHORT='https://naver.me/xfboSqg8'"),'original shared-list shortcut must remain available');
+assert(patch.includes('save-pages/web/detail-list/91225107a51946ed8cdb44cf9ce422ec?at=a'),'outing screen must use the live Naver shared-list view');
+assert(patch.includes('네이버 저장목록'),'Naver list section must always be visible');
+assert(patch.includes('복사본을 따로 만들지 않고 네이버 원본 목록을 그대로 불러와 보여줘요'),'UI must explain that it shows the live source rather than publishing a mirror');
+assert(patch.includes('목록 다시 불러오기'),'user must be able to reload the live list');
+assert(patch.includes('네이버에서 크게 보기'),'fallback open action must always be present');
+assert(patch.includes('id="naverLiveFrame"'),'Naver shared list must be embedded directly in the outing screen');
+assert(!patch.includes('data/naver-places.json'),'app must not depend on a public-repo mirror of the user place list');
+console.log('PASS: v38 always shows a live Naver saved-list panel without publishing user place data');
