@@ -1,0 +1,14 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-management-v30.js'),'utf8');
+new Function(patch);
+assert(index.includes('legacy-management-v30.js?v=20260915-v30'),'v30 patch must load after v29');
+assert(patch.includes('총량형 냉동재고'),'frozen total stock must be visible separately');
+assert(patch.includes('큐브형'),'cube stock must be visibly distinguished');
+assert(patch.includes('냉동 큐브 추가'),'users need a direct cube registration flow');
+assert(patch.includes('기존 냉동 큐브'),'prep must show existing frozen cubes');
+assert(patch.includes('새로 손질'),'prep must show fresh handling amount');
+assert(patch.includes('수량 고정'),'existing frozen quantities should be rendered as fixed calculations');
+assert(patch.includes('fixedUnit30'),'cube unit amount should have a default from current stage portions');
+console.log('PASS: v30 freezer inventory and prep split wired');
