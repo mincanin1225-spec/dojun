@@ -1,4 +1,4 @@
-name: v36 tests
+name: v37 tests
 
 on:
   pull_request:
@@ -34,3 +34,5 @@ jobs:
         run: node tests/v35-batch-deduct.cjs
       - name: v36 outing and map MVP
         run: node tests/v36-outing-map.cjs
+      - name: v37 outing UI and Naver Maps bridge
+        run: node tests/v37-outing-polish.cjs
