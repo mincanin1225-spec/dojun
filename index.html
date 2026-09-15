@@ -10,7 +10,7 @@
 <style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v24.html?v=20260915-v33" title="도준이 밥상"></iframe>
+<iframe id="app" src="./legacy-v24.html?v=20260915-v34" title="도준이 밥상"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app');
@@ -20,27 +20,33 @@
     if(d.getElementById('v29-management-script'))return;
     const s=d.createElement('script');
     s.id='v29-management-script';
-    s.src='./legacy-management-v29.js?v=20260915-v33';
+    s.src='./legacy-management-v29.js?v=20260915-v34';
     s.onload=function(){
       const p=d.createElement('script');
       p.id='v30-management-script';
-      p.src='./legacy-management-v30.js?v=20260915-v33';
+      p.src='./legacy-management-v30.js?v=20260915-v34';
       p.onload=function(){
         const q=d.createElement('script');
         q.id='v31-management-script';
-        q.src='./legacy-management-v31.js?v=20260915-v33';
+        q.src='./legacy-management-v31.js?v=20260915-v34';
         q.onload=function(){
           const r=d.createElement('script');
           r.id='v32-management-script';
-          r.src='./legacy-management-v32.js?v=20260915-v33';
+          r.src='./legacy-management-v32.js?v=20260915-v34';
           r.onload=function(){
             const t=d.createElement('script');
             t.id='v32-1-management-script';
-            t.src='./legacy-management-v32-1.js?v=20260915-v33';
+            t.src='./legacy-management-v32-1.js?v=20260915-v34';
             t.onload=function(){
               const u=d.createElement('script');
               u.id='v33-management-script';
-              u.src='./legacy-management-v33.js?v=20260915-v33';
+              u.src='./legacy-management-v33.js?v=20260915-v34';
+              u.onload=function(){
+                const v=d.createElement('script');
+                v.id='v34-management-script';
+                v.src='./legacy-management-v34.js?v=20260915-v34';
+                d.head.appendChild(v);
+              };
               d.head.appendChild(u);
             };
             d.head.appendChild(t);

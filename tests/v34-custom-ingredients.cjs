@@ -1,0 +1,18 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-management-v34.js'),'utf8');
+new Function(patch);
+assert(index.includes('legacy-management-v34.js?v=20260915-v34'),'v34 custom ingredient patch must load last');
+assert(patch.includes('＋ 목록에 없는 식품 직접 입력'),'ingredient selector must expose direct entry');
+assert(patch.includes('id="mg34Name"'),'direct ingredient name field must exist');
+assert(patch.includes("const BACKUP_KEY='dj:customInventory1'"),'custom inventory must have a durable local backup');
+assert(patch.includes('cleanInventory=function(raw)'),'custom ingredients must survive inventory cleaning and remote merge');
+assert(patch.includes('custom:true,customName:name'),'custom stock entries must be marked and named');
+assert(patch.includes("builtInKeyByName(name)"),'direct names matching built-in ingredients must reuse the built-in key');
+assert(patch.includes("if(unsafeName(name))"),'firebase-unsafe custom names must be rejected');
+assert(patch.includes("document.getElementById('mg32Loc')"),'custom entries must reuse fridge/freezer/room-temperature selection');
+assert(patch.includes("document.getElementById('mg32Mode')"),'custom entries must reuse total/count/portion modes');
+assert(patch.includes('pushInventoryItem(name)'),'custom inventory must participate in family inventory sync');
+assert(patch.includes("fetch(famURL('inventory2'))"),'custom stock must be reloaded from shared inventory when connected');
+console.log('PASS: v34 supports directly entered foods with stock, shopping matching and shared inventory persistence');
