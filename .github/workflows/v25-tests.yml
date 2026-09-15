@@ -1,4 +1,4 @@
-name: v29 tests
+name: v30 tests
 
 on:
   pull_request:
@@ -20,3 +20,5 @@ jobs:
         run: node tests/ops-v27.cjs
       - name: v29 management overview and workflow
         run: node tests/v29-management.cjs
+      - name: v30 freezer inventory and prep split
+        run: node tests/v30-freezer-prep.cjs
