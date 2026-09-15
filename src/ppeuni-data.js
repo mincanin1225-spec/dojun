@@ -3,8 +3,9 @@
   const DATA={
     child:{name:'도준',birth:'2025-12-05'},
     sourcePolicy:{
-      strict:true,
-      message:'식단은 확인된 『뿐이 토핑 이유식』 원문 행만 사용합니다. 확인되지 않은 메뉴는 자동 생성하지 않습니다.'
+      strict:false,
+      mode:'provisional_until_ppeuni_schedule',
+      message:'앱 개발을 먼저 진행하기 위해 임시 식단을 사용합니다. 『뿐이 토핑 이유식』 실제 스케줄표가 확보되면 같은 데이터 구조로 교체합니다.'
     },
     sources:{
       publisher:{title:'서사원 『뿐이 토핑 이유식』',url:'https://seosawonbooks.com/toppingbabyfood'},
@@ -24,17 +25,38 @@
         '1.5배 잡곡진밥','톳밥(전자레인지)','톳밥(밥솥)','돼지고기','셀러리','매생이달걀찜','쑥갓','오징어','오징어볼','강낭콩밥','콜라비','밥새우주먹밥','그린빈','그린빈스크램블드에그'
       ]}
     },
-    /*
-      날짜별 식단은 책/저자 공개 식단표에서 '그 날짜 행'을 실제로 확인한 뒤에만 넣습니다.
-      과거 ChatGPT가 생성한 30일 캘린더, 영양 추정식단, 임의 조합은 여기로 가져오지 않습니다.
-      meal schema:
-      {
-        source:'ppeuni_verified', sourceRef:'...', title:'...',
-        ingredients:[{name:'양파',grams:20}, ...]
-      }
-    */
+    planMode:'provisional',
     plan:{}
   };
+
+  const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const meal=(date,slot,protein,v1,v2,fruit)=>({
+    source:'provisional',
+    sourceRef:`temporary:dev-plan:${date}:${slot}`,
+    title:`진밥 + ${protein} + ${v1} + ${v2} + ${fruit}`,
+    ingredients:[
+      {name:'진밥',grams:80},{name:protein,grams:20},{name:v1,grams:15},{name:v2,grams:15},{name:fruit,grams:20}
+    ]
+  });
+  const cycle=[
+    [['소고기','단호박','시금치','사과'],['닭고기','양파','애호박','고구마'],['두부','당근','콜리플라워','복숭아']],
+    [['닭고기','단호박','양파','사과'],['소고기','애호박','당근','고구마'],['연어','청경채','양파','복숭아']],
+    [['두부','시금치','애호박','사과'],['닭고기','당근','양파','고구마'],['소고기','단호박','비타민채','복숭아']],
+    [['소고기','시금치','양파','사과'],['연어','청경채','애호박','고구마'],['닭고기','단호박','당근','복숭아']],
+    [['두부','콜리플라워','애호박','사과'],['소고기','당근','양파','고구마'],['닭고기','비타민채','단호박','복숭아']],
+    [['연어','청경채','양파','사과'],['닭고기','애호박','당근','고구마'],['소고기','시금치','단호박','복숭아']],
+    [['소고기','비타민채','양파','사과'],['두부','당근','애호박','고구마'],['닭고기','단호박','시금치','복숭아']]
+  ];
+  const start=new Date(2026,8,14);
+  for(let i=0;i<42;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);const date=iso(d),c=cycle[i%7];
+    DATA.plan[date]={
+      breakfast:meal(date,'breakfast',...c[0]),
+      lunch:meal(date,'lunch',...c[1]),
+      dinner:meal(date,'dinner',...c[2])
+    };
+  }
+
   if(typeof module==='object'&&module.exports)module.exports=DATA;
   else root.PpeuniData=DATA;
 })(typeof globalThis!=='undefined'?globalThis:this);
