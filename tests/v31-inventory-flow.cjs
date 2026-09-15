@@ -1,0 +1,15 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-management-v31.js'),'utf8');
+new Function(patch);
+assert(index.includes('legacy-management-v31.js?v=20260915-v31'),'v31 patch must be loaded');
+assert(patch.includes('재료별 총 보유량'),'inventory must headline total owned amount');
+assert(patch.includes('냉장 / 냉동 / 실온'),'storage must be simplified to location');
+assert(patch.includes('추가로 사야 할 양만'),'shopping must show only shortages');
+assert(patch.includes('1차에 쓴 재고는 2차에서 자동으로 빠집니다'),'first batch must allocate before second batch');
+assert(patch.includes('최종 식단 재료가 전부 준비됐는지'),'prep must surface final ingredient readiness');
+assert(patch.includes('준비완료'),'prep must show ready status');
+assert(patch.includes('기존 냉동'),'detailed prep must retain frozen-vs-new handling distinction');
+assert(patch.includes('새로 손질'),'detailed prep must retain handling amount');
+console.log('PASS: v31 focuses on total stock → buy shortage → final prep readiness');
