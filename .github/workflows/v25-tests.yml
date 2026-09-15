@@ -1,4 +1,4 @@
-name: v37 tests
+name: v38 tests
 
 on:
   pull_request:
@@ -36,3 +36,5 @@ jobs:
         run: node tests/v36-outing-map.cjs
       - name: v37 outing UI and Naver Maps bridge
         run: node tests/v37-outing-polish.cjs
+      - name: v38 Naver saved-list auto sync
+        run: node tests/v38-naver-sync.cjs
