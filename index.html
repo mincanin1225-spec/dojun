@@ -1,1 +1,77 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#FFF8F1"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="도준이 밥상"><title>도준이 밥상 v27</title><style>html,body{margin:0;height:100%;background:#fff8f1}iframe{border:0;width:100%;height:100dvh;display:block}</style></head><body><iframe id="app" title="도준이 밥상 v27"></iframe><script>(function(){var h=location.hash||'#schedule';document.getElementById('app').src='./ops-v27.html?v=27'+h;window.addEventListener('hashchange',function(){document.getElementById('app').src='./ops-v27.html?v=27'+(location.hash||'#schedule')})})();</script></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#FFF8F1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="도준이 밥상">
+<title>도준이 밥상 v28</title>
+<style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block}</style>
+</head>
+<body>
+<iframe id="app" src="./legacy-v24.html?v=20260915-v28" title="도준이 밥상"></iframe>
+<script>
+(function(){
+  const frame=document.getElementById('app');
+  const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
+  const batches=()=>{try{const v=JSON.parse(localStorage.getItem('dj:cubeInventory2')||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}};
+  const cubeTotals=()=>batches().reduce((a,b)=>{const n=String(b.ingredient||'').trim();if(n)a[n]=(a[n]||0)+(Number(b.remainingCount)||0)*(Number(b.unitG)||0);return a},{});
+  function boot(){
+    const w=frame.contentWindow,d=frame.contentDocument;
+    if(!w||!d||typeof w.vShop!=='function'||typeof w.render!=='function')return setTimeout(boot,80);
+    if(w.__v28ManagementInjected)return;
+    w.__v28ManagementInjected=true;
+    const originalShop=w.vShop.bind(w);
+    w.__manageStep='menu';
+    const style=d.createElement('style');
+    style.textContent='.manage-grid{display:grid;gap:10px}.manage-choice{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:18px;padding:15px;box-shadow:var(--sh)}.manage-choice b{display:block;font-size:15px;margin-bottom:3px}.manage-choice span{font-size:12px;color:var(--muted)}.manage-top{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}.manage-back{font-size:12px;font-weight:700;color:var(--peach)}.cube-row{display:grid;grid-template-columns:1fr 72px;gap:8px;align-items:center;padding:10px 0;border-top:1px solid var(--line2)}.cube-row:first-child{border-top:0}.cube-row input{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit}.only-row{padding:12px 0;border-top:1px solid var(--line2)}.only-row:first-child{border-top:0}.manage-badge{display:inline-block;border-radius:99px;background:var(--peach-s);color:#9A5A28;padding:3px 8px;font-size:11px;font-weight:800;margin-left:5px}';
+    d.head.appendChild(style);
+    function header(title){return `<div class="manage-top"><h2>${title}</h2><button class="manage-back" data-manage="menu">관리 선택으로</button></div>`}
+    function rename(){d.querySelectorAll('.tabbar button').forEach(b=>{if(b.textContent.includes('장보기'))b.innerHTML=b.innerHTML.replace('장보기','관리')})}
+    function parts(){
+      const full=originalShop(),mark='<div class="sec"><h2>우리집 재고</h2>',i=full.indexOf(mark);
+      return{shop:i>=0?full.slice(0,i):full,inventory:i>=0?full.slice(i):''};
+    }
+    function cubeStockHtml(){
+      const bs=batches();
+      return `<div class="sec"><h2>냉동 큐브 재고</h2></div><p class="hint">토요일에 실제 냉동실 개수와 맞춰 주세요.</p><div class="card">${bs.length?bs.map((b,i)=>`<div class="cube-row"><div><b>${esc(b.code||'코드 없음')} · ${esc(b.ingredient||'')}</b><div class="hint">1개 ${Number(b.unitG)||0}g · ${esc(b.madeDate||'제조일 미입력')}</div></div><input data-cube="${i}" type="number" min="0" step="1" value="${Number(b.remainingCount)||0}" aria-label="${esc(b.ingredient||'')} 남은 개수"></div>`).join(''):'<p class="hint">등록된 냉동 큐브가 없어요.</p>'}</div>${bs.length?'<div class="btnrow"><button class="btn pri" data-manage="save-cubes">냉동 큐브 재고 갱신</button></div>':''}`;
+    }
+    function shoppingHtml(){
+      try{
+        const b=w.shopBatch(),t=w.shoppingNeeds(b),c=cubeTotals();
+        const rows=Object.entries(t).map(([name,v])=>{const miss=v.unknown?null:Math.max(0,(Number(v.missing)||0)-(c[name]||0));return{name,v,miss}}).filter(x=>x.v.unknown||x.miss>0);
+        return `${header('2단계 · 장보기')}<p class="hint">집 재고와 만들어둔 냉동 큐브를 뺀 뒤, 실제로 사야 하는 부족분만 보여줘요.</p><div class="card">${rows.length?rows.map(x=>`<div class="only-row"><b>${esc(x.name)}</b>${x.v.unknown?'<span class="manage-badge">수량 확인</span>':`<span class="manage-badge">${Math.ceil(x.miss)}g 부족</span>`}<div class="hint">${esc(x.v.note||'')}</div></div>`).join(''):'<p class="hint">현재 기준으로 추가 장볼 재료가 없어요.</p>'}</div>`;
+      }catch(e){return header('2단계 · 장보기')+parts().shop}
+    }
+    function makeHtml(){
+      try{
+        const b=w.shopBatch(),t=w.shoppingNeeds(b),c=cubeTotals();
+        const rows=Object.entries(t).map(([name,v])=>{const need=Number(v.g)||0,make=v.unknown?null:Math.max(0,need-(c[name]||0));return{name,v,make}}).filter(x=>x.v.unknown||x.make>0);
+        return `${header('3단계 · 식단만들기')}<p class="hint">이번 준비구간 식단에 필요한 양에서 냉동 큐브 재고를 빼서, 새로 만들어야 할 것만 보여줘요.</p><div class="card">${rows.length?rows.map(x=>`<div class="only-row"><b>${esc(x.name)}</b>${x.v.unknown?'<span class="manage-badge">수량 확인</span>':`<span class="manage-badge">${Math.ceil(x.make)}g 만들기</span>`}</div>`).join(''):'<p class="hint">현재 냉동 큐브로 이번 준비분이 충족돼요.</p>'}</div><p class="hint">제조 후에는 1단계 재고관리에서 실제 완성 개수를 갱신하면 다음 계산에 바로 반영돼요.</p>`;
+      }catch(e){return `${header('3단계 · 식단만들기')}<div class="card"><p class="hint">식단 계산을 불러오지 못했어요. 잠시 후 다시 열어 주세요.</p></div>`}
+    }
+    w.vShop=function(){
+      if(w.__manageStep==='stock')return header('1단계 · 재고관리')+parts().inventory+cubeStockHtml();
+      if(w.__manageStep==='shop')return shoppingHtml();
+      if(w.__manageStep==='make')return makeHtml();
+      return `<div class="sec"><h2>관리</h2></div><p class="hint">메인 식단 화면은 그대로 두고, 필요한 관리 업무만 여기서 골라서 진행해요.</p><div class="manage-grid"><button class="manage-choice" data-manage="stock"><b>1단계 · 재고관리</b><span>집 재료와 냉동 큐브의 실제 재고를 확인하고 갱신</span></button><button class="manage-choice" data-manage="shop"><b>2단계 · 장보기</b><span>재고를 뺀 뒤 부족해서 사야 하는 것만 확인</span></button><button class="manage-choice" data-manage="make"><b>3단계 · 식단만들기</b><span>냉동 재고를 뺀 뒤 이번에 새로 만들 것만 확인</span></button></div>`;
+    };
+    d.addEventListener('click',function(e){
+      const nav=e.target.closest('.tabbar button');
+      if(nav&&(/장보기|관리/).test(nav.textContent))w.__manageStep='menu';
+      const m=e.target.closest('[data-manage]');if(!m)return;
+      e.preventDefault();e.stopImmediatePropagation();
+      const step=m.dataset.manage;
+      if(step==='save-cubes'){
+        const bs=batches();d.querySelectorAll('[data-cube]').forEach(inp=>{const i=Number(inp.dataset.cube);if(bs[i]){bs[i].remainingCount=Math.max(0,Number(inp.value)||0);bs[i].updatedAt=Date.now()}});localStorage.setItem('dj:cubeInventory2',JSON.stringify(bs));w.__manageStep='stock';w.render();rename();return;
+      }
+      w.__manageStep=step;w.render();rename();
+    },true);
+    const mo=new MutationObserver(rename);mo.observe(d.body,{childList:true,subtree:true});rename();
+  }
+  frame.addEventListener('load',boot);boot();
+})();
+</script>
+</body>
+</html>
