@@ -1,0 +1,13 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const app=fs.readFileSync(path.join(root,'ops-v27.html'),'utf8');
+const legacy=fs.readFileSync(path.join(root,'legacy-v24.html'),'utf8');
+assert(index.includes('ops-v27.html?v=27'),'default entry must load v27 operations app');
+assert(app.includes('1단계<br>재고관리'),'v27 needs inventory stage');
+assert(app.includes('2단계<br>장보기'),'v27 needs shopping stage');
+assert(app.includes('3단계<br>식단만들기'),'v27 needs prep stage');
+assert(app.includes('4단계<br>전체스케줄'),'v27 needs schedule stage');
+assert(app.includes('메인 화면입니다. 여기서는 재료·재고는 빼고 도준이의 하루 3끼 식단만 봅니다.'),'schedule must be meal-only');
+assert(legacy.includes('도준이 밥상'),'legacy app must remain preserved');
+console.log('PASS: v27 four-stage entry and preserved legacy app');
