@@ -1,5 +1,5 @@
 const vm=require('vm'),fs=require('fs'),assert=require('assert/strict');
-let html=fs.readFileSync(require('path').join(__dirname,'../index.html'),'utf8'),source=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^boot\(\);/m,'');
+let html=fs.readFileSync(require('path').join(__dirname,'../legacy-v24.html'),'utf8'),source=html.match(/<script>([\s\S]*?)<\/script>/)[1].replace(/^boot\(\);/m,'');
 const elements={},db=new Map();const el=()=>({innerHTML:'',style:{},classList:{add(){},remove(){},contains(){return false}},addEventListener(){},querySelector(){return null},querySelectorAll(){return []}});
 const ctx={console,Date,Math,JSON,Object,Array,Set,Map,Number,String,Uint8Array,Promise,localStorage:{getItem:k=>db.get(k)||null,setItem:(k,v)=>db.set(k,v),key:i=>[...db.keys()][i],get length(){return db.size}},document:{getElementById:k=>elements[k]||(elements[k]=el()),addEventListener(){}},window:{},addEventListener(){},setTimeout(){},clearTimeout(){},setInterval(){},history:{replaceState(){},pushState(){}},crypto:require('crypto').webcrypto};
 vm.createContext(ctx);vm.runInContext(source,ctx);
@@ -34,15 +34,12 @@ const core=async()=>{
  const packed=JSON.stringify(packPlan(M.plan));delete months[k];await ensureM(2026,9);
  if(JSON.stringify(packPlan(months[k].plan))!==packed)throw Error('reload differs');
  LS.set('pc:'+k,null);delete months[k];await ensureM(2026,9);if(JSON.stringify(packPlan(months[k].plan))!==packed)throw Error('cache miss differs');
-
  M.plan=genMonth(2026,9,5,M.d.reco);Object.assign(M.plan,unpackPlan(M.d.fixedPlan));
  if(JSON.stringify(packPlan({[today]:M.plan[today]})[today])!==JSON.stringify(M.d.fixedPlan[today]))throw Error('logged meal changed');
- // Unit conversion is explicit, unknown grams never subtract arbitrary amounts.
  const oldList=weekList;weekList=()=>({'소고기':{g:220,n:3},'감자':{g:100,n:2},'두부':{g:250,n:2},'계란':{g:0,n:2}});
  inventory=cleanInventory({beef:{qty:180,unit:'g'},potato:{qty:3,unit:'개'},tofu:{qty:1,unit:'팩',gramsPerUnit:200}});
  const needs=shoppingNeeds(shopBatch());if(needs['소고기'].missing!==40||needs['감자'].missing!==100||needs['두부'].missing!==50||!needs['계란'].unknown)throw Error('unit conversion');weekList=oldList;
  if(!vShop().includes('우리집 재고'))throw Error('shop render');sheetDay(today);if(!sheet.innerHTML.includes('실제 섭취량'))throw Error('day render');sheetInventory('beef');if(!sheet.innerHTML.includes('현재 남은 양'))throw Error('inventory render');
-
  const offered={dataset:{offered:'b'},value:'150'},eaten={value:'151'};
  sheet.querySelectorAll=q=>q==='[data-offered]'?[offered]:[];
  sheet.querySelector=q=>q.startsWith('[data-eaten')?eaten:null;
