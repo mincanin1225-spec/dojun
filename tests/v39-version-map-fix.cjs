@@ -1,0 +1,15 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-fixes-v39.js'),'utf8');
+new Function(patch);
+assert(index.includes("legacy-fixes-v39.js?v=20260916-v39"),'v39 patch must load last with fresh cache key');
+assert(index.includes("legacy-outing-v38.js?v=20260916-v39"),'v38 outing behavior must be preserved before v39 fix');
+assert(patch.includes("const DISPLAY_VER='v39'"),'displayed app version must be v39');
+assert(patch.includes('/버전\\s*v24\\b/'),'legacy v24 display must be replaced');
+assert(patch.includes("data-a=\"checkver\""),'version check action must be intercepted');
+assert(patch.includes("window.top.location.href=url"),'external map opening must have same-window top fallback');
+assert(patch.includes("네이버 저장목록은 기기에 따라 앱 안에서 표시가 차단될 수 있어요"),'blocked Naver iframe must show an honest fallback');
+assert(patch.includes("data-v39-map-retry"),'internal map must expose a retry action');
+assert(patch.includes("data-v39-url=\"https://map.naver.com/\""),'map section must always expose a reliable Naver Maps opener');
+console.log('PASS: v39 fixes misleading v24 display and adds robust map opening fallbacks');

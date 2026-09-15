@@ -1,4 +1,4 @@
-name: v38 tests
+name: v39 tests
 
 on:
   pull_request:
@@ -38,3 +38,5 @@ jobs:
         run: node tests/v37-outing-polish.cjs
       - name: v38 Naver saved-list auto sync
         run: node tests/v38-naver-sync.cjs
+      - name: v39 displayed version and map opening fallback
+        run: node tests/v39-version-map-fix.cjs
