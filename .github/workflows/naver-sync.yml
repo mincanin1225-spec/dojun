@@ -1,0 +1,46 @@
+name: Naver saved-list sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
+  push:
+    branches: ['v38-naver-sync-ui']
+    paths:
+      - 'scripts/sync-naver.mjs'
+      - '.github/workflows/naver-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Sync public Naver list
+        id: sync
+        continue-on-error: true
+        env:
+          NAVER_SHARE_URL: https://naver.me/xfboSqg8
+        run: node scripts/sync-naver.mjs
+      - name: Commit refreshed list
+        run: |
+          if git diff --quiet -- data/naver-places.json; then
+            echo 'No sync data change'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/naver-places.json
+          git commit -m 'chore: refresh Naver saved list'
+          git push
+      - name: Report sync result
+        if: steps.sync.outcome == 'failure'
+        run: |
+          echo 'Naver sync did not complete; previous places are preserved in data/naver-places.json.'
