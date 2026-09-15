@@ -1,10 +1,10 @@
 {
   "status": "error",
   "sourceUrl": "https://naver.me/xfboSqg8",
-  "shareId": null,
-  "syncedAt": "2026-09-15T22:39:17.032Z",
+  "shareId": "91225107a51946ed8cdb44cf9ce422ec",
+  "syncedAt": "2026-09-15T22:41:03.079Z",
   "count": 0,
   "places": [],
-  "message": "공유 ID를 찾지 못했습니다. 최종 URL: https://map.naver.com/p/favorite/sharedPlace/folder/91225107a51946ed8cdb44cf9ce422ec",
+  "message": "Naver bookmark API HTTP 500",
   "landingUrl": "https://map.naver.com/p/favorite/sharedPlace/folder/91225107a51946ed8cdb44cf9ce422ec"
 }
