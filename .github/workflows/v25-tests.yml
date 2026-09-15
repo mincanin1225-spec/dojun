@@ -1,4 +1,4 @@
-name: v28 tests
+name: v29 tests
 
 on:
   pull_request:
@@ -18,5 +18,5 @@ jobs:
         run: node tests/ppeuni-core.cjs
       - name: management stock-shopping-prep logic
         run: node tests/ops-v27.cjs
-      - name: original app plus management extension wiring
-        run: node tests/v27-entry.cjs
+      - name: v29 management overview and workflow
+        run: node tests/v29-management.cjs

@@ -1,0 +1,18 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const legacy=fs.readFileSync(path.join(root,'legacy-v24.html'),'utf8');
+const management=fs.readFileSync(path.join(root,'legacy-management-v29.js'),'utf8');
+new Function(management);
+assert(index.includes('./legacy-v24.html?v=20260915-v29'),'original app must remain the default UI');
+assert(index.includes('legacy-management-v29.js?v=20260915-v29'),'v29 management extension must be injected');
+assert(legacy.includes("const TABS=[['cal','식단','cal'],['shop','장보기','shop']"),'original app source must remain preserved');
+assert(management.includes("window.__mgStage='home'"),'management must open on weekly overview');
+assert(management.includes("title:'1차 식단표'"),'overview must include first meal-plan block');
+assert(management.includes("title:'2차 식단표'"),'overview must include second meal-plan block');
+assert(management.includes('식재료 추가'),'stock view must allow adding ingredients beyond rice');
+assert(management.includes('실재고를 갱신했어요 · 장보기 목록도 다시 계산됩니다'),'stock refresh must recalculate shopping');
+assert(management.includes('data-mgcheck'),'shopping rows must be checkable');
+assert(management.includes('data-mgprep'),'prep stage must offer first/second detailed prep selection');
+assert(management.includes('sheetBatch(w.start,w.count)'),'prep selection must open the existing detailed cooking sheet directly');
+console.log('PASS: v29 keeps original app and adds overview → stock → shopping → detailed prep flow');
