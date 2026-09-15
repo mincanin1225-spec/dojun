@@ -1,10 +1,8 @@
-name: v30 tests
+name: v31 tests
 
 on:
   pull_request:
     branches: ["main"]
-  push:
-    branches: ["v30-freezer-prep"]
 
 jobs:
   node-tests:
@@ -24,3 +22,5 @@ jobs:
         run: node tests/v29-management.cjs
       - name: v30 freezer inventory and prep split
         run: node tests/v30-freezer-prep.cjs
+      - name: v31 total stock shopping readiness flow
+        run: node tests/v31-inventory-flow.cjs
