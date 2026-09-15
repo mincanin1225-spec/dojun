@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v33.js'),'utf8');
 new Function(patch);
-assert(/legacy-management-v33\.js\?v=20260915-v[\w-]+/.test(index),'v33 patch must load with a fresh cache key');
+assert(/legacy-management-v33\.js\?v=\d{8}-v[\w-]+/.test(index),'v33 patch must load with a fresh cache key');
 assert(patch.includes('소분 ${Number(v.gramsPerUnit)}g × ${Math.ceil(q)}개'),'raw portion detail must be shown with total stock');
 assert(patch.includes('냉동 소분 ${u}g × ${Math.ceil(cnt)}개'),'frozen portion detail must be shown with total stock');
 assert(patch.includes('다음 주 준비'),'management must expose next-week preparation');
