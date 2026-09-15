@@ -1,4 +1,4 @@
-name: v34 tests
+name: v35 tests
 
 on:
   pull_request:
@@ -30,3 +30,5 @@ jobs:
         run: node tests/v33-management.cjs
       - name: v34 custom ingredient inventory flow
         run: node tests/v34-custom-ingredients.cjs
+      - name: v35 batch deduction and next shopping recalculation
+        run: node tests/v35-batch-deduct.cjs
