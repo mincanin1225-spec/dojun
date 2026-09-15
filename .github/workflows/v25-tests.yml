@@ -1,4 +1,4 @@
-name: v32 tests
+name: v33 tests
 
 on:
   pull_request:
@@ -26,3 +26,5 @@ jobs:
         run: node tests/v31-inventory-flow.cjs
       - name: v32 unified stock entry flow
         run: node tests/v32-stock-entry.cjs
+      - name: v33 next-week shopping and prep UX
+        run: node tests/v33-management.cjs
