@@ -8,6 +8,7 @@ const UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/14
 function shareIdFrom(text=''){
   const decoded=String(text).replace(/\\u002F/g,'/').replace(/&amp;/g,'&');
   const patterns=[
+    /\/favorite\/sharedPlace\/folder\/([A-Za-z0-9_-]{4,})/i,
     /[?&](?:shareId|shareID)=([^&#"']+)/i,
     /\/(?:shares|share)\/([A-Za-z0-9_-]{4,})/i,
     /["'](?:shareId|shareID)["']\s*[:=]\s*["']([^"']+)["']/i,
