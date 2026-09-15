@@ -18,8 +18,11 @@ function shareIdFrom(text=''){
   return null;
 }
 
+async function get(url,opts={}){
+  return fetch(url,{...opts,signal:AbortSignal.timeout(20000)});
+}
 async function fetchText(url){
-  const r=await fetch(url,{redirect:'follow',headers:{'user-agent':UA,'accept-language':'ko-KR,ko;q=0.9,en;q=0.8'}});
+  const r=await get(url,{redirect:'follow',headers:{'user-agent':UA,'accept-language':'ko-KR,ko;q=0.9,en;q=0.8'}});
   if(!r.ok)throw new Error(`HTTP ${r.status} ${url}`);
   return {url:r.url,text:await r.text(),headers:r.headers};
 }
@@ -34,7 +37,7 @@ async function main(){
     shareId=shareIdFrom(landingUrl)||shareIdFrom(landingText);
     if(!shareId)throw new Error(`공유 ID를 찾지 못했습니다. 최종 URL: ${landingUrl}`);
     const api=`https://pages.map.naver.com/save-pages/api/maps-bookmark/v3/shares/${encodeURIComponent(shareId)}/bookmarks?start=0&limit=5000&sort=lastUseTime`;
-    const r=await fetch(api,{headers:{'user-agent':UA,'accept':'application/json, text/plain, */*','referer':landingUrl||SOURCE_URL}});
+    const r=await get(api,{headers:{'user-agent':UA,'accept':'application/json, text/plain, */*','referer':landingUrl||SOURCE_URL}});
     if(!r.ok)throw new Error(`Naver bookmark API HTTP ${r.status}`);
     const data=await r.json();
     const list=Array.isArray(data?.bookmarkList)?data.bookmarkList:Array.isArray(data?.bookmarks)?data.bookmarks:[];
