@@ -1,0 +1,15 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-management-v32.js'),'utf8');
+new Function(patch);
+assert(index.includes('legacy-management-v32.js?v=20260915-v32'),'v32 patch must be loaded');
+assert(patch.includes('소분 냉동을 따로 등록하지 않아요'),'stock entry must explain unified flow');
+assert(patch.includes('id="mg32Loc"'),'stock entry must choose storage location');
+assert(patch.includes('id="mg32Mode"'),'stock entry must choose total/count/portion mode');
+assert(patch.includes('소분(g × 개수)'),'portion entry must be available in the same form');
+assert(!patch.includes('<h2>소분 냉동 추가</h2>'),'separate portion-freezer section must be removed from v32 stock view');
+assert(patch.includes('data-mg32="save"'),'stock rows must save both raw and portion quantities together');
+assert(patch.includes('data-mg32="add"'),'unified stock form must have one add action');
+assert(patch.includes('stockCode'),'unified entry must preserve auto stock numbers');
+console.log('PASS: v32 uses one stock entry form for storage + optional portions');
