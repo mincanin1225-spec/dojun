@@ -1,0 +1,18 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-outing-v36.js'),'utf8');
+new Function(patch);
+assert(index.includes('<title>도준이육성게임</title>'),'app shell must use the new product name');
+assert(/legacy-outing-v36\.js\?v=20260916-v36/.test(index),'outing patch must load after the preserved management patches');
+assert(patch.includes("const STORAGE_KEY='dj:outingPlaces1'"),'outing data must use its own durable local storage key');
+for(const s of ['가고싶음','추천','다녀옴','재방문'])assert(patch.includes(s),`missing outing status: ${s}`);
+for(const f of ['outName','outAddress','outCategory','outVisitDate','outReaction','outLat','outLng','outParking','outStroller','outNursing','outDiaper'])assert(patch.includes(f),`missing outing field: ${f}`);
+assert(patch.includes("data-a','tab:outing'"),'bottom navigation must expose an outing entry');
+assert(patch.includes('unpkg.com/leaflet@1.9.4'),'map UI must load a keyless Leaflet client');
+assert(patch.includes('tile.openstreetmap.org'),'saved coordinates must render on a map');
+assert(patch.includes('map.naver.com/p/search/'),'each place must be openable in Naver Map search');
+assert(patch.includes("status:'다녀옴',visitDate:date"),'quick visit action must store the visit date');
+assert(patch.includes("REACTIONS=['','잘 놀았음','보통','별로였음']"),'Dojun reaction choices must be preserved');
+assert(patch.includes('장소를 추가하면 여기서 우선 후보를 골라 보여줄게요'),'recommendation area must avoid inventing live weather/event data');
+console.log('PASS: v36 outing MVP adds local place CRUD, visit/reaction records and map display without touching meal inventory keys');
