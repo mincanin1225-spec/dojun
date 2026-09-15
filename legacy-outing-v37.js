@@ -95,9 +95,8 @@
     document.head.appendChild(s);
   }
 
-  function openSafe(url){
-    try{window.open(url,'_blank','noopener')}catch(e){location.href=url}
-  }
+  function setText(el,text){if(el&&el.textContent!==text)el.textContent=text}
+  function openSafe(url){try{window.open(url,'_blank','noopener')}catch(e){location.href=url}}
 
   function naverSearchUrl(){
     const n=document.getElementById('outName')?.value?.trim()||'';
@@ -116,21 +115,21 @@
     const note=map.nextElementSibling;
     if(note&&note.classList?.contains('hint')){
       note.classList.add('outing-v37-map-note');
-      note.textContent='앱 안 지도에서는 저장 위치를 한눈에 보고, 네이버지도 버튼으로 실제 장소 검색·길찾기를 이어서 사용할 수 있어요.';
+      setText(note,'앱 안 지도에서는 저장 위치를 한눈에 보고, 네이버지도 버튼으로 실제 장소 검색·길찾기를 이어서 사용할 수 있어요.');
     }
   }
 
   function polishCards(){
     document.querySelectorAll('.outing-card').forEach(card=>{
-      const nav=card.querySelector('[data-outing^="naver:"]');if(nav)nav.textContent='네이버지도';
-      const visit=card.querySelector('[data-outing^="visit:"]');if(visit)visit.textContent='방문 기록';
-      const edit=card.querySelector('[data-outing^="edit:"]');if(edit)edit.textContent='상세 보기';
+      setText(card.querySelector('[data-outing^="naver:"]'),'네이버지도');
+      setText(card.querySelector('[data-outing^="visit:"]'),'방문 기록');
+      setText(card.querySelector('[data-outing^="edit:"]'),'상세 보기');
     });
   }
 
   function polishHero(){
-    const add=document.querySelector('.outing-title [data-outing="add"]');if(add)add.textContent='＋ 장소 추가';
-    const title=document.querySelector('.outing-title h2');if(title)title.textContent='오늘 도준이랑 어디 갈까?';
+    setText(document.querySelector('.outing-title [data-outing="add"]'),'＋ 장소 추가');
+    setText(document.querySelector('.outing-title h2'),'오늘 도준이랑 어디 갈까?');
   }
 
   function polishEditor(){
@@ -151,8 +150,8 @@
         grid.parentNode.insertBefore(details,grid);details.appendChild(summary);details.appendChild(grid);
       }
     }
-    const picker=modal.querySelector('[data-outing="picker"]');if(picker)picker.textContent='앱 지도에서 위치 지정';
-    const naverForm=modal.querySelector('[data-outing="naver-form"]');if(naverForm)naverForm.textContent='네이버지도에서 보기';
+    setText(modal.querySelector('[data-outing="picker"]'),'앱 지도에서 위치 지정');
+    setText(modal.querySelector('[data-outing="naver-form"]'),'네이버지도에서 보기');
   }
 
   function polishOuting(){
@@ -164,9 +163,7 @@
   render=function(keep){
     const r=baseRender(keep);
     if(typeof tab!=='undefined'&&tab==='outing'){
-      polishOuting();
-      setTimeout(polishOuting,0);
-      setTimeout(polishOuting,120);
+      polishOuting();setTimeout(polishOuting,0);setTimeout(polishOuting,120);
     }
     return r;
   };
@@ -179,8 +176,10 @@
     if(cmd==='naver-search')return openSafe(naverSearchUrl());
   },true);
 
+  let scheduled=false;
   const obs=new MutationObserver(()=>{
-    if(typeof tab!=='undefined'&&tab==='outing')polishOuting();
+    if(scheduled||typeof tab==='undefined'||tab!=='outing')return;
+    scheduled=true;requestAnimationFrame(()=>{scheduled=false;polishOuting()});
   });
   obs.observe(document.body,{childList:true,subtree:true});
 
