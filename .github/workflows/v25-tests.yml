@@ -1,4 +1,4 @@
-name: v26 tests
+name: v27 tests
 
 on:
   pull_request:
@@ -16,5 +16,7 @@ jobs:
         run: node tests/core.cjs
       - name: v25 prep and cube inventory tests
         run: node tests/ppeuni-core.cjs
-      - name: v26 default entry wiring
-        run: node tests/v26-entry.cjs
+      - name: v27 stock-shopping-prep logic
+        run: node tests/ops-v27.cjs
+      - name: v27 default entry wiring
+        run: node tests/v27-entry.cjs
