@@ -59,4 +59,79 @@
 
   if(typeof module==='object'&&module.exports)module.exports=DATA;
   else root.PpeuniData=DATA;
+
+  // v25 재고표 보조 기능: 집에서 실제 개수를 한 번에 확인한 뒤
+  // '재고 갱신' 한 번으로 저장하고 식단 만들기 목록을 즉시 다시 계산한다.
+  if(typeof document!=='undefined'&&typeof localStorage!=='undefined'){
+    document.addEventListener('DOMContentLoaded',()=>{
+      const stockView=document.querySelector('#view-stock');
+      if(!stockView)return;
+      const toolbar=stockView.querySelector('.toolbar');
+      if(!toolbar||document.querySelector('#refreshAllStock'))return;
+
+      const guide=document.createElement('div');
+      guide.className='hint';
+      guide.style.margin='8px 0 4px';
+      guide.textContent='집에서 냉동실 실제 개수를 확인해 각 행의 남은 수를 고친 뒤, 아래 재고 갱신을 한 번만 누르면 됩니다.';
+      toolbar.parentNode.insertBefore(guide,toolbar);
+
+      const refreshBtn=document.createElement('button');
+      refreshBtn.className='btn pri';
+      refreshBtn.id='refreshAllStock';
+      refreshBtn.textContent='재고 갱신';
+      toolbar.insertBefore(refreshBtn,toolbar.firstChild);
+
+      const refreshedAt=localStorage.getItem('dj:cubeInventoryRefreshedAt');
+      if(refreshedAt){
+        const stamp=document.createElement('span');
+        stamp.className='hint';
+        stamp.style.alignSelf='center';
+        const d=new Date(refreshedAt);
+        stamp.textContent=Number.isNaN(d.getTime())?'':`마지막 갱신 ${d.toLocaleString('ko-KR')}`;
+        toolbar.appendChild(stamp);
+      }
+
+      refreshBtn.onclick=()=>{
+        let saved=[];
+        try{saved=JSON.parse(localStorage.getItem('dj:cubeInventory2')||'[]')}catch(e){saved=[]}
+        const sorted=saved.slice().sort((a,b)=>String(a.code||'').localeCompare(String(b.code||''),'ko')||String(a.madeDate||'').localeCompare(String(b.madeDate||'')));
+        const inputs=[...document.querySelectorAll('[data-qty]')];
+        if(inputs.length!==sorted.length){
+          alert('재고표가 바뀌었습니다. 화면을 새로고침한 뒤 다시 확인해 주세요.');
+          return;
+        }
+        for(let i=0;i<inputs.length;i++){
+          const v=Number(inputs[i].value);
+          if(!Number.isFinite(v)||v<0){
+            alert('남은 개수는 0 이상의 숫자로 입력해 주세요.');
+            inputs[i].focus();
+            return;
+          }
+          const b=sorted[i];
+          if(v>Number(b.initialCount||0))b.initialCount=v;
+          b.remainingCount=v;
+          b.updatedAt=Date.now();
+          b.history=Array.isArray(b.history)?b.history:[];
+          b.history.push({type:'actual_inventory_refresh',at:new Date().toISOString(),remainingCount:v});
+        }
+        localStorage.setItem('dj:cubeInventory2',JSON.stringify(sorted));
+        localStorage.setItem('dj:cubeInventoryRefreshedAt',new Date().toISOString());
+        sessionStorage.setItem('dj:v25InventoryRefreshDone','1');
+        location.hash='prep';
+        location.reload();
+      };
+
+      if(sessionStorage.getItem('dj:v25InventoryRefreshDone')==='1'){
+        sessionStorage.removeItem('dj:v25InventoryRefreshDone');
+        const prep=document.querySelector('#view-prep');
+        if(prep){
+          const done=document.createElement('div');
+          done.className='card';
+          done.style.background='#eaf7f0';
+          done.innerHTML='<b style="color:#39785f">재고 갱신 완료</b><div class="hint" style="margin-top:5px">방금 확인한 냉동실 수량 기준으로 1차·2차 준비목록을 다시 계산했습니다.</div>';
+          prep.insertBefore(done,prep.firstChild);
+        }
+      }
+    });
+  }
 })(typeof globalThis!=='undefined'?globalThis:this);
