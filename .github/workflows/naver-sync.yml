@@ -29,6 +29,31 @@ jobs:
         env:
           NAVER_SHARE_URL: https://naver.me/xfboSqg8
         run: node scripts/sync-naver.mjs
+      - name: Probe Naver shared-list implementation
+        if: steps.sync.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          node <<'JS'
+          const u='https://naver.me/xfboSqg8';
+          const r=await fetch(u,{redirect:'follow',headers:{'user-agent':'Mozilla/5.0'}});
+          const html=await r.text();
+          console.log('landing',r.status,r.url,'html',html.length);
+          const srcs=[...html.matchAll(/<script[^>]+src=["']([^"']+)["']/g)].map(m=>new URL(m[1],r.url).href);
+          console.log('scripts',srcs.length);
+          const terms=['maps-bookmark','sharedPlace','save-pages/api','favorite/sharedPlace'];
+          for(const src of srcs.slice(-30)){
+            try{
+              const rr=await fetch(src,{headers:{'user-agent':'Mozilla/5.0'}});if(!rr.ok)continue;
+              const js=await rr.text();
+              for(const term of terms){
+                const i=js.indexOf(term);if(i>=0){
+                  const sn=js.slice(Math.max(0,i-180),Math.min(js.length,i+360)).replace(/\s+/g,' ');
+                  console.log('HIT',term,src,sn);
+                }
+              }
+            }catch{}
+          }
+          JS
       - name: Commit refreshed list
         run: |
           if git diff --quiet -- data/naver-places.json; then
