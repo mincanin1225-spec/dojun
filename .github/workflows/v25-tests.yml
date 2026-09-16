@@ -1,4 +1,4 @@
-name: v42 tests
+name: v43 tests
 
 on:
   pull_request:
@@ -46,3 +46,5 @@ jobs:
         run: node tests/v41-no-embedded-map.cjs
       - name: v42 prioritize unvisited outing places
         run: node tests/v42-outing-priority.cjs
+      - name: v43 health checkup and vaccination manager
+        run: node tests/v43-health-management.cjs
