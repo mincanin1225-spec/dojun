@@ -1,4 +1,4 @@
-name: v41 tests
+name: v42 tests
 
 on:
   pull_request:
@@ -44,3 +44,5 @@ jobs:
         run: node tests/v40-naver-places.cjs
       - name: v41 remove embedded Leaflet maps
         run: node tests/v41-no-embedded-map.cjs
+      - name: v42 prioritize unvisited outing places
+        run: node tests/v42-outing-priority.cjs
