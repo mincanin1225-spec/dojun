@@ -82,6 +82,18 @@
                                 const ad=d.createElement('script');
                                 ad.id='v42-outing-priority-script';
                                 ad.src='./legacy-outing-v42-priority.js?v=20260916-v42';
+                                ad.onload=function(){
+                                  const ae=d.createElement('script');
+                                  ae.id='v43-health-data-script';
+                                  ae.src='./health-schedule-v43.js?v=20260916-v43';
+                                  ae.onload=function(){
+                                    const af=d.createElement('script');
+                                    af.id='v43-health-manager-script';
+                                    af.src='./legacy-health-v43.js?v=20260916-v43';
+                                    d.head.appendChild(af);
+                                  };
+                                  d.head.appendChild(ae);
+                                };
                                 d.head.appendChild(ad);
                               };
                               d.head.appendChild(ac);
