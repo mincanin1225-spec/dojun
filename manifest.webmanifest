@@ -1,11 +1,11 @@
 {
-  "name": "도준이육성게임",
-  "short_name": "도준이육성게임",
+  "name": "도준이키우기",
+  "short_name": "도준이키우기",
   "lang": "ko-KR",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#FFF8F1",
   "theme_color": "#FFF8F1",
-  "description": "도준이 식단·재고·외출·기록을 한 곳에서 관리하는 가족 앱"
+  "description": "도준이 식단·재고·외출·건강·기록을 한 곳에서 관리하는 가족 앱"
 }
