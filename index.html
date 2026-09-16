@@ -98,6 +98,12 @@
                                         const ah=d.createElement('script');
                                         ah.id='v44-health-entry-fix-script';
                                         ah.src='./legacy-health-v44-entry-fix.js?v=20260916-v44';
+                                        ah.onload=function(){
+                                          const ai=d.createElement('script');
+                                          ai.id='v46-health-import-script';
+                                          ai.src='./legacy-health-v46-import.js?v=20260916-v46';
+                                          d.head.appendChild(ai);
+                                        };
                                         d.head.appendChild(ah);
                                       };
                                       d.head.appendChild(ag);

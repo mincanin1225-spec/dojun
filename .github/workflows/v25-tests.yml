@@ -1,4 +1,4 @@
-name: v45 tests
+name: v46 tests
 
 on:
   pull_request:
@@ -52,3 +52,5 @@ jobs:
         run: node tests/v44-health-entry-fix.cjs
       - name: v45 육아 hub navigation
         run: node tests/v45-care-hub.cjs
+      - name: v46 loader check
+        run: node tests/v46-loader.cjs
