@@ -1,4 +1,4 @@
-name: v40 tests
+name: v41 tests
 
 on:
   pull_request:
@@ -42,3 +42,5 @@ jobs:
         run: node tests/v39-version-map-fix.cjs
       - name: v40 seed 28 Naver outing places
         run: node tests/v40-naver-places.cjs
+      - name: v41 remove embedded Leaflet maps
+        run: node tests/v41-no-embedded-map.cjs
