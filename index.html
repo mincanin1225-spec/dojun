@@ -78,6 +78,12 @@
                               const ac=d.createElement('script');
                               ac.id='v41-no-embedded-map-script';
                               ac.src='./legacy-outing-v41-no-embedded-map.js?v=20260916-v41';
+                              ac.onload=function(){
+                                const ad=d.createElement('script');
+                                ad.id='v42-outing-priority-script';
+                                ad.src='./legacy-outing-v42-priority.js?v=20260916-v42';
+                                d.head.appendChild(ad);
+                              };
                               d.head.appendChild(ac);
                             };
                             d.head.appendChild(ab);
