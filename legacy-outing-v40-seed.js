@@ -3,6 +3,7 @@
   if(typeof render!=='function')return;
 
   const STORAGE_KEY='dj:outingPlaces1';
+  const GEO_KEY='dj:outingGeocodeV40';
   const DISPLAY_VER='v40';
   const NOW=Date.now();
   const SEED=[
@@ -38,10 +39,15 @@
 
   const norm=s=>String(s||'').replace(/\s+/g,'').toLowerCase();
   const makeId=(name,i)=>`naver-seed-${String(i+1).padStart(2,'0')}-${norm(name).replace(/[^0-9a-z가-힣]/g,'').slice(0,24)}`;
+  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 
   function readRaw(){
     try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');return Array.isArray(x)?x:[]}catch(e){return []}
   }
+  function writeRaw(list){localStorage.setItem(STORAGE_KEY,JSON.stringify(list));window.__outingPlaces=list}
+  function readGeo(){try{const x=JSON.parse(localStorage.getItem(GEO_KEY)||'{}');return x&&typeof x==='object'?x:{}}catch(e){return {}}}
+  function writeGeo(cache){try{localStorage.setItem(GEO_KEY,JSON.stringify(cache))}catch(e){}}
+
   function seedPlaces(){
     const existing=readRaw();
     const keys=new Set(existing.map(x=>`${norm(x?.name)}|${norm(x?.address)}`));
@@ -56,25 +62,60 @@
       });
       keys.add(key);added++;
     });
-    if(added){
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(existing));
-      window.__outingPlaces=existing;
-    }
+    if(added)writeRaw(existing);
     return added;
   }
 
   function patchVersion(){
     document.querySelectorAll('.card .hint').forEach(el=>{
-      if(!/버전\s*v(?:24|39)\b/.test(el.textContent||''))return;
-      el.innerHTML=el.innerHTML.replace(/버전\s*<b([^>]*)>v(?:24|39)<\/b>/,`버전 <b$1>${DISPLAY_VER}</b>`).replace(/버전\s*v(?:24|39)\b/,`버전 ${DISPLAY_VER}`);
+      if(!/버전\s*v(?:24|39|40)\b/.test(el.textContent||''))return;
+      el.innerHTML=el.innerHTML.replace(/버전\s*<b([^>]*)>v(?:24|39|40)<\/b>/,`버전 <b$1>${DISPLAY_VER}</b>`).replace(/버전\s*v(?:24|39|40)\b/,`버전 ${DISPLAY_VER}`);
     });
+  }
+
+  let geocoding=false,geoDone=0,geoTotal=0;
+  function patchOutingProgress(){
+    if(typeof tab==='undefined'||tab!=='outing')return;
+    const empty=document.querySelector('#outingMap .outing-map-empty');
+    if(!empty||!geocoding||!geoTotal)return;
+    empty.innerHTML=`저장 장소 ${SEED.length}곳을 불러왔어요.<br>지도 위치 자동 확인 중… ${geoDone}/${geoTotal}`;
+  }
+
+  async function geocodeMissing(){
+    if(geocoding||typeof fetch!=='function')return;
+    const list=readRaw();
+    const cache=readGeo();
+    const targets=list.filter(p=>String(p?.id||'').startsWith('naver-seed-')&&(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lng))));
+    if(!targets.length)return;
+    geocoding=true;geoDone=0;geoTotal=targets.length;patchOutingProgress();
+    for(const p of targets){
+      const key=`${norm(p.name)}|${norm(p.address)}`;
+      const cached=cache[key];
+      if(cached&&Number.isFinite(Number(cached.lat))&&Number.isFinite(Number(cached.lng))){
+        p.lat=Number(cached.lat);p.lng=Number(cached.lng);geoDone++;writeRaw(list);patchOutingProgress();continue;
+      }
+      if(cached?.failedAt&&Date.now()-Number(cached.failedAt)<86400000){geoDone++;patchOutingProgress();continue}
+      try{
+        const q=encodeURIComponent(`${p.name}, ${p.address}, 대한민국`);
+        const res=await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=kr&accept-language=ko&q=${q}`,{headers:{Accept:'application/json'}});
+        if(!res.ok)throw new Error('geocode '+res.status);
+        const data=await res.json();const hit=Array.isArray(data)?data[0]:null;
+        const lat=Number(hit?.lat),lng=Number(hit?.lon);
+        if(Number.isFinite(lat)&&Number.isFinite(lng)){
+          p.lat=lat;p.lng=lng;p.updatedAt=Date.now();cache[key]={lat,lng,at:Date.now()};writeRaw(list);
+        }else cache[key]={failedAt:Date.now()};
+      }catch(e){cache[key]={failedAt:Date.now()}}
+      writeGeo(cache);geoDone++;patchOutingProgress();await sleep(1100);
+    }
+    geocoding=false;writeRaw(list);writeGeo(cache);
+    if(typeof tab!=='undefined'&&tab==='outing'){try{render(true)}catch(e){}}
   }
 
   const baseRender=render;
   seedPlaces();
   render=function(keep){
     const r=baseRender(keep);
-    setTimeout(()=>{patchVersion()},0);
+    setTimeout(()=>{patchVersion();patchOutingProgress()},0);
     return r;
   };
 
@@ -85,5 +126,5 @@
     patchVersion();if(typeof toast==='function')toast(`현재 앱 버전 ${DISPLAY_VER}`);
   },true);
 
-  try{patchVersion()}catch(e){}
+  try{patchVersion();setTimeout(geocodeMissing,600)}catch(e){}
 })();
