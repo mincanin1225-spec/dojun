@@ -74,6 +74,12 @@
                             const ab=d.createElement('script');
                             ab.id='v40-naver-places-script';
                             ab.src='./legacy-outing-v40-seed.js?v=20260916-v40';
+                            ab.onload=function(){
+                              const ac=d.createElement('script');
+                              ac.id='v41-no-embedded-map-script';
+                              ac.src='./legacy-outing-v41-no-embedded-map.js?v=20260916-v41';
+                              d.head.appendChild(ac);
+                            };
                             d.head.appendChild(ab);
                           };
                           d.head.appendChild(aa);
