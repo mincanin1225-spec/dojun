@@ -1,4 +1,4 @@
-name: v44 tests
+name: v45 tests
 
 on:
   pull_request:
@@ -50,3 +50,5 @@ jobs:
         run: node tests/v43-health-management.cjs
       - name: v44 health entry visibility fix
         run: node tests/v44-health-entry-fix.cjs
+      - name: v45 육아 hub navigation
+        run: node tests/v45-care-hub.cjs

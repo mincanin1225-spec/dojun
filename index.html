@@ -92,8 +92,14 @@
                                     af.src='./legacy-health-v43.js?v=20260916-v43';
                                     af.onload=function(){
                                       const ag=d.createElement('script');
-                                      ag.id='v44-health-entry-fix-script';
-                                      ag.src='./legacy-health-v44-entry-fix.js?v=20260916-v44';
+                                      ag.id='v45-care-hub-script';
+                                      ag.src='./legacy-care-v45.js?v=20260916-v45';
+                                      ag.onload=function(){
+                                        const ah=d.createElement('script');
+                                        ah.id='v44-health-entry-fix-script';
+                                        ah.src='./legacy-health-v44-entry-fix.js?v=20260916-v44';
+                                        d.head.appendChild(ah);
+                                      };
                                       d.head.appendChild(ag);
                                     };
                                     d.head.appendChild(af);
