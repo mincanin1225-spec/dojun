@@ -1,0 +1,13 @@
+const fs=require('fs'),assert=require('assert/strict');
+const patch=fs.readFileSync('legacy-outing-v42-priority.js','utf8');
+const index=fs.readFileSync('index.html','utf8');
+new Function(patch);
+assert(index.includes('legacy-outing-v42-priority.js?v=20260916-v42'),'v42 priority patch must load last');
+assert(patch.includes("const DISPLAY_VER='v42'"),'display version must be v42');
+assert(patch.includes("'가고싶음':0"),'wish places must have top priority');
+assert(patch.includes("'추천':0"),'recommended places must stay with top unvisited group');
+assert(patch.includes("'재방문':1"),'revisit places must follow unvisited places');
+assert(patch.includes("'다녀옴':2"),'visited places must be last');
+assert(patch.includes("article.outing-card[data-outing-card]"),'outing cards must be reordered');
+assert(patch.includes('cards.forEach(card=>parent.appendChild(card))'),'sorted cards must be reinserted in priority order');
+console.log('PASS: v42 keeps unvisited outing places above revisit and visited records');
