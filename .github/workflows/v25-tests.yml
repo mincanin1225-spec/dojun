@@ -1,4 +1,4 @@
-name: v43 tests
+name: v44 tests
 
 on:
   pull_request:
@@ -48,3 +48,5 @@ jobs:
         run: node tests/v42-outing-priority.cjs
       - name: v43 health checkup and vaccination manager
         run: node tests/v43-health-management.cjs
+      - name: v44 health entry visibility fix
+        run: node tests/v44-health-entry-fix.cjs
