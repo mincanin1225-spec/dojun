@@ -1,0 +1,10 @@
+const fs=require('fs');
+const assert=require('assert');
+const patch=fs.readFileSync('legacy-health-v44-entry-fix.js','utf8');
+const index=fs.readFileSync('index.html','utf8');
+const legacy=fs.readFileSync('legacy-v24.html','utf8');
+assert(legacy.includes('id="main"'),'legacy app should expose #main container');
+assert(patch.includes("document.getElementById('main')"),'v44 patch should target #main');
+assert(patch.includes('data-health-open="1"'),'v44 patch should expose health entry button');
+assert(index.includes('legacy-health-v44-entry-fix.js?v=20260916-v44'),'index should load v44 health entry fix after v43');
+console.log('v44 health entry visibility checks passed');
