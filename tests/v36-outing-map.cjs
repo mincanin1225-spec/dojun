@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-outing-v36.js'),'utf8');
 new Function(patch);
-assert(index.includes('<title>도준이육성게임</title>'),'app shell must use the new product name');
+assert(index.includes('<title>도준이키우기</title>'),'app shell must use the current product name');
 assert(/legacy-outing-v36\.js\?v=\d{8}-v[\w-]+/.test(index),'outing patch must load after the preserved management patches');
 assert(patch.includes("const STORAGE_KEY='dj:outingPlaces1'"),'outing data must use its own durable local storage key');
 for(const s of ['가고싶음','추천','다녀옴','재방문'])assert(patch.includes(s),`missing outing status: ${s}`);
