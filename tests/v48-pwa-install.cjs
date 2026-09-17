@@ -1,0 +1,13 @@
+const fs=require('fs');
+const assert=require('assert');
+const index=fs.readFileSync('index.html','utf8');
+const manifest=JSON.parse(fs.readFileSync('manifest.webmanifest','utf8'));
+const sw=fs.readFileSync('sw.js','utf8');
+assert(index.includes('manifest.webmanifest?v=20260917-v48'),'index should load v48 manifest');
+assert(index.includes("navigator.serviceWorker.register('./sw.js')"),'service worker should be registered');
+assert(Array.isArray(manifest.icons)&&manifest.icons.some(x=>x.sizes==='192x192')&&manifest.icons.some(x=>x.sizes==='512x512'),'manifest should include 192 and 512 icons');
+assert(manifest.display==='standalone','manifest display should be standalone');
+assert(manifest.start_url==='./index.html'&&manifest.scope==='./','manifest start_url/scope should match GitHub Pages app scope');
+assert(fs.existsSync('icons/icon-192.svg')&&fs.existsSync('icons/icon-512.svg'),'PWA icon files should exist');
+assert(sw.includes("const CACHE='dojun-pwa-v48'"),'service worker cache version should be v48');
+console.log('v48 PWA installability checks passed');

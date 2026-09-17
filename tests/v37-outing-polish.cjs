@@ -6,7 +6,7 @@ const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest')
 new Function(patch);
 assert(/legacy-outing-v37\.js\?v=\d{8}-v[\w-]+/.test(index),'v37 polish patch must remain loaded after outing v36');
 assert(/manifest\.webmanifest\?v=\d{8}-v[\w-]+/.test(index),'install manifest must be linked with a fresh cache key');
-assert(manifest.name==='도준이육성게임'&&manifest.short_name==='도준이육성게임','installed app name must be Dojun Growth Game');
+assert(manifest.name==='도준이키우기'&&manifest.short_name==='도준이키우기','installed app name must match the current product name');
 assert(patch.includes("const NAVER_LIST_URL='https://naver.me/xfboSqg8'"),'saved Naver list shortcut must be wired');
 assert(patch.includes('네이버지도 연결'),'outing screen must expose Naver Maps bridge');
 assert(patch.includes("setText(card.querySelector('[data-outing^=\"naver:\"]'),'네이버지도')"),'place card map action must clearly say Naver Maps');
