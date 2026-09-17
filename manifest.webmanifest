@@ -2,10 +2,25 @@
   "name": "도준이키우기",
   "short_name": "도준이키우기",
   "lang": "ko-KR",
+  "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#FFF8F1",
   "theme_color": "#FFF8F1",
-  "description": "도준이 식단·재고·외출·건강·기록을 한 곳에서 관리하는 가족 앱"
+  "description": "도준이 식단·재고·외출·건강·기록을 한 곳에서 관리하는 가족 앱",
+  "icons": [
+    {
+      "src": "./icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
