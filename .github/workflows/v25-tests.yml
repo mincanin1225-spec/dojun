@@ -1,4 +1,4 @@
-name: v56 stable shell restore tests
+name: v57 safe Ppeuni tests
 
 on:
   pull_request:
@@ -59,4 +59,6 @@ jobs:
 
       - name: v56 stable shell restore
         run: node tests/v56-shell-restore.cjs
+      - name: v57 safe Ppeuni layer
+        run: node tests/v57-ppeuni-safe.cjs
 
