@@ -83,17 +83,17 @@
       const on=addD(start,q),e=entry(on);if(!e)continue;
       for(const m of e.meals||[]){
         const name=mealText(m);if(!name)continue;meals++;
-        const key=e.stage+'|'+name,r=map[key]||(map[key]={name,stage:e.stage,base:m.base||'',tokens:String(m.t||'').split(/\\s+/).filter(Boolean),n:0});r.n++;
+        const key=e.stage+'|'+name,r=map[key]||(map[key]={name,stage:e.stage,base:m.base||'',tokens:String(m.t||'').split(/\s+/).filter(Boolean),n:0});r.n++;
       }
     }
     for(const r of Object.values(map)){
       const ing=[];
       if(r.stage==='complete')ing.push('세부 재료량은 원본 레시피 확인');
       else{
-        if(r.base)ing.push(\`${r.base} ${100*r.n}g (100g × ${r.n}회)\`);
+        if(r.base)ing.push(`${r.base} ${100*r.n}g (100g × ${r.n}회)`);
         for(const n of r.tokens){
-          if(r.stage==='late3')ing.push(\`${n} ${20*r.n}~${25*r.n}g (20~25g × ${r.n}회)\`);
-          else ing.push(\`${n} ${20*r.n}g (20g × ${r.n}회)\`);
+          if(r.stage==='late3')ing.push(`${n} ${20*r.n}~${25*r.n}g (20~25g × ${r.n}회)`);
+          else ing.push(`${n} ${20*r.n}g (20g × ${r.n}회)`);
         }
       }
       rows.push({name:r.name,n:r.n,ing,o:{__ppeuni:true,stage:r.stage}});
@@ -127,8 +127,8 @@
   function badge(){
     try{
       const d=dplus(today),e=entry(today);if(!e)return;
-      let el=document.getElementById('ppeuniVerifiedV50');
-      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV50';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
+      let el=document.getElementById('ppeuniVerifiedV51');
+      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV51';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
       el.textContent=`뿐이 식단 원본 적용 · D+${d}`;
     }catch(e){}
   }
