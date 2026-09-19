@@ -56,3 +56,6 @@ jobs:
         run: node tests/v46-loader.cjs
       - name: v48 PWA installability
         run: node tests/v48-pwa-install.cjs
+
+      - name: v49 verified Ppeuni schedule
+        run: node tests/v49-ppeuni-verified.cjs
