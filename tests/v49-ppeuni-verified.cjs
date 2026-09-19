@@ -11,9 +11,9 @@ assert(!data.includes('provisional'),'verified schedule must not contain provisi
 assert(patch.includes("/DAY)+1"),'D+ mapping must count birth date as D+1');
 assert(patch.includes("return '';"),'unverified dates must not fall back to generated menus');
 assert(patch.includes("add(t,'밥 (조리 후)',100"),'late-stage base must use the book 100g base amount');
-assert(patch.includes("toks.forEach(n=>add(t,n,20"),'late 1/2 toppings must use the book 20g amount');
+assert(patch.includes("add(t,x.name,20,1,'v')"),'late 1/2 raw toppings must use the book 20g amount');
 assert(!patch.includes('22.5'),'late 3 toppings must not be collapsed to an invented 22.5g midpoint');
-assert(patch.includes("add(t,n,20,1,'v',25)"),'late 3 toppings must preserve the photographed 20~25g range');
+assert(patch.includes("add(t,x.name,20,1,'v',25)"),'late 3 raw toppings must preserve the photographed 20~25g range');
 assert(patch.includes("'비타민':'비타민채'")&&patch.includes("'달걀':'계란'"),'stock aliases must match existing inventory names');
 assert(patch.includes('return oldObj(on,i)'),'non-Ppeuni dates must keep the original structured meal object');
 assert(patch.includes('verifiedBatchRows'),'Ppeuni dates must provide a usable batch-prep view');
