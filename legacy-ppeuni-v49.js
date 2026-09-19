@@ -6,11 +6,11 @@
   const oldObj=typeof mObj==='function'?mObj:null;
   const oldWeek=typeof weekList==='function'?weekList:null;
   const oldRender=typeof render==='function'?render:null;
-  const DISPLAY_VER='v49';
+  const DISPLAY_VER='v50';
   const DAY=86400000;
 
   function dplus(on){
-    try{return Math.round((P(on).getTime()-P(V.birth).getTime())/DAY)}catch(e){return null}
+    try{return Math.round((P(on).getTime()-P(V.birth).getTime())/DAY)+1}catch(e){return null}
   }
   function entry(on){const d=dplus(on);return d==null?null:V.byD[d]||null}
   function manual(on,i){
@@ -59,7 +59,7 @@
           }
           add(t,'밥 (조리 후)',100,1,'e');
           const toks=String(m.t||'').split(/\s+/).filter(Boolean);
-          if(e.stage==='late3')toks.forEach(n=>add(t,n,0,1,'v'));
+          if(e.stage==='late3')toks.forEach(n=>add(t,n,22.5,1,'v'));
           else toks.forEach(n=>add(t,n,20,1,'v'));
         }
       }
@@ -79,8 +79,8 @@
   function badge(){
     try{
       const d=dplus(today),e=entry(today);if(!e)return;
-      let el=document.getElementById('ppeuniVerifiedV49');
-      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV49';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
+      let el=document.getElementById('ppeuniVerifiedV50');
+      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV50';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
       el.textContent=`뿐이 식단 원본 적용 · D+${d}`;
     }catch(e){}
   }
@@ -88,5 +88,5 @@
   apply();setTimeout(apply,0);setTimeout(apply,250);
   try{const mo=new MutationObserver(()=>apply());mo.observe(document.body,{childList:true,subtree:true})}catch(e){}
   if(oldRender){try{setTimeout(()=>{render();apply()},0)}catch(e){}}
-  root.__ppeuniVerifiedScheduleV49={entry,dplus,source:V.source,minD:V.minD,maxD:V.maxD};
+  root.__ppeuniVerifiedScheduleV50={entry,dplus,source:V.source,minD:V.minD,maxD:V.maxD};
 })(typeof globalThis!=='undefined'?globalThis:this);
