@@ -1,4 +1,4 @@
-name: v56 stable shell restore tests
+name: v58 unified stable rebuild tests
 
 on:
   pull_request:
@@ -59,4 +59,7 @@ jobs:
 
       - name: v56 stable shell restore
         run: node tests/v56-shell-restore.cjs
+
+      - name: v58 unified release
+        run: node tests/v58-unified-release.cjs
 
