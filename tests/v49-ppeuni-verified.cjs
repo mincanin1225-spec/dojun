@@ -25,7 +25,11 @@ assert(mg35.includes('실제 사용량 확인'),'range amounts must not be auto-
 assert(patch.includes('RECIPE_PHRASES')&&patch.includes('classifiedTokens'),'composite recipe names must not be treated as raw stock items');
 assert(patch.includes("PLAIN_BASE"),'special rice/porridge bases must not be treated as plain cooked rice');
 assert(mg35.includes('recipe:!!v.recipe')&&mg35.includes('원본 레시피 원재료 확인'),'composite recipes must block false automatic stock deduction');
-assert(patch.includes("DISPLAY_VER='v52'"),'fix must display v52');
+assert(!patch.includes(String.raw`/\\\\s+/`),'token parser must not look for a literal backslash-s sequence');
+assert(patch.includes('if(el.textContent!==next)'),'badge update must not mutate DOM when unchanged');
+assert(patch.includes('setTimeout(apply,60)'),'mutation observer must be debounced');
+assert(index.includes("frame.addEventListener('load',()=>{reveal();inject()})"),'base app must reveal even if enhancement loading fails');
+assert(patch.includes("DISPLAY_VER='v53'"),'hotfix must display v53');
 const a=index.indexOf('v49-ppeuni-data-script'),b=index.indexOf('v49-ppeuni-apply-script');
 assert(a>=0&&b>a,'v49 verified data must load before its integration patch');
-console.log('PASS: v52 keeps Ppeuni menus, screen compatibility, stock ranges, and composite-recipe safety');
+console.log('PASS: v53 restores startup stability and preserves Ppeuni stock safety');

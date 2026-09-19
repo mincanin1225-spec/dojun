@@ -9,7 +9,7 @@
   const oldBatch=typeof batchPlan==='function'?batchPlan:null;
   const oldBMainSteps=typeof bMainSteps==='function'?bMainSteps:null;
   const oldNut=typeof vNut==='function'?vNut:null;
-  const DISPLAY_VER='v52';
+  const DISPLAY_VER='v53';
   const DAY=86400000;
 
   function dplus(on){
@@ -56,8 +56,8 @@
   const PLAIN_BASE=new Set(['잡곡무른밥','잡곡진밥']);
   function classifiedTokens(text){
     let rest=String(text||'').trim(),out=[];
-    for(const name of RECIPE_PHRASES){if(rest.includes(name)){out.push({name,recipe:true});rest=rest.replace(name,' ').replace(/\\s+/g,' ').trim()}}
-    for(const name of rest.split(/\\s+/).filter(Boolean))out.push({name,recipe:!RAW_TOPPINGS.has(name)});
+    for(const name of RECIPE_PHRASES){if(rest.includes(name)){out.push({name,recipe:true});rest=rest.replace(name,' ').replace(/\s+/g,' ').trim()}}
+    for(const name of rest.split(/\s+/).filter(Boolean))out.push({name,recipe:!RAW_TOPPINGS.has(name)});
     return out;
   }
   function add(t,name,g,n=1,c='v',gMax=null,recipe=false){
@@ -160,14 +160,14 @@
   function badge(){
     try{
       const d=dplus(today),e=entry(today);if(!e)return;
-      let el=document.getElementById('ppeuniVerifiedV52');
-      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV52';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
-      el.textContent=`뿐이 식단 원본 적용 · D+${d}`;
+      let el=document.getElementById('ppeuniVerifiedV53');
+      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV53';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
+      const next=`뿐이 식단 원본 적용 · D+${d}`;if(el.textContent!==next)el.textContent=next;
     }catch(e){}
   }
   function apply(){patchVersion();badge();try{if(entry(today)){const b=document.querySelector('[data-a="reshuffle"]');if(b){const row=b.closest('.btnrow');if(row)row.innerHTML='<span class="hint">뿐이 원본 식단 적용 기간에는 자동 식단 재생성을 사용하지 않아요.</span>';else b.style.display='none'}}}catch(e){}}
   apply();setTimeout(apply,0);setTimeout(apply,250);
-  try{const mo=new MutationObserver(()=>apply());mo.observe(document.body,{childList:true,subtree:true})}catch(e){}
+  try{let at=null;const mo=new MutationObserver(()=>{clearTimeout(at);at=setTimeout(apply,60)});mo.observe(document.body,{childList:true,subtree:true})}catch(e){}
   if(oldRender){try{setTimeout(()=>{render();apply()},0)}catch(e){}}
-  root.__ppeuniVerifiedScheduleV52={entry,dplus,source:V.source,minD:V.minD,maxD:V.maxD};
+  root.__ppeuniVerifiedScheduleV53={entry,dplus,source:V.source,minD:V.minD,maxD:V.maxD};
 })(typeof globalThis!=='undefined'?globalThis:this);

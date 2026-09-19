@@ -1,4 +1,4 @@
-const CACHE='dojun-pwa-v52';
+const CACHE='dojun-pwa-v53';
 const CORE=['./','./index.html','./manifest.webmanifest','./legacy-v24.html','./icons/icon-192.svg','./icons/icon-512.svg'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).catch(()=>{}));self.skipWaiting();});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
