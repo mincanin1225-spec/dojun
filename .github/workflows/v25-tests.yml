@@ -1,4 +1,4 @@
-name: v49 tests
+name: v50 tests
 
 on:
   pull_request:
@@ -57,5 +57,5 @@ jobs:
       - name: v48 PWA installability
         run: node tests/v48-pwa-install.cjs
 
-      - name: v49 verified Ppeuni schedule
+      - name: v50 verified Ppeuni schedule hotfix
         run: node tests/v49-ppeuni-verified.cjs
