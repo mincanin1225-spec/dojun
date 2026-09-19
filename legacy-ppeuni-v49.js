@@ -8,6 +8,7 @@
   const oldRender=typeof render==='function'?render:null;
   const oldBatch=typeof batchPlan==='function'?batchPlan:null;
   const oldBMainSteps=typeof bMainSteps==='function'?bMainSteps:null;
+  const oldNut=typeof vNut==='function'?vNut:null;
   const DISPLAY_VER='v51';
   const DAY=86400000;
 
@@ -116,6 +117,23 @@
     root.bMainSteps=bMainSteps;
   }
 
+
+  if(oldNut){
+    vNut=function(){
+      const days=[];let has=false;
+      for(let i=0;i<7;i++){const on=addD(weekCur,i);days.push(on);if(entry(on))has=true}
+      if(!has)return oldNut();
+      const end=P(days[6]);
+      const cards=days.map(on=>{
+        const e=entry(on);if(!e)return '';
+        const meals=(e.meals||[]).map((m,i)=>'<div style="display:grid;grid-template-columns:38px 1fr;gap:7px;padding:3px 0"><span class="hint" style="color:var(--mint);font-weight:800">'+['아침','점심','저녁'][i]+'</span><span>'+esc(mealText(m))+'</span></div>').join('');
+        return '<div class="meal" style="display:block"><b>'+ (P(on).getMonth()+1)+'/'+P(on).getDate()+' ('+WD[P(on).getDay()]+')</b><div style="margin-top:6px">'+meals+'</div></div>';
+      }).join('');
+      return '<div class="sec"><div class="nav"><button class="rd" data-a="wk:-1">‹</button><b>'+(P(weekCur).getMonth()+1)+'/'+P(weekCur).getDate()+' – '+(end.getMonth()+1)+'/'+end.getDate()+'</b><button class="rd" data-a="wk:1">›</button></div></div><div class="sec"><h2>뿐이 식단 원본</h2><span class="more">영양 자동계산 보류</span></div><div class="card">'+(cards||'<p class="hint">이 주에는 등록된 뿐이 식단이 없어요.</p>')+'</div><p class="hint" style="margin:10px 2px 0">14장 식단표에 레시피별 원재료 중량이 확인되지 않은 메뉴는 영양값을 0으로 계산하지 않아요. 확인 가능한 분량만 장보기·재고에 반영합니다.</p>';
+    };
+    root.vNut=vNut;
+  }
+
   function patchVersion(){
     try{
       document.querySelectorAll('.card .hint').forEach(el=>{
@@ -132,7 +150,7 @@
       el.textContent=`뿐이 식단 원본 적용 · D+${d}`;
     }catch(e){}
   }
-  function apply(){patchVersion();badge()}
+  function apply(){patchVersion();badge();try{if(entry(today)){const b=document.querySelector('[data-a="reshuffle"]');if(b){const row=b.closest('.btnrow');if(row)row.innerHTML='<span class="hint">뿐이 원본 식단 적용 기간에는 자동 식단 재생성을 사용하지 않아요.</span>';else b.style.display='none'}}}catch(e){}}
   apply();setTimeout(apply,0);setTimeout(apply,250);
   try{const mo=new MutationObserver(()=>apply());mo.observe(document.body,{childList:true,subtree:true})}catch(e){}
   if(oldRender){try{setTimeout(()=>{render();apply()},0)}catch(e){}}
