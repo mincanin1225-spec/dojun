@@ -11,9 +11,9 @@ assert(!data.includes('provisional'),'verified schedule must not contain provisi
 assert(patch.includes("/DAY)+1"),'D+ mapping must count birth date as D+1');
 assert(patch.includes("return '';"),'unverified dates must not fall back to generated menus');
 assert(patch.includes("add(t,'밥 (조리 후)',100"),'late-stage base must use the book 100g base amount');
-assert(patch.includes("toks.forEach(n=>add(t,n,20"),'late 1/2 toppings must use the book 20g amount');
+assert(patch.includes("add(t,x.name,20,1,'v')"),'late 1/2 raw toppings must use the book 20g amount');
 assert(!patch.includes('22.5'),'late 3 toppings must not be collapsed to an invented 22.5g midpoint');
-assert(patch.includes("add(t,n,20,1,'v',25)"),'late 3 toppings must preserve the photographed 20~25g range');
+assert(patch.includes("add(t,x.name,20,1,'v',25)"),'late 3 raw toppings must preserve the photographed 20~25g range');
 assert(patch.includes("'비타민':'비타민채'")&&patch.includes("'달걀':'계란'"),'stock aliases must match existing inventory names');
 assert(patch.includes('return oldObj(on,i)'),'non-Ppeuni dates must keep the original structured meal object');
 assert(patch.includes('verifiedBatchRows'),'Ppeuni dates must provide a usable batch-prep view');
@@ -22,7 +22,10 @@ assert(patch.includes('자동 식단 재생성을 사용하지 않아요'),'Ppeu
 assert(mg35.includes('needMaxG')&&mg35.includes('buyMinG'),'shopping must calculate late-3 min/max requirements');
 assert(mg35.includes('unitMismatch')&&mg35.includes('1개당 g 입력 필요'),'count-only stock must not be treated as a precise gram shortage');
 assert(mg35.includes('실제 사용량 확인'),'range amounts must not be auto-deducted as a fake exact quantity');
-assert(patch.includes("DISPLAY_VER='v51'"),'fix must display v51');
+assert(patch.includes('RECIPE_PHRASES')&&patch.includes('classifiedTokens'),'composite recipe names must not be treated as raw stock items');
+assert(patch.includes("PLAIN_BASE"),'special rice/porridge bases must not be treated as plain cooked rice');
+assert(mg35.includes('recipe:!!v.recipe')&&mg35.includes('원본 레시피 원재료 확인'),'composite recipes must block false automatic stock deduction');
+assert(patch.includes("DISPLAY_VER='v52'"),'fix must display v52');
 const a=index.indexOf('v49-ppeuni-data-script'),b=index.indexOf('v49-ppeuni-apply-script');
 assert(a>=0&&b>a,'v49 verified data must load before its integration patch');
-console.log('PASS: v51 keeps Ppeuni menus, restores screen compatibility, and preserves stock ranges');
+console.log('PASS: v52 keeps Ppeuni menus, screen compatibility, stock ranges, and composite-recipe safety');

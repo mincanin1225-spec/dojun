@@ -9,7 +9,7 @@
   const oldBatch=typeof batchPlan==='function'?batchPlan:null;
   const oldBMainSteps=typeof bMainSteps==='function'?bMainSteps:null;
   const oldNut=typeof vNut==='function'?vNut:null;
-  const DISPLAY_VER='v51';
+  const DISPLAY_VER='v52';
   const DAY=86400000;
 
   function dplus(on){
@@ -51,11 +51,21 @@
 
   const STOCK_ALIAS={'비타민':'비타민채','달걀':'계란','치즈':'아기 치즈'};
   const stockName=n=>STOCK_ALIAS[String(n||'').trim()]||String(n||'').trim();
-  function add(t,name,g,n=1,c='v',gMax=null){
+  const RAW_TOPPINGS=new Set(['소고기','닭고기','돼지고기','흰살생선','생선','연어','새우','두부','달걀','게살','오징어','애호박','당근','양파','감자','고구마','단호박','브로콜리','양배추','배추','시금치','청경채','비타민','팽이버섯','느타리버섯','새송이버섯','양송이버섯','무','파프리카','가지','토마토','적채','비트','근대','케일','쑥갓','셀러리','콜라비','콩나물','숙주','오이','아스파라거스','연근','우엉','김','밤','치즈','그린빈']);
+  const RECIPE_PHRASES=['달걀그린빈 스크램블에그','케일달걀오믈렛','달걀케일','단호박건포도범벅','새우애호박조림','부추달걀스크램블','달걀부추','연어양파감자볼','닭안심소시지','소고기라구소스','돼지고기수육','오징어볼','쑥갓두부무침','매생이달걀찜','밥새우주먹밥','소고기가지볶음'];
+  const PLAIN_BASE=new Set(['잡곡무른밥','잡곡진밥']);
+  function classifiedTokens(text){
+    let rest=String(text||'').trim(),out=[];
+    for(const name of RECIPE_PHRASES){if(rest.includes(name)){out.push({name,recipe:true});rest=rest.replace(name,' ').replace(/\\s+/g,' ').trim()}}
+    for(const name of rest.split(/\\s+/).filter(Boolean))out.push({name,recipe:!RAW_TOPPINGS.has(name)});
+    return out;
+  }
+  function add(t,name,g,n=1,c='v',gMax=null,recipe=false){
     name=stockName(name);if(!name)return;
     const x=t[name]||(t[name]={c,g:0,n:0});
     x.g+=Number(g)||0;x.n+=Number(n)||0;
     if(Number(gMax)>0)x.gMax=(Number(x.gMax)||0)+Number(gMax);
+    if(recipe)x.recipe=true;
   }
   if(oldWeek){
     weekList=function(start,count=7){
@@ -67,10 +77,14 @@
             add(t,mealText(m),0,1,'e');
             continue;
           }
-          add(t,'밥 (조리 후)',100,1,'e');
-          const toks=String(m.t||'').split(/\s+/).filter(Boolean);
-          if(e.stage==='late3')toks.forEach(n=>add(t,n,20,1,'v',25));
-          else toks.forEach(n=>add(t,n,20,1,'v'));
+          if(PLAIN_BASE.has(m.base))add(t,'밥 (조리 후)',100,1,'e');
+          else add(t,m.base,0,1,'e',null,true);
+          const toks=classifiedTokens(m.t);
+          for(const x of toks){
+            if(x.recipe)add(t,x.name,0,1,'e',null,true);
+            else if(e.stage==='late3')add(t,x.name,20,1,'v',25);
+            else add(t,x.name,20,1,'v');
+          }
         }
       }
       return t;
@@ -84,17 +98,18 @@
       const on=addD(start,q),e=entry(on);if(!e)continue;
       for(const m of e.meals||[]){
         const name=mealText(m);if(!name)continue;meals++;
-        const key=e.stage+'|'+name,r=map[key]||(map[key]={name,stage:e.stage,base:m.base||'',tokens:String(m.t||'').split(/\s+/).filter(Boolean),n:0});r.n++;
+        const key=e.stage+'|'+name,r=map[key]||(map[key]={name,stage:e.stage,base:m.base||'',tokens:classifiedTokens(m.t),n:0});r.n++;
       }
     }
     for(const r of Object.values(map)){
       const ing=[];
       if(r.stage==='complete')ing.push('세부 재료량은 원본 레시피 확인');
       else{
-        if(r.base)ing.push(`${r.base} ${100*r.n}g (100g × ${r.n}회)`);
-        for(const n of r.tokens){
-          if(r.stage==='late3')ing.push(`${n} ${20*r.n}~${25*r.n}g (20~25g × ${r.n}회)`);
-          else ing.push(`${n} ${20*r.n}g (20g × ${r.n}회)`);
+        if(r.base)ing.push(PLAIN_BASE.has(r.base)?`${r.base} ${100*r.n}g (100g × ${r.n}회)`:`${r.base} · 원본 레시피 분량 확인`);
+        for(const x of r.tokens){
+          if(x.recipe)ing.push(`${x.name} · 원본 레시피 분량 확인`);
+          else if(r.stage==='late3')ing.push(`${x.name} ${20*r.n}~${25*r.n}g (20~25g × ${r.n}회)`);
+          else ing.push(`${x.name} ${20*r.n}g (20g × ${r.n}회)`);
         }
       }
       rows.push({name:r.name,n:r.n,ing,o:{__ppeuni:true,stage:r.stage}});
@@ -145,8 +160,8 @@
   function badge(){
     try{
       const d=dplus(today),e=entry(today);if(!e)return;
-      let el=document.getElementById('ppeuniVerifiedV51');
-      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV51';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
+      let el=document.getElementById('ppeuniVerifiedV52');
+      if(!el){el=document.createElement('div');el.id='ppeuniVerifiedV52';el.className='hint';el.style.cssText='margin:6px 16px 0;color:var(--mint);font-weight:800';const barEl=document.querySelector('.appbar');barEl?.insertAdjacentElement('afterend',el)}
       el.textContent=`뿐이 식단 원본 적용 · D+${d}`;
     }catch(e){}
   }
@@ -154,5 +169,5 @@
   apply();setTimeout(apply,0);setTimeout(apply,250);
   try{const mo=new MutationObserver(()=>apply());mo.observe(document.body,{childList:true,subtree:true})}catch(e){}
   if(oldRender){try{setTimeout(()=>{render();apply()},0)}catch(e){}}
-  root.__ppeuniVerifiedScheduleV51={entry,dplus,source:V.source,minD:V.minD,maxD:V.maxD};
+  root.__ppeuniVerifiedScheduleV52={entry,dplus,source:V.source,minD:V.minD,maxD:V.maxD};
 })(typeof globalThis!=='undefined'?globalThis:this);
