@@ -3,7 +3,7 @@ const index=fs.readFileSync('index.html','utf8');
 const patch=fs.readFileSync('legacy-outing-v41-no-embedded-map.js','utf8');
 new Function(patch);
 assert(index.includes('legacy-outing-v41-no-embedded-map.js?v=20260916-v41'),'v41 patch must load after v40');
-assert(patch.includes("const DISPLAY_VER='v41'"),'display version must be v41');
+assert(patch.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v58'"),'v41 module must use canonical release version');
 assert(patch.includes("getElementById('outingMap')?.remove()"),'main embedded map must be removed');
 assert(patch.includes("getElementById('outingMapFallbackTools')?.remove()"),'map retry/fallback tools must be removed');
 assert(patch.includes("#outingModal [data-outing=\"picker\"]"),'modal map picker button must be removed');

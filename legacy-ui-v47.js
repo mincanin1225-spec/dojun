@@ -1,7 +1,7 @@
 (function(){
   'use strict';
-  const APP_NAME='도준이키우기';
-  const DISPLAY_VER='v47';
+  const APP_NAME=window.__DOJUN_RELEASE?.name||'도준이키우기';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v58';
 
   function patchBrand(){
     document.title=APP_NAME;
