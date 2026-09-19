@@ -22,7 +22,10 @@ assert(patch.includes('자동 식단 재생성을 사용하지 않아요'),'Ppeu
 assert(mg35.includes('needMaxG')&&mg35.includes('buyMinG'),'shopping must calculate late-3 min/max requirements');
 assert(mg35.includes('unitMismatch')&&mg35.includes('1개당 g 입력 필요'),'count-only stock must not be treated as a precise gram shortage');
 assert(mg35.includes('실제 사용량 확인'),'range amounts must not be auto-deducted as a fake exact quantity');
-assert(patch.includes("DISPLAY_VER='v51'"),'fix must display v51');
+assert(patch.includes('RECIPE_PHRASES')&&patch.includes('classifiedTokens'),'composite recipe names must not be treated as raw stock items');
+assert(patch.includes("PLAIN_BASE"),'special rice/porridge bases must not be treated as plain cooked rice');
+assert(mg35.includes('recipe:!!v.recipe')&&mg35.includes('원본 레시피 원재료 확인'),'composite recipes must block false automatic stock deduction');
+assert(patch.includes("DISPLAY_VER='v52'"),'fix must display v52');
 const a=index.indexOf('v49-ppeuni-data-script'),b=index.indexOf('v49-ppeuni-apply-script');
 assert(a>=0&&b>a,'v49 verified data must load before its integration patch');
-console.log('PASS: v51 keeps Ppeuni menus, restores screen compatibility, and preserves stock ranges');
+console.log('PASS: v52 keeps Ppeuni menus, screen compatibility, stock ranges, and composite-recipe safety');
