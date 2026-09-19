@@ -58,6 +58,5 @@ jobs:
         run: node tests/v48-pwa-install.cjs
 
       - name: v56 stable shell restore
-        run: |
-          node -e "const fs=require('fs'),a=fs.readFileSync('index.html','utf8'),s=fs.readFileSync('sw.js','utf8'),assert=require('assert'); assert(a.includes('<iframe id=\"app\"')); assert(a.includes('legacy-ui-v47.js?v=20260916-v47&r=20260919-v56')); assert(a.includes('visibility:visible')); assert(!a.includes('v49-ppeuni-data-script')); assert(s.includes("const CACHE='dojun-pwa-v56'")); console.log('PASS: v56 restores stable enhanced shell and forces fresh assets')"
+        run: node tests/v56-shell-restore.cjs
 
