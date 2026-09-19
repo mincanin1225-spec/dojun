@@ -3,7 +3,7 @@
   if(typeof render!=='function'||typeof bar!=='function'||typeof $!=='function')return;
 
   const STORAGE_KEY='dj:outingPlaces1';
-  const APP_NAME='도준이육성게임';
+  const APP_NAME=window.__DOJUN_RELEASE?.name||'도준이키우기';
   const STATUS=['가고싶음','추천','다녀옴','재방문'];
   const REACTIONS=['','잘 놀았음','보통','별로였음'];
   const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
