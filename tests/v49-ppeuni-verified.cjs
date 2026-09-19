@@ -1,0 +1,15 @@
+const fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const data=fs.readFileSync(path.join(root,'src/ppeuni-verified-v49.js'),'utf8');
+const patch=fs.readFileSync(path.join(root,'legacy-ppeuni-v49.js'),'utf8');
+const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
+new Function(data); new Function(patch);
+assert(data.includes("minD:282,maxD:373"),'verified D+ range must be 282-373');
+for(const s of ['288,290','소고기 근대 양파 당근','닭고기 밤 비타민 단호박','달걀 팽이버섯 시금치 애호박','373:["김달걀죽"','소고기시금치덮밥'])assert(data.includes(s),`missing verified schedule token: ${s}`);
+assert(!data.includes('provisional'),'verified schedule must not contain provisional meals');
+assert(patch.includes("return '';"),'unverified dates must not fall back to generated menus');
+assert(patch.includes("add(t,'밥 (조리 후)',100"),'late-stage base must use the book 100g base amount');
+assert(patch.includes("toks.forEach(n=>add(t,n,20"),'late 1/2 toppings must use the book 20g amount');
+const a=index.indexOf('v49-ppeuni-data-script'),b=index.indexOf('v49-ppeuni-apply-script');
+assert(a>=0&&b>a,'v49 verified data must load before its integration patch');
+console.log('PASS: v49 applies verified Ppeuni D+ schedule and disables provisional menu fallback');
