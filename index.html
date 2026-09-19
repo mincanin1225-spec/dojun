@@ -108,10 +108,26 @@
                                           aj.src='./legacy-ui-v47.js?v=20260916-v47&r=20260919-v56';
                                           aj.onload=function(){
                                             reveal();
-                                            const ai=d.createElement('script');
-                                            ai.id='v46-health-import-script';
-                                            ai.src='./legacy-health-v46-import.js?v=20260916-v46&r=20260919-v56';
-                                            d.head.appendChild(ai);
+                                            const loadHealth=function(){
+                                              if(d.getElementById('v46-health-import-script'))return;
+                                              const ai=d.createElement('script');
+                                              ai.id='v46-health-import-script';
+                                              ai.src='./legacy-health-v46-import.js?v=20260916-v46&r=20260919-v56';
+                                              d.head.appendChild(ai);
+                                            };
+                                            const ak=d.createElement('script');
+                                            ak.id='v57-ppeuni-data-script';
+                                            ak.src='./src/ppeuni-verified-v49.js?v=20260919-v57';
+                                            ak.onload=function(){
+                                              const al=d.createElement('script');
+                                              al.id='v57-ppeuni-safe-script';
+                                              al.src='./legacy-ppeuni-v57-safe.js?v=20260919-v57';
+                                              al.onload=loadHealth;
+                                              al.onerror=loadHealth;
+                                              d.head.appendChild(al);
+                                            };
+                                            ak.onerror=loadHealth;
+                                            d.head.appendChild(ak);
                                           };
                                           d.head.appendChild(aj);
                                         };
