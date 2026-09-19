@@ -1,4 +1,4 @@
-name: v51 tests
+name: v52 tests
 
 on:
   pull_request:
@@ -57,5 +57,5 @@ jobs:
       - name: v48 PWA installability
         run: node tests/v48-pwa-install.cjs
 
-      - name: v51 verified Ppeuni screen and stock fix
+      - name: v52 verified Ppeuni recipe stock safety
         run: node tests/v49-ppeuni-verified.cjs
