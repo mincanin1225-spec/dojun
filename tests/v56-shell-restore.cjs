@@ -1,0 +1,10 @@
+const fs=require('fs');
+const assert=require('assert');
+const index=fs.readFileSync('index.html','utf8');
+const sw=fs.readFileSync('sw.js','utf8');
+assert(index.includes('<iframe id="app"'),'stable shell must use legacy app iframe');
+assert(index.includes('legacy-ui-v47.js?v=20260916-v47&r=20260919-v56'),'v47 UI patch must stay in the original order with a fresh cache-bust');
+assert(index.includes('visibility:visible'),'base app must be visible immediately');
+assert(!index.includes('v49-ppeuni-data-script'),'Ppeuni integration must stay disabled during shell recovery');
+assert(sw.includes("const CACHE='dojun-pwa-v56'"),'v56 service worker marker missing');
+console.log('PASS: v56 restores stable enhanced shell and forces fresh assets');
