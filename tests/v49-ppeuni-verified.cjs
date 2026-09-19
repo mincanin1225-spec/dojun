@@ -20,6 +20,7 @@ assert(patch.includes('verifiedBatchRows'),'Ppeuni dates must provide a usable b
 assert(patch.includes('영양 자동계산 보류'),'Ppeuni weeks must not show fake zero nutrition');
 assert(patch.includes('자동 식단 재생성을 사용하지 않아요'),'Ppeuni fixed schedules must hide reshuffle behavior');
 assert(mg35.includes('needMaxG')&&mg35.includes('buyMinG'),'shopping must calculate late-3 min/max requirements');
+assert(mg35.includes('unitMismatch')&&mg35.includes('1개당 g 입력 필요'),'count-only stock must not be treated as a precise gram shortage');
 assert(mg35.includes('실제 사용량 확인'),'range amounts must not be auto-deducted as a fake exact quantity');
 assert(patch.includes("DISPLAY_VER='v51'"),'fix must display v51');
 const a=index.indexOf('v49-ppeuni-data-script'),b=index.indexOf('v49-ppeuni-apply-script');
