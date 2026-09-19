@@ -3,9 +3,9 @@
 <meta name="theme-color" content="#FFF8F1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>도준이 밥상</title>
+<title>도준이키우기</title>
 <link rel="apple-touch-icon" id="ati">
-<meta name="apple-mobile-web-app-title" content="도준이 밥상">
+<meta name="apple-mobile-web-app-title" content="도준이키우기">
 <meta name="description" content="도준이 이유식 월간 식단·기록·장보기·영양">
 <style>
 :root{
@@ -216,9 +216,10 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 </div>
 <input type="file" id="avfile" accept="image/*" style="display:none">
 
+<script>window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v58'});</script>
 <script>
 /* ══════════ 저장소 ══════════ */
-const APP_VER='v24';
+const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
   get(k){const v=localStorage.getItem('dj:'+k);return v?JSON.parse(v):null},
@@ -929,7 +930,7 @@ const TABS=[['cal','식단','cal'],['shop','장보기','shop'],['nut','영양','
 function bar(){
   $('bar').innerHTML=`<div class="appbar">
     <div class="avatar" data-a="avatar">${avatar?`<img src="${avatar}" alt="">`:'🐣'}</div>
-    <div class="nm"><h1>${esc(settings.name)} 밥상</h1>
+    <div class="nm"><h1>${esc(window.__DOJUN_RELEASE.name)}</h1>
       <div class="age">${esc(ageTxt(today))} · ${stage(today).label}</div></div>
     <button class="pill" data-a="tab:set">설정</button></div>`;
   $('tabbar').innerHTML=TABS.map(([k,n,ic])=>`<button aria-selected="${tab===k}" data-a="tab:${k}">
