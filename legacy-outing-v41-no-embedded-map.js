@@ -2,7 +2,7 @@
   'use strict';
   if(typeof render!=='function')return;
 
-  const DISPLAY_VER='v41';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v58';
   const baseRender=render;
 
   function removeEmbeddedMaps(){
