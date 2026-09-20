@@ -11,7 +11,7 @@ new Function(mg29);
 new Function(mg34);
 new Function(ui47);
 
-assert(core.includes("version:'v63'"),'canonical release must be v61');
+assert(core.includes("version:'v66'"),'canonical release must be v61');
 assert(index.includes('r=20260921-v63'),'v61 cache bust must reach injected app assets');
 assert(sw.includes("const CACHE='dojun-pwa-v"),'v61 PWA cache marker missing');
 
