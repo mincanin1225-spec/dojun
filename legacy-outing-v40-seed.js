@@ -4,7 +4,7 @@
 
   const STORAGE_KEY='dj:outingPlaces1';
   const GEO_KEY='dj:outingGeocodeV40';
-  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v58';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v59';
   const NOW=Date.now();
   const SEED=[
     ['영월강변저류지수변공원','강원특별자치도 영월군 영월읍 방절리 97'],
