@@ -1,4 +1,4 @@
-const CACHE='dojun-pwa-v60';
+const CACHE='dojun-pwa-v61';
 const CORE=[
   './','./index.html','./manifest.webmanifest','./legacy-v24.html',
   './icons/icon-192.svg','./icons/icon-512.svg',
