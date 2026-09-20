@@ -67,11 +67,14 @@
     const s=document.getElementById('mg32Key'),key=s?.value||'';
     if(key!==DIRECT&&!inventory?.[key]?.custom)return;
     if(key===DIRECT){
-      const name=cleanCustomName(document.getElementById('mg34Name')?.value),r=addCustom(name);
-      if(r?.builtin)return;
-      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();return;
+      const name=cleanCustomName(document.getElementById('mg34Name')?.value),builtin=builtInKeyByName(name);
+      if(builtin){if(s)s.value=builtin;return}
+      e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+      try{addCustom(name)}catch(err){toast('재료를 추가하지 못했어요 · 다시 시도해 주세요')}
+      return;
     }
-    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addCustom(key);
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    try{addCustom(key)}catch(err){toast('재료를 저장하지 못했어요 · 다시 시도해 주세요')}
   },true);
 
   setTimeout(()=>{try{if(typeof famURL==='function'&&typeof mergeInventory==='function'&&online&&sync?.url&&sync?.code){fetch(famURL('inventory2')).then(r=>r.ok?r.json():null).then(raw=>{if(!raw)return;const changed=mergeInventory(raw);saveBackup();if(changed)render(true)}).catch(()=>{})}}catch(e){}},0);
