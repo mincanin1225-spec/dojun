@@ -6,12 +6,12 @@ const core=fs.readFileSync('legacy-v24.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 new Function(patch);
 
-assert(core.includes("version:'v61'"),'canonical release must be v61');
+assert(core.includes("version:'v63'"),'canonical release must be v61');
 assert(index.includes("v61-photo-inventory-script"),'v61 photo inventory loader missing');
 assert(index.indexOf('v35-management-script')<index.indexOf('v61-photo-inventory-script'),'photo inventory must load after management v35');
 assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61'),'v61 photo inventory cache key missing');
-assert(index.includes('r=20260921-v61'),'v61 shell cache bust missing');
-assert(sw.includes("const CACHE='dojun-pwa-v61'"),'v61 service worker cache missing');
+assert(index.includes('r=20260921-v63'),'v61 shell cache bust missing');
+assert(sw.includes("const CACHE='dojun-pwa-v63'"),'v61 service worker cache missing');
 
 for(const literal of [
   "{ingredient:'청경채',madeDate:'2026-09-09',unitG:10,count:3}",

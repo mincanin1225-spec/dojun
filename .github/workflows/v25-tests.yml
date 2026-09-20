@@ -71,4 +71,7 @@ jobs:
 
       - name: v61 confirmed photo inventory
         run: node tests/v61-photo-inventory.cjs
-
+      - name: Meal stock transaction regression
+        run: node tests/v63-meal-workflow.cjs
+      - name: Meal workflow UI integration
+        run: node tests/v63-ui-integration.cjs

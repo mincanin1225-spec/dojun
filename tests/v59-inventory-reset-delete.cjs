@@ -5,14 +5,14 @@ const mg33=fs.readFileSync('legacy-management-v33.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 
-assert(html.includes("version:'v61'"),'canonical release must be v61');
+assert(html.includes("version:'v63'"),'canonical release must be v61');
 assert(html.includes('resetInventoryV59IfNeeded'),'one-time inventory reset helper missing');
 assert(html.includes('inventoryTombstones1'),'inventory delete tombstones missing');
 assert(html.includes('data-a="invdelete:'),'inventory edit sheet needs a delete button');
 assert(mg33.includes('data-a="invdelete:'),'stock list needs a raw inventory delete button');
 assert(mg33.includes('data-v59-cubedel'),'cube inventory needs a delete button');
-assert(index.includes('r=20260921-v61'),'v61 cache bust missing');
-assert(sw.includes("const CACHE='dojun-pwa-v61'"),'v61 PWA cache missing');
+assert(index.includes('r=20260921-v63'),'v61 cache bust missing');
+assert(sw.includes("const CACHE='dojun-pwa-v63'"),'v61 PWA cache missing');
 
 const db=new Map();
 const elements={};
