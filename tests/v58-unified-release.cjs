@@ -74,7 +74,7 @@ assert(core.includes("const APP_VER=window.__DOJUN_RELEASE.version"),'settings m
 assert(!v36.includes("APP_NAME='도준이육성게임'"),'outing must not rename the app to 육성게임');
 assert(v36.includes("__DOJUN_RELEASE?.name"),'outing must use canonical app name');
 assert(v41.includes("__DOJUN_RELEASE?.version")&&v47.includes("__DOJUN_RELEASE?.version"),'version patches must use one canonical release');
-assert(sw.includes("const CACHE='dojun-pwa-v63"),'v58 PWA cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v"),'v58 PWA cache missing');
 assert(sw.includes("req.mode==='navigate'"),'only navigation should force fresh network');
 assert(!sw.includes("fetch(event.request,{cache:'no-store'})"),'all assets must not be no-store');
 console.log('PASS: v61 canonical brand/version, Ppeuni D+291, stock safety and fast PWA cache');

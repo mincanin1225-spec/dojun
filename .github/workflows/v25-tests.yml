@@ -81,3 +81,5 @@ jobs:
         run: node tests/v63-final-shopping-checkbox.cjs
       - name: Shopping workflow cache hard bypass
         run: node tests/v64-shopping-cache-bypass.cjs
+      - name: Raw-only shopping list
+        run: node tests/v65-shopping-raw-only.cjs
