@@ -62,7 +62,7 @@ vm.runInContext(source,ctx);
   vm.runInContext("mergeInventory({beef:{deleted:true,updatedAt:10}})",ctx);
   assert.equal(vm.runInContext("inventory.beef",ctx),undefined,'remote tombstone must remove deleted inventory');
 
-  vm.runInContext("inventory={carrot:{qty:30,unit:'g',location:'냉장',updatedAt:11}}; close=()=>{}; render=()=>{}; toast=()=>{};",ctx);
+  vm.runInContext("inventory={carrot:{qty:30,unit:'g',location:'냉장',updatedAt:11}}; close=()=>{}; render=()=>{};",ctx);
   vm.runInContext("deleteInventoryItem('carrot')",ctx);
   assert.equal(vm.runInContext("inventory.carrot",ctx),undefined,'local delete must remove inventory');
   assert(vm.runInContext("Number(inventoryTombstones.carrot)>0",ctx),'local delete must create a tombstone');
