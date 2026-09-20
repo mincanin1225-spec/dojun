@@ -69,7 +69,7 @@ const v36=fs.readFileSync('legacy-outing-v36.js','utf8');
 const v41=fs.readFileSync('legacy-outing-v41-no-embedded-map.js','utf8');
 const v47=fs.readFileSync('legacy-ui-v47.js','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
-assert(core.includes("name:'도준이키우기',version:'v63'"),'core release metadata must be canonical');
+assert(core.includes("name:'도준이키우기',version:'v66'"),'core release metadata must be canonical');
 assert(core.includes("const APP_VER=window.__DOJUN_RELEASE.version"),'settings must read canonical version');
 assert(!v36.includes("APP_NAME='도준이육성게임'"),'outing must not rename the app to 육성게임');
 assert(v36.includes("__DOJUN_RELEASE?.name"),'outing must use canonical app name');
