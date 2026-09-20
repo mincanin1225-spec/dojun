@@ -218,7 +218,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v58'});
+window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v59'});
 const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
@@ -253,7 +253,7 @@ function syncPush(k,v){
 function applyRemote(rk,val){
   if(val==null)return false;
   const k=kOf(rk);
-  if(k==='inventory2'){return mergeInventory(val)}
+  if(k==='inventory2'){try{if(localStorage.getItem(INV_RESET_REMOTE_KEY)==='1')return false}catch(e){};return mergeInventory(val)}
   if(!SYNCABLE(k))return false;
   try{if(JSON.stringify(LS.get(k))===JSON.stringify(val))return false}catch(e){}
   try{LS.set(k,val)}catch(e){}
@@ -294,6 +294,8 @@ function syncStart(){
       const d=m.data||{};
       for(const rk in d){if(applyRemote(rk,d[rk]))changed=true}
       const was=online; online=true; if(!was)changed=true;
+      clearRemoteInventoryResetV59().then(ok=>{if(ok)syncPush('inventory2',inventory)}).catch(()=>{});
+      flushInventoryDeletes();
       pushAllLocal(d);
     }else{
       const seg=m.path.replace(/^\//,'').split('/')[0];
@@ -307,7 +309,7 @@ function syncStart(){
   };
   es.addEventListener('put',handle);
   es.addEventListener('patch',handle);
-  es.onopen=()=>{fails=0};
+  es.onopen=()=>{fails=0;clearRemoteInventoryResetV59().catch(()=>{})};
   /* 연결이 안 되면 화면을 계속 다시 그리지 않는다 */
   es.onerror=()=>{
     const was=online; online=false;
@@ -1357,6 +1359,7 @@ document.addEventListener('click',async e=>{
   if(cmd==='shoppart'){shopPart=arg;return render()}
   if(cmd==='invedit')return sheetInventory(arg);
   if(cmd==='invsave')return saveInventoryForm(arg);
+  if(cmd==='invdelete')return deleteInventoryItem(arg);
   if(cmd==='invzero'){$('invQty').value=0;return}
   if(cmd==='invadjust'){$('invQty').value=Math.max(0,(Number($('invQty').value)||0)+Number(arg));return}
   if(cmd==='tab'){
@@ -1524,22 +1527,88 @@ function cleanInventory(raw){
   }
   return out;
 }
+const INV_TOMB_KEY='dj:inventoryTombstones1';
+const INV_RESET_KEY='dj:inventoryResetV59';
+const INV_RESET_REMOTE_KEY='dj:inventoryResetRemotePendingV59';
+let inventoryResetJustRan=false;
+function readInventoryTombstones(){
+  try{const v=JSON.parse(localStorage.getItem(INV_TOMB_KEY)||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{}}catch(e){return{}}
+}
+let inventoryTombstones=readInventoryTombstones();
+function saveInventoryTombstones(){
+  try{localStorage.setItem(INV_TOMB_KEY,JSON.stringify(inventoryTombstones))}catch(e){}
+}
 function persistInventoryLocal(){
   LS.set('inventory2',inventory);
   try{if(window.storage)Promise.resolve(window.storage.set('inventory2',JSON.stringify(inventory))).catch(()=>{})}catch(e){}
 }
 function pushInventoryItem(k){
-  if(!online||!sync.url||!sync.code)return;
+  if(!online||!sync.url||!sync.code||!inventory[k])return;
   fetch(famURL('inventory2/'+k),{method:'PUT',body:JSON.stringify(inventory[k])}).then(r=>{if(!r.ok)toast('재고 공유 대기 중 · 연결 후 다시 시도해요')}).catch(()=>toast('재고 공유 대기 중'));
 }
+function pushInventoryDelete(k,at=inventoryTombstones[k]){
+  if(!sync.url||!sync.code||!at)return Promise.resolve(false);
+  return fetch(famURL('inventory2/'+k),{method:'PUT',body:JSON.stringify({deleted:true,updatedAt:Number(at)||Date.now()})})
+    .then(r=>r.ok).catch(()=>false);
+}
+function flushInventoryDeletes(){
+  if(!online||!sync.url||!sync.code)return;
+  for(const [k,at] of Object.entries(inventoryTombstones))pushInventoryDelete(k,at);
+}
+function removeCustomInventoryBackup(k){
+  try{const key='dj:customInventory1',v=JSON.parse(localStorage.getItem(key)||'{}');if(v&&typeof v==='object'&&v[k]!==undefined){delete v[k];localStorage.setItem(key,JSON.stringify(v))}}catch(e){}
+}
+function deleteInventoryItem(k){
+  if(!inventory[k])return;
+  if(!confirm(`${invName(k)} 재고를 삭제할까요?`))return;
+  const at=Math.max(Date.now(),(Number(inventory[k]?.updatedAt)||0)+1,(Number(inventoryTombstones[k])||0)+1);
+  inventoryTombstones[k]=at;saveInventoryTombstones();
+  delete inventory[k];removeCustomInventoryBackup(k);persistInventoryLocal();pushInventoryDelete(k,at);
+  close();render();toast('재고를 삭제했어요');
+}
+async function resetInventoryV59IfNeeded(raw){
+  try{if(localStorage.getItem(INV_RESET_KEY)==='1')return raw||{}}catch(e){return raw||{}}
+  const at=Date.now(),src=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
+  for(const k of Object.keys(src))inventoryTombstones[k]=Math.max(Number(inventoryTombstones[k])||0,at);
+  saveInventoryTombstones();
+  try{LS.set('inventory2',{})}catch(e){}
+  try{if(window.storage)await window.storage.set('inventory2','{}')}catch(e){}
+  try{localStorage.setItem('dj:cubeInventory2','[]')}catch(e){}
+  try{localStorage.setItem('dj:customInventory1','{}')}catch(e){}
+  try{localStorage.setItem(INV_RESET_KEY,'1');localStorage.setItem(INV_RESET_REMOTE_KEY,'1')}catch(e){}
+  inventoryResetJustRan=true;
+  return {};
+}
+function clearRemoteInventoryResetV59(){
+  try{
+    if(localStorage.getItem(INV_RESET_REMOTE_KEY)!=='1'||!sync.url||!sync.code)return Promise.resolve(false);
+    return fetch(famURL('inventory2'),{method:'PUT',body:JSON.stringify(inventory||{})}).then(r=>{
+      if(!r.ok)return false;
+      localStorage.removeItem(INV_RESET_REMOTE_KEY);return true;
+    }).catch(()=>false);
+  }catch(e){return Promise.resolve(false)}
+}
 function mergeInventory(raw){
-  const remote=cleanInventory(raw),before=JSON.stringify(inventory);
-  for(const k of Object.keys(remote)){
-    if(!inventory[k]||remote[k].updatedAt>=inventory[k].updatedAt)inventory[k]=remote[k];
+  const source=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{},before=JSON.stringify(inventory),remote=cleanInventory(source);
+  for(const [k,v] of Object.entries(source)){
+    if(!v||v.deleted!==true)continue;
+    const at=Math.max(0,Number(v.updatedAt)||0);
+    if(at>(Number(inventoryTombstones[k])||0))inventoryTombstones[k]=at;
+    if(!inventory[k]||at>=(Number(inventory[k].updatedAt)||0))delete inventory[k];
+    removeCustomInventoryBackup(k);
   }
-  persistInventoryLocal();
-  // At the root event online becomes true after applyRemote; flush via microtask.
-  Promise.resolve().then(()=>{for(const k of Object.keys(inventory))if(!remote[k]||inventory[k].updatedAt>remote[k].updatedAt)pushInventoryItem(k)});
+  for(const k of Object.keys(remote)){
+    const tomb=Number(inventoryTombstones[k])||0,updated=Number(remote[k].updatedAt)||0;
+    if(tomb>=updated){if(online)pushInventoryDelete(k,tomb);continue}
+    if(tomb&&updated>tomb){delete inventoryTombstones[k]}
+    if(!inventory[k]||updated>=(Number(inventory[k].updatedAt)||0))inventory[k]=remote[k];
+  }
+  saveInventoryTombstones();persistInventoryLocal();
+  // At the root event online becomes true after applyRemote; flush local changes and deletions via microtask.
+  Promise.resolve().then(()=>{
+    for(const k of Object.keys(inventory))if(!remote[k]||(Number(inventory[k].updatedAt)||0)>(Number(remote[k]?.updatedAt)||0))pushInventoryItem(k);
+    flushInventoryDeletes();
+  });
   return before!==JSON.stringify(inventory);
 }
 function sheetInventory(k){
@@ -1553,7 +1622,7 @@ function sheetInventory(k){
     <div class="fld"><label for="invMemo">메모</label><input id="invMemo" maxlength="200" value="${esc(v.memo)}"></div>
     <p class="hint">조리에 쓴 만큼 현재량을 줄여 저장해 주세요. 빠른 버튼은 위에서 선택한 단위로 계산해요.</p>
     <div class="btnrow"><button class="btn" data-a="invadjust:-10">−10</button><button class="btn" data-a="invadjust:10">+10</button><button class="btn" data-a="invadjust:50">+50</button><button class="btn" data-a="invzero">전부 사용</button></div>
-    <div class="btnrow"><button class="btn pri" data-a="invsave:${k||''}">저장</button><button class="btn" data-a="close">닫기</button></div>`);
+    <div class="btnrow"><button class="btn pri" data-a="invsave:${k||''}">저장</button>${k?`<button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-a="invdelete:${esc(k)}">삭제</button>`:''}<button class="btn" data-a="close">닫기</button></div>`);
 }
 function saveInventoryForm(k){
   k=k||$('invKey').value;
@@ -1652,12 +1721,14 @@ async function boot(){
   const s=await store.get('settings2');if(s)settings={...settings,...s};
   const f=await store.get('foods2');if(f)foods=f;
   const sh=await store.get('shop2');if(sh)shopChk=sh;
-  inventory=cleanInventory(await store.get('inventory2')||{});
+  const rawInventory=await store.get('inventory2')||{};
+  inventory=cleanInventory(await resetInventoryV59IfNeeded(rawInventory));
   const bd=await store.get('batch2');if(bd)batchDone=bd;
   const av=await store.get('avatar');if(av)avatar=av;
   const sy=await store.get('sync');if(sy&&sy.url){sync=sy;syncStart()}
   const y=+today.slice(0,4),m=+today.slice(5,7);
   render();
+  if(inventoryResetJustRan)setTimeout(()=>toast('예시 재고를 비웠어요 · 실제 재고를 새로 입력해 주세요'),0);
   await ensureM(y,m);
   render(true);
   /* 앞뒤 달은 화면을 띄운 뒤 여유 있을 때 준비한다 */
