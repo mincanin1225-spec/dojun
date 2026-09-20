@@ -77,3 +77,5 @@ jobs:
         run: node tests/v63-ui-integration.cjs
       - name: Shopping completion status regression
         run: node tests/v63-shopping-status.cjs
+      - name: Final shopping checkbox UI
+        run: node tests/v63-final-shopping-checkbox.cjs
