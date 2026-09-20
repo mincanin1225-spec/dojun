@@ -55,14 +55,23 @@
  function target(){return root.__mgWeekTarget==='next'?addD(weekCur,7):weekCur}
  function nav(){return '<div class="card"><div class="btnrow"><button class="btn" data-v33week="current">이번 주</button><button class="btn" data-v33week="next">다음 주</button></div><div class="btnrow"><button class="btn" data-mg="stock">재고관리</button><button class="btn" data-mg="shop">장보기</button><button class="btn" data-mg="prep">식단만들기</button></div><p class="hint">'+esc(target())+'부터 7일 · 재고연결 v63 · 조리식은 현재 기기에 저장</p></div>'}
  function plan(){return E.plan(meals(target(),7),snapshot())}
+ function shopKey(start){return 'mg29|'+start}
+ function shopList(start){return shopChk?.[shopKey(start)]||[]}
+ function shopChecked(start,name){return shopList(start).includes(name)}
+ function saveShopChecks(){try{Promise.resolve(store.set('shop2',shopChk)).catch(()=>{})}catch(e){}}
  function shopping(){
-   const p=plan();let html=nav()+'<h2>장보기 · 만들어둔 음식 먼저 반영</h2><p class="hint">1차와 2차에 같은 재고를 두 번 배정하지 않아요. 밥·반찬은 조리된 양 기준이며, 쌀 등 원물 구매량은 해당 레시피가 있어야 환산됩니다.</p>';
+   const p=plan();let html=nav()+'<h2>장보기 · 만들어둔 음식 먼저 반영</h2><p class="hint">1차와 2차에 같은 재고를 두 번 배정하지 않아요. <b>산 재료는 왼쪽 체크박스를 눌러 구매완료로 표시</b>할 수 있어요.</p>';
    for(const [label,a,b]of [['1차',0,4],['2차',4,7]]){
-     const totals={};for(const r of p.filter(r=>r.meal.on>=addD(target(),a)&&r.meal.on<addD(target(),b)))for(const x of r.needs){
+     const start=addD(target(),a),totals={};for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<addD(target(),b)))for(const x of r.needs){
        const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
      }
      const rows=Object.entries(totals).filter(([,v])=>v.g>1e-6||v.unknown);
-     html+='<div class="card" style="margin-top:12px"><h3>'+label+' 부족분</h3>'+(rows.length?rows.map(([n,x])=>'<p><b>'+esc(n)+'</b> '+(x.g>0?Math.round(x.g*10)/10+'g':'')+(x.unknown?' · 레시피량 확인 필요':'')+'</p>').join(''):'<p>등록된 재고로 준비 가능</p>')+'</div>';
+     const done=rows.filter(([n])=>shopChecked(start,n)).length,allDone=!rows.length||done===rows.length;
+     html+='<div class="card" style="margin-top:12px">'
+       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">'+label+' 부족분</h3><span class="chip sm '+(allDone?'ok':'')+'">'+(rows.length?(allDone?'장보기 완료':'장보기 미완료 '+done+'/'+rows.length):'장보기 완료 · 추가 구매 없음')+'</span></div>'
+       +(rows.length?rows.map(([n,x])=>{const on=shopChecked(start,n);return '<div class="shop'+(on?' on':'')+'" data-v63-shopcheck="'+start+'|'+encodeURIComponent(n)+'" style="cursor:pointer"><div class="bx"></div><div class="nm"><b>'+esc(n)+'</b><div class="hint">'+(x.g>0?Math.round(x.g*10)/10+'g':'')+(x.unknown?(x.g>0?' · ':'')+'레시피량 확인 필요':'')+'</div></div><div class="qt">'+(on?'구매완료':'미구매')+'</div></div>'}).join(''):'<p>등록된 재고로 준비 가능</p>')
+       +(rows.length?'<div class="btnrow" style="margin-top:10px"><button class="btn '+(allDone?'':'pri')+'" data-v63-shopall="'+start+'">'+(allDone?'완료 취소':'전체 구매완료')+'</button></div>':'')
+       +'</div>';
    }return html;
  }
  function token(){return 'cook-'+(root.crypto&&root.crypto.randomUUID?root.crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))}
@@ -88,6 +97,20 @@
  if(root.addEventListener)root.addEventListener('click',function(e){const old=e.target.closest&&e.target.closest('[data-v62-complete],[data-v35complete],[data-a^="bdone:"]');if(old){e.preventDefault();e.stopImmediatePropagation();toast('새 식단만들기 화면에서 완료해 주세요')}},true);
  // Block legacy automatic deduction entry points. The old v62 loader is removed in index.html.
  document.addEventListener('click',function(e){
+   const shop=e.target.closest&&e.target.closest('[data-v63-shopcheck],[data-v63-shopall]');
+   if(shop){
+     e.preventDefault();e.stopImmediatePropagation();
+     if(shop.hasAttribute('data-v63-shopcheck')){
+       const [start,enc]=shop.getAttribute('data-v63-shopcheck').split('|'),name=decodeURIComponent(enc),key=shopKey(start),list=shopChk[key]||(shopChk[key]=[]),i=list.indexOf(name);
+       i<0?list.push(name):list.splice(i,1);
+     }else{
+       const start=shop.getAttribute('data-v63-shopall'),key=shopKey(start),p=plan(),end=addD(start,start===target()?4:3),names=[];
+       const totals={};for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<end))for(const x of r.needs){const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG}
+       for(const [n,v] of Object.entries(totals))if(v.g>1e-6||v.unknown)names.push(n);
+       const cur=shopChk[key]||[],all=names.length>0&&names.every(n=>cur.includes(n));shopChk[key]=all?[]:names;
+     }
+     saveShopChecks();render(true);return;
+   }
    const el=e.target.closest&&e.target.closest('[data-v63-edit],[data-v63-feed],[data-v62-complete],[data-v35complete],[data-a^="bdone:"]');if(!el)return;
    e.preventDefault();e.stopImmediatePropagation();
    if(locked)return;
