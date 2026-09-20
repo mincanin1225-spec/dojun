@@ -1,4 +1,4 @@
-name: v60 inventory custom and navigation tests
+name: v61 photo inventory import tests
 
 on:
   pull_request:
@@ -68,4 +68,7 @@ jobs:
 
       - name: v60 inventory custom and navigation
         run: node tests/v60-inventory-custom-nav.cjs
+
+      - name: v61 confirmed photo inventory
+        run: node tests/v61-photo-inventory.cjs
 

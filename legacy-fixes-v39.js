@@ -2,7 +2,7 @@
   'use strict';
   if(typeof render!=='function')return;
 
-  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v60';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v61';
   const NAVER_HOME='https://map.naver.com/';
   const NAVER_SAVED='https://naver.me/xfboSqg8';
   const baseRender=render;
