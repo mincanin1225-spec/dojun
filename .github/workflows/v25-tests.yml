@@ -75,3 +75,5 @@ jobs:
         run: node tests/v63-meal-workflow.cjs
       - name: Meal workflow UI integration
         run: node tests/v63-ui-integration.cjs
+      - name: Shopping completion status regression
+        run: node tests/v63-shopping-status.cjs
