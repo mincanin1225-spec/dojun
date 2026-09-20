@@ -62,19 +62,18 @@
  function shopChecked(start,name){return shopList(start).includes(name)}
  function saveShopChecks(){try{Promise.resolve(store.set('shop2',shopChk)).catch(()=>{})}catch(e){}}
  function shopping(){
-   const p=plan();let html=nav()+'<h2>장보기 · 만들어둔 음식 먼저 반영</h2><p class="hint">1차와 2차에 같은 재고를 두 번 배정하지 않아요. <b>산 재료는 왼쪽 체크박스를 눌러 구매완료로 표시</b>할 수 있어요. 잡곡무른밥 같은 조리 준비식은 장보기에서 제외하고 식단만들기에서 관리합니다.</p>';
+   const p=plan();let html=nav()+'<h2>장보기 · 만들어둔 음식 먼저 반영</h2><p class="hint">1차와 2차에 같은 재고를 두 번 배정하지 않아요. <b>산 재료는 왼쪽 체크박스를 눌러 구매완료로 표시</b>할 수 있어요. 밥·죽 같은 조리 준비식은 장보기에서 제외하고 식단만들기에서 관리합니다.</p>';
    for(const [label,a,b]of [['1차',0,4],['2차',4,7]]){
-     const start=addD(target(),a),totals={},preparedOnly={};for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<addD(target(),b)))for(const x of r.needs){
-       if(isPreparedOnlyShoppingName(x.name)){const t=preparedOnly[x.name]||(preparedOnly[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;continue}
+     const start=addD(target(),a),totals={};for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<addD(target(),b)))for(const x of r.needs){
+       if(isPreparedOnlyShoppingName(x.name))continue;
        const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
      }
-     const rows=Object.entries(totals).filter(([,v])=>v.g>1e-6||v.unknown),prepRows=Object.entries(preparedOnly).filter(([,v])=>v.g>1e-6||v.unknown);
+     const rows=Object.entries(totals).filter(([,v])=>v.g>1e-6||v.unknown);
      const done=rows.filter(([n])=>shopChecked(start,n)).length,allDone=!rows.length||done===rows.length;
      html+='<div class="card" style="margin-top:12px">'
        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">'+label+' 부족분</h3><span class="chip sm '+(allDone?'ok':'')+'">'+(rows.length?(allDone?'장보기 완료':'장보기 미완료 '+done+'/'+rows.length):'장보기 완료 · 추가 구매 없음')+'</span></div>'
        +(rows.length?rows.map(([n,x])=>{const on=shopChecked(start,n);return '<div class="shop'+(on?' on':'')+'" data-v63-shopcheck="'+start+'|'+encodeURIComponent(n)+'" style="cursor:pointer"><div class="bx"></div><div class="nm"><b>'+esc(n)+'</b><div class="hint">'+(x.g>0?Math.round(x.g*10)/10+'g':'')+(x.unknown?(x.g>0?' · ':'')+'레시피량 확인 필요':'')+'</div></div><div class="qt">'+(on?'구매완료':'미구매')+'</div></div>'}).join(''):'<p>등록된 재고로 준비 가능</p>')
        +(rows.length?'<div class="btnrow" style="margin-top:10px"><button class="btn '+(allDone?'':'pri')+'" data-v63-shopall="'+start+'">'+(allDone?'완료 취소':'전체 구매완료')+'</button></div>':'')
-       +(prepRows.length?'<div class="hint" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line2)"><b>장보기 제외 · 식단만들기에서 준비</b><br>'+prepRows.map(([n,x])=>esc(n)+(x.g>0?' '+Math.round(x.g*10)/10+'g':'')).join(' · ')+'</div>':'')
        +'</div>';
    }return html;
  }
