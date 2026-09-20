@@ -2,7 +2,7 @@
   'use strict';
   if(typeof render!=='function')return;
 
-  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v66';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v67';
   const baseRender=render;
   const PRIORITY={
     '가고싶음':0,
