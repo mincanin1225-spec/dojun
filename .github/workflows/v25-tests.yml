@@ -1,4 +1,4 @@
-name: v59 inventory reset and delete tests
+name: v60 inventory custom and navigation tests
 
 on:
   pull_request:
@@ -65,4 +65,7 @@ jobs:
 
       - name: v59 inventory reset and delete
         run: node tests/v59-inventory-reset-delete.cjs
+
+      - name: v60 inventory custom and navigation
+        run: node tests/v60-inventory-custom-nav.cjs
 
