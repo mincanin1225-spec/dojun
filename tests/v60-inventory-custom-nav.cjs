@@ -47,6 +47,7 @@ const ctx={
     removeItem:k=>db.delete(k)
   },
   document:{addEventListener(){},getElementById(){return null}},
+  addEventListener(){},
   render(){},
   toast(){},
   setTimeout(){},
