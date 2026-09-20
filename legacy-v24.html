@@ -218,7 +218,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v66'});
+window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v67'});
 const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
@@ -239,7 +239,7 @@ const store={
 
 /* ══════════ 가족 공유 (Firebase 실시간 데이터베이스) ══════════ */
 let sync={url:'',code:''}, es=null, online=false, rt=null, syncFail=false;
-const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='inventory2'||k==='avatar'||k.indexOf('m2:')===0;
+const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='inventory2'||k==='prepChecklist2'||k==='avatar'||k.indexOf('m2:')===0;
 const rkOf=k=>k.replace(':','__'), kOf=rk=>rk.replace('__',':');
 const famURL=seg=>sync.url.replace(/\/+$/,'')+'/fam/'+sync.code+(seg?'/'+seg:'')+'.json';
 function newCode(){
@@ -273,7 +273,7 @@ function scheduleRender(){clearTimeout(rt);rt=setTimeout(async()=>{
   if(!months[`${y}-${pad(m)}`])await ensureM(y,m);
   render(true)},250)}
 async function pushAllLocal(remote){
-  const keys=['settings2','foods2','shop2','inventory2','avatar'];
+  const keys=['settings2','foods2','shop2','inventory2','prepChecklist2','avatar'];
   try{for(let i=0;i<localStorage.length;i++){const kk=localStorage.key(i);
     if(kk&&kk.indexOf('dj:m2:')===0)keys.push(kk.slice(3))}}catch(e){}
   for(const k of keys){
