@@ -98,7 +98,7 @@
  // Block legacy automatic deduction entry points. The old v62 loader is removed in index.html.
  document.addEventListener('click',function(e){
    const shop=e.target.closest&&e.target.closest('[data-v63-shopcheck],[data-v63-shopall]');
-   if(shop){
+   if(shop&&(shop.hasAttribute('data-v63-shopcheck')||shop.hasAttribute('data-v63-shopall'))){
      e.preventDefault();e.stopImmediatePropagation();
      if(shop.hasAttribute('data-v63-shopcheck')){
        const [start,enc]=shop.getAttribute('data-v63-shopcheck').split('|'),name=decodeURIComponent(enc),key=shopKey(start),list=shopChk[key]||(shopChk[key]=[]),i=list.indexOf(name);
