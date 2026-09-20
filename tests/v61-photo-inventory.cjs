@@ -6,7 +6,7 @@ const core=fs.readFileSync('legacy-v24.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 new Function(patch);
 
-assert(core.includes("version:'v63'"),'canonical release must be v61');
+assert(core.includes("version:'v66'"),'canonical release must be v61');
 assert(index.includes("v61-photo-inventory-script"),'v61 photo inventory loader missing');
 assert(index.indexOf('v35-management-script')<index.indexOf('v61-photo-inventory-script'),'photo inventory must load after management v35');
 assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61'),'v61 photo inventory cache key missing');
