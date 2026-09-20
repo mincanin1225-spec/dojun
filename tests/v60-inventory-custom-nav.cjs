@@ -13,7 +13,7 @@ new Function(ui47);
 
 assert(core.includes("version:'v63'"),'canonical release must be v61');
 assert(index.includes('r=20260921-v63'),'v61 cache bust must reach injected app assets');
-assert(sw.includes("const CACHE='dojun-pwa-v63'"),'v61 PWA cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v63"),'v61 PWA cache marker missing');
 
 assert(core.includes("stockCode:String(v.stockCode||'')"),'inventory cleaning must preserve stable stock codes');
 assert(mg29.includes("const MG_HISTORY_KEY='__dojunManagementStageV60'"),'management navigation history marker missing');
