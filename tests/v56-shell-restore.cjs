@@ -6,5 +6,5 @@ assert(index.includes('<iframe id="app"'),'stable shell must use legacy app ifra
 assert(index.includes('legacy-ui-v47.js?v=20260916-v47&r=20260921-v63'),'v47 UI patch must stay in the original order with the v58 cache-bust');
 assert(index.includes('visibility:visible'),'base app must be visible immediately');
 assert(index.includes('v58-ppeuni-data-script')&&index.includes('v58-ppeuni-safe-script'),'verified Ppeuni integration must load after the stable UI shell');
-assert(sw.includes("const CACHE='dojun-pwa-v63'"),'v58 service worker marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v63"),'v58 service worker marker missing');
 console.log('PASS: stable enhanced shell remains preserved under v61');

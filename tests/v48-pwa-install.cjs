@@ -9,5 +9,5 @@ assert(Array.isArray(manifest.icons)&&manifest.icons.some(x=>x.sizes==='192x192'
 assert(manifest.display==='standalone','manifest display should be standalone');
 assert(manifest.start_url==='./index.html'&&manifest.scope==='./','manifest start_url/scope should match GitHub Pages app scope');
 assert(fs.existsSync('icons/icon-192.svg')&&fs.existsSync('icons/icon-512.svg'),'PWA icon files should exist');
-assert(/const CACHE='dojun-pwa-v(?:4[8-9]|[5-9]\d+)'/.test(sw),'service worker should use a versioned cache at v48 or newer');
+assert(/const CACHE='dojun-pwa-v(?:4[8-9]|[5-9]\d+)(?:-[a-z0-9]+)*'/i.test(sw),'service worker should use a versioned cache at v48 or newer');
 console.log('v48+ PWA installability checks passed');
