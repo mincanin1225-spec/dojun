@@ -83,3 +83,5 @@ jobs:
         run: node tests/v64-shopping-cache-bypass.cjs
       - name: Raw-only shopping list
         run: node tests/v65-shopping-raw-only.cjs
+      - name: Two-batch prep stock allocation
+        run: node tests/v66-prep-stock-allocation.cjs

@@ -1,4 +1,4 @@
-const assert=require('node:assert/strict'),E=require('../meal-stock-v63.js');
+const assert=require('node:assert/strict'),E=require('../meal-stock-v66.js');
 const initial=()=>({prepared:[],cubes:[],raw:{},ops:{},feeds:{}});
 const menu=(key='2026-09-23|0')=>({key,name:'잡곡무른밥 · 양배추',g:120,ingredients:[{name:'잡곡무른밥',g:100},{name:'양배추',g:20}]});
 let n=0;function test(name,f){f();console.log('PASS',name);n++}
