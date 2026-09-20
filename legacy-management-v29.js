@@ -5,6 +5,32 @@
   TABS[1][1]='관리';
   window.__mgStage='home';
 
+  const MG_HISTORY_KEY='__dojunManagementStageV60';
+  function mgHistory(next,mode='push'){
+    try{
+      const state={...(history.state||{})};
+      if(next==='home')delete state[MG_HISTORY_KEY];else state[MG_HISTORY_KEY]=next;
+      history[mode==='replace'?'replaceState':'pushState'](state,'',location.href);
+    }catch(e){}
+  }
+  function setManagementStage(next){
+    const cur=window.__mgStage||'home';
+    if(next===cur){render();return}
+    if(next==='home'){
+      try{if(history.state?.[MG_HISTORY_KEY]){history.back();return}}catch(e){}
+      window.__mgStage='home';mgHistory('home','replace');render();return;
+    }
+    window.__mgStage=next;
+    mgHistory(next,cur==='home'?'push':'replace');
+    render();
+  }
+  window.addEventListener('popstate',function(){
+    if(window.__mgStage!=='home'){
+      window.__mgStage='home';
+      try{render()}catch(e){}
+    }
+  });
+
   const mealLabels=['아침','점심','저녁'];
   const cubeBatches=()=>{try{const v=JSON.parse(localStorage.getItem('dj:cubeInventory2')||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}};
   const normName=n=>{n=String(n||'').trim();return ['진밥','밥','밥 (조리 후)'].includes(n)?'밥 (조리 후)':n};
@@ -126,7 +152,7 @@
 
   document.addEventListener('click',async function(e){
     const tabBtn=e.target.closest&&e.target.closest('[data-a="tab:shop"]');
-    if(tabBtn)window.__mgStage='home';
+    if(tabBtn){window.__mgStage='home';mgHistory('home','replace')}
 
     const prepBtn=e.target.closest&&e.target.closest('[data-mgprep]');
     if(prepBtn){e.preventDefault();e.stopImmediatePropagation();const w=windows().find(x=>x.id===prepBtn.dataset.mgprep);if(w)sheetBatch(w.start,w.count);return}
@@ -136,7 +162,7 @@
 
     const t=e.target.closest&&e.target.closest('[data-mg]');if(!t)return;
     const a=t.dataset.mg;e.preventDefault();e.stopImmediatePropagation();
-    if(['home','stock','shop','prep'].includes(a)){window.__mgStage=a;render();return}
+    if(['home','stock','shop','prep'].includes(a)){setManagementStage(a);return}
     if(a==='rawsave'){
       document.querySelectorAll('[data-rq]').forEach(x=>{const k=x.dataset.rq;if(inventory[k]){inventory[k].qty=Math.max(0,Number(x.value)||0);inventory[k].updatedAt=Date.now();try{pushInventoryItem(k)}catch(_){}}});persistInventoryLocal();toast('실재고를 갱신했어요 · 장보기 목록도 다시 계산됩니다');render(true);return;
     }
