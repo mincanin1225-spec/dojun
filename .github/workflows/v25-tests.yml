@@ -85,3 +85,5 @@ jobs:
         run: node tests/v65-shopping-raw-only.cjs
       - name: Two-batch prep stock allocation
         run: node tests/v66-prep-stock-allocation.cjs
+      - name: Canonical v66 shell version
+        run: node tests/v66-canonical-shell-version.cjs
