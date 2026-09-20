@@ -3,7 +3,7 @@ const patch=fs.readFileSync('legacy-outing-v42-priority.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 new Function(patch);
 assert(index.includes('legacy-outing-v42-priority.js?v=20260916-v42'),'v42 priority patch must load last');
-assert(patch.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v59'"),'v42 module must use canonical release version');
+assert(patch.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v60'"),'v42 module must use canonical release version');
 assert(patch.includes("'가고싶음':0"),'wish places must have top priority');
 assert(patch.includes("'추천':0"),'recommended places must stay with top unvisited group');
 assert(patch.includes("'재방문':1"),'revisit places must follow unvisited places');
