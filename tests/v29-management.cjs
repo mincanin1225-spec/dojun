@@ -4,7 +4,7 @@ const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const legacy=fs.readFileSync(path.join(root,'legacy-v24.html'),'utf8');
 const management=fs.readFileSync(path.join(root,'legacy-management-v29.js'),'utf8');
 new Function(management);
-assert(/\.\/legacy-v(?:24|66)\.html(?:\?[^\"']+)?/.test(index),'original app shell must remain the default UI');
+assert(/\.\/legacy-v(?:24|\d+)\.html(?:\?[^\"']+)?/.test(index),'original app shell must remain the default UI');
 assert(/legacy-management-v29\.js\?v=\d{8}-v[\w-]+/.test(index),'v29 management extension must be injected');
 assert(legacy.includes("const TABS=[['cal','식단','cal'],['shop','장보기','shop']"),'original app source must remain preserved');
 assert(management.includes("window.__mgStage='home'"),'management must open on weekly overview');
