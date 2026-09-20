@@ -3,7 +3,7 @@ const assert=require('assert');
 const seed=fs.readFileSync('legacy-outing-v40-seed.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 
-assert(seed.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v58'"),'v40 module must use canonical release version');
+assert(seed.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v59'"),'v40 module must use canonical release version');
 assert(seed.includes("const STORAGE_KEY='dj:outingPlaces1'"),'outing storage key missing');
 assert(seed.includes("const GEO_KEY='dj:outingGeocodeV40'"),'geocode cache key missing');
 assert(seed.includes("status:'가고싶음'"),'seed status must be 가고싶음');

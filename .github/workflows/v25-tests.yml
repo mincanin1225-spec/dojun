@@ -1,4 +1,4 @@
-name: v58 unified stable rebuild tests
+name: v59 inventory reset and delete tests
 
 on:
   pull_request:
@@ -62,4 +62,7 @@ jobs:
 
       - name: v58 unified release
         run: node tests/v58-unified-release.cjs
+
+      - name: v59 inventory reset and delete
+        run: node tests/v59-inventory-reset-delete.cjs
 
