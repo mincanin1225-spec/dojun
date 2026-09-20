@@ -218,7 +218,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v59'});
+window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v60'});
 const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
@@ -1523,7 +1523,8 @@ function cleanInventory(raw){
     const v=raw?.[k];if(!v||!Number.isFinite(v.qty)||v.qty<0||!['g','개','팩'].includes(v.unit))continue;
     out[k]={qty:v.qty,unit:v.unit,location:['냉장','냉동','실온'].includes(v.location)?v.location:'냉장',
       gramsPerUnit:Number.isFinite(v.gramsPerUnit)&&v.gramsPerUnit>0?v.gramsPerUnit:null,
-      memo:String(v.memo||'').slice(0,200),updatedAt:Number.isFinite(v.updatedAt)?v.updatedAt:0};
+      memo:String(v.memo||'').slice(0,200),updatedAt:Number.isFinite(v.updatedAt)?v.updatedAt:0,
+      stockCode:String(v.stockCode||'')};
   }
   return out;
 }
