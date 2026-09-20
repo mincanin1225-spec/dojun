@@ -79,3 +79,5 @@ jobs:
         run: node tests/v63-shopping-status.cjs
       - name: Final shopping checkbox UI
         run: node tests/v63-final-shopping-checkbox.cjs
+      - name: Shopping workflow cache hard bypass
+        run: node tests/v64-shopping-cache-bypass.cjs
