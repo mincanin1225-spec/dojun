@@ -17,7 +17,7 @@ assert(shell.includes("btn.setAttribute('aria-pressed'"),'reaction buttons must 
 assert(!shell.includes("if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]'))sheetDay(on);"),'reaction tap must not rebuild the day sheet or erase unsaved menu edits');
 assert(!flow.includes("render(true);if(typeof sheetOpen!=='undefined'&&sheetOpen&&oldSheet)sheetDay(m.on)"),'feed action must not rebuild the sheet and erase unsaved inputs');
 assert(flow.includes('function batchShoppingTotals')&&flow.includes('if(isPreparedOnlyShoppingName(x.name))continue'),'prepared meals must be excluded through the shared shopping totals path');
-assert(flow.includes('>조리하기</button>'),'meal cards must use one unified cooking button');
+assert(flow.includes("done?'✓ 조리 완료':'조리하기'"),'meal cards must use one unified cooking action with completed state');
 assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 완료·소분</button>'),'old split cooking buttons must be removed from active cards');
 assert(flow.includes('data-v70-unified'),'recipe, cooking and portion registration must be one screen');
 for(const t of ['1 · 재료·분량','2 · 만드는 법','3 · 완성량·소분','4 · 재고 반영 예상'])assert(flow.includes(t),t+' missing from unified cooking screen');
