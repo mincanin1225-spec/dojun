@@ -23,9 +23,14 @@ assert(flow.includes('data-v70-unified'),'recipe, cooking and portion registrati
 for(const t of ['1 · 재료·분량','2 · 만드는 법','3 · 완성량·소분','4 · 재고 반영 예상'])assert(flow.includes(t),t+' missing from unified cooking screen');
 assert(flow.includes('data-v70-save-recipe'),'recipe-only save must support planning before actual cooking');
 assert(flow.includes("result=E.cook(s,cooked,form)"),'final submit must still use the existing stock transaction engine');
+assert(flow.includes('function mealReady(m,r)'),'prep cards must derive completion from actual prepared stock');
+assert(flow.includes("done=mealReady(m,r)"),'meal cards must bind actual stock coverage to completion UI');
+assert(flow.includes('<span class="chip sm ok">조리 완료</span>'),'completed prep card must show completion chip');
+assert(flow.includes("done?'✓ 조리 완료':'조리하기'"),'cooking action must change to completed outside the sheet');
+assert(flow.includes("done?'disabled aria-disabled=\"true\"'"),'completed cooking action must block accidental duplicate stock registration');
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v70 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-shoppingstock3'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-cookedstatus1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
