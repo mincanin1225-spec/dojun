@@ -105,3 +105,6 @@ jobs:
 
       - name: Shopping completion to raw stock
         run: node tests/v70-shopping-stock-flow.cjs
+
+      - name: Simple weekly make checklist
+        run: node tests/v70-simple-make-flow.cjs
