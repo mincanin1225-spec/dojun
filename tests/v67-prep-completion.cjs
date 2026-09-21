@@ -28,7 +28,7 @@ assert(html.includes('1차 식단만들기'),'first batch must exist');
 assert(html.includes('준비할 음식'),'prep summary must exist');
 assert(html.includes('잡곡무른밥'),'missing prepared food must become a prep task');
 assert(html.includes('50g × 10개'),'five 100g meals with saved 50g portion size must require ten portions');
-assert(html.includes('5끼 · 필요 500g'),'prep task must show meal count and total grams');
+assert(html.includes('총 5끼 필요 · 500g'),'prep task must show total meal count and grams');
 assert(html.includes('data-v67-prepdone'),'prep task must have a completion checkbox');
 assert(html.includes('만들기 0/1'),'batch status must show incomplete count');
 
@@ -45,7 +45,7 @@ const saved=JSON.parse(db.get('dj:prepChecklist2'));assert(Object.values(saved).
 
 limit=4;
 html=ctx.vShop();
-assert(html.includes('4끼 · 필요 400g'),'changed plan must create a changed prep task');
+assert(html.includes('총 4끼 필요 · 400g'),'changed plan must create a changed prep task');
 const firstTask=html.match(/data-v67-prepdone="([^"]+)"/)?.[1];
 assert(firstTask&&decodeURIComponent(firstTask)!==decodeURIComponent(m[1]),'changed required quantity must use a new task identity');
 assert(html.includes('만들기 0/1'),'old completion must not silently complete changed plan');
