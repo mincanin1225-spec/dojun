@@ -1,0 +1,22 @@
+const fs=require('fs'),assert=require('assert/strict');
+const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
+const index=fs.readFileSync('index.html','utf8');
+const shell=fs.readFileSync('legacy-v70.html','utf8');
+const sw=fs.readFileSync('sw.js','utf8');
+new Function(flow);
+
+for(const t of ['1 · 재고','2 · 장보기','3 · 만들기','4 · 먹이기·기록'])assert(flow.includes(t),t+' missing');
+assert(flow.includes('function polishLegacy(html)'),'legacy management surfaces must be normalized');
+assert(flow.includes("t.includes('재고 자동 차감')"),'outdated legacy auto-deduction banner must be filtered');
+assert(flow.includes("summary.textContent='조리법 보기'"),'day recipes should be collapsed on mobile');
+assert(flow.includes("saveBtn.textContent='기록 저장'"),'day save action should be explicit');
+assert(flow.includes("holder.insertBefore(box,actionRow)"),'step 4 must appear before final save actions');
+assert(flow.includes("el.textContent=lb+' · '+(undo?'먹인 재고 차감':'재고 차감 취소')"),'feed action should update in place');
+assert(!flow.includes("render(true);if(typeof sheetOpen!=='undefined'&&sheetOpen&&oldSheet)sheetDay(m.on)"),'feed action must not rebuild the sheet and erase unsaved inputs');
+assert((flow.match(/if\(isPreparedOnlyShoppingName\(x\.name\)\)continue/g)||[]).length>=2,'hidden prepared meals must also be excluded from bulk shopping completion');
+assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v70 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
+assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit1'"),'v70 cache missing');
+assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
+console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');

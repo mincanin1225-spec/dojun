@@ -1,8 +1,8 @@
 const fs=require('fs'),assert=require('assert/strict');
-const flow=fs.readFileSync('meal-workflow-v69.js','utf8');
+const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
 const mg35=fs.readFileSync('legacy-management-v35.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
-const shell=fs.readFileSync('legacy-v69.html','utf8');
+const shell=fs.readFileSync('legacy-v70.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 new Function(flow);new Function(mg35);
 
@@ -19,8 +19,8 @@ assert(!flow.includes("급여 완료 · 조리식 차감"),'feeding action must 
 assert(!flow.includes("<p class=\"hint\">'+esc(m.source)"),'repeated recipe-source prose must be removed from meal cards');
 assert(flow.includes("사용 재고"),'compact meal cards must still show allocated stock');
 assert(flow.includes("분량·레시피")&&flow.includes("조리 완료·소분"),'core prep actions must remain visible');
-assert(index.includes('./legacy-v69.html?r=20260921-v69'),'index must load v69 shell');
-assert(index.includes('./meal-workflow-v69.js?r=20260921-v69'),'index must load v69 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v69'"),'canonical version must be v69');
-assert(sw.includes("const CACHE='dojun-pwa-v69-finalux1'"),'v69 cache missing');
+assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v69 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v69 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v69');
+assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit1'"),'v69 cache missing');
 console.log('PASS: final UX is a four-step flow with compact prep cards and separated feeding');
