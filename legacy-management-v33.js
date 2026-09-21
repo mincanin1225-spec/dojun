@@ -48,35 +48,38 @@
     return cb;
   }
   function grams(v){if(!v)return 0;if(v.unit==='g')return Math.max(0,Number(v.qty)||0);if(Number(v.gramsPerUnit)>0)return Math.max(0,(Number(v.qty)||0)*Number(v.gramsPerUnit));return 0}
+  function cleanG(v){const n=Math.round((Number(v)||0)*10)/10;return Math.abs(n-Math.round(n))<1e-9?String(Math.round(n)):String(n)}
+  function baseStockCode(v){return String(v||'').replace(/-잔량-\d+-\d+$/,'')}
   function unitFor(k){try{const A=stage(today),x=byK[k];if(k==='rice')return A.rice;if(!x)return 20;if(x.cat==='v')return A.veg;if(x.cat==='f')return A.fruit;if(x.k==='tofu')return A.tofu;if(x.fish)return A.fish;if(x.cat==='p')return A.meat}catch(e){}return 20}
 
   function stockSnapshot(){
     ensureCodes();const out={};
-    const row=n=>{n=norm(n);return out[n]||(out[n]={name:n,g:0,n:0,by:{'냉장':0,'냉동':0,'실온':0},countBy:{'냉장':0,'냉동':0,'실온':0},parts:[],codes:[],lots:[]})};
+    const row=n=>{n=norm(n);return out[n]||(out[n]={name:n,g:0,n:0,by:{'냉장':0,'냉동':0,'실온':0},countBy:{'냉장':0,'냉동':0,'실온':0},parts:[],partMap:{},codes:[],lots:[]})};
+    const addPart=(r,loc,u,count)=>{u=Math.round((Number(u)||0)*10)/10;count=Math.round((Number(count)||0)*1000)/1000;if(!(u>0&&count>0))return;const k=loc+'|'+u;r.partMap[k]=(r.partMap[k]||0)+count};
     for(const [k,v] of Object.entries(inventory||{})){
       const r=row(invName(k)),loc=['냉장','냉동','실온'].includes(v.location)?v.location:'냉동',q=Math.max(0,Number(v.qty)||0),g=grams(v);
-      if(g){r.g+=g;r.by[loc]+=g;r.lots.push({loc,g,prepared:false});if(v.unit==='개'&&Number(v.gramsPerUnit)>0)r.parts.push(`${loc} 소분 ${Number(v.gramsPerUnit)}g × ${Math.ceil(q)}개`)}
+      if(g){r.g+=g;r.by[loc]+=g;r.lots.push({loc,g,prepared:false});if(v.unit==='개'&&Number(v.gramsPerUnit)>0)addPart(r,loc,v.gramsPerUnit,q)}
       else if(v.unit==='개'){r.n+=q;r.countBy[loc]+=q}
-      if(v.stockCode&&!r.codes.includes(v.stockCode))r.codes.push(v.stockCode);
+      const code=baseStockCode(v.stockCode);if(code&&!r.codes.includes(code))r.codes.push(code);
     }
     for(const b of cubes()){
       const r=row(b.ingredient),cnt=Math.max(0,Number(b.remainingCount)||0),u=Math.max(0,Number(b.unitG)||0),g=u*cnt;
-      if(g){r.g+=g;r.by['냉동']+=g;r.lots.push({loc:'냉동',g,prepared:true});r.parts.push(`냉동 소분 ${u}g × ${Math.ceil(cnt)}개`)}
-      if(b.stockCode&&!r.codes.includes(b.stockCode))r.codes.push(b.stockCode);
+      if(g){r.g+=g;r.by['냉동']+=g;r.lots.push({loc:'냉동',g,prepared:true});addPart(r,'냉동',u,cnt)}
+      const code=baseStockCode(b.stockCode);if(code&&!r.codes.includes(code))r.codes.push(code);
     }
+    for(const r of Object.values(out))r.parts=Object.entries(r.partMap).map(([k,count])=>{const [loc,u]=k.split('|');return `${loc} 소분 ${cleanG(u)}g × ${cleanG(count)}개`});
     return out;
   }
-
   function totalSummary(){
     const rows=Object.values(stockSnapshot()).filter(r=>r.g>0||r.n>0).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
     if(!rows.length)return '<p class="hint">등록된 재고가 없어요.</p>';
-    return rows.map(r=>`<div class="inventory-row"><div style="flex:1;min-width:0"><b>${esc(r.name)}</b><div class="hint">재고번호 ${esc(r.codes.join(', ')||'-')}</div>${r.parts.length?`<div class="hint" style="color:var(--ink2);font-weight:700">${r.parts.map(esc).join(' · ')}</div>`:''}</div><div style="text-align:right"><b>${r.g?`${Math.ceil(r.g)}g`:`${Math.ceil(r.n)}개`}</b>${r.g?'<div class="hint">총 보유량</div>':''}</div></div>`).join('');
+    return rows.map(r=>`<div class="inventory-row"><div style="flex:1;min-width:0"><b>${esc(r.name)}</b><div class="hint">재고번호 ${esc(r.codes.join(', ')||'-')}</div>${r.parts.length?`<div class="hint" style="color:var(--ink2);font-weight:700">${r.parts.map(esc).join(' · ')}</div>`:''}</div><div style="text-align:right"><b>${r.g?`${cleanG(r.g)}g`:`${cleanG(r.n)}개`}</b>${r.g?'<div class="hint">총 보유량</div>':''}</div></div>`).join('');
   }
   function rawRow(k,v){
     const total=grams(v),portion=v.unit==='개'&&Number(v.gramsPerUnit)>0;
-    return `<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(v.stockCode||'-')}</span><b>${esc(invName(k))}</b></div><div style="margin-top:6px;display:flex;align-items:center;gap:6px"><input data-rq="${esc(k)}" type="number" min="0" step="0.1" value="${Number(v.qty)||0}" style="width:82px;border:1px solid var(--line);border-radius:9px;padding:6px"><span>${esc(v.unit)}</span>${portion?`<span class="hint">× ${Number(v.gramsPerUnit)}g = ${Math.ceil(total)}g</span>`:''}</div><div class="hint">${esc(v.location||'')} ${portion?'· 소분':''}</div></div><div style="display:flex;gap:6px;flex-direction:column"><button class="btn" data-a="invedit:${esc(k)}">수정</button><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-a="invdelete:${esc(k)}">삭제</button></div></div>`;
+    return `<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(baseStockCode(v.stockCode)||'-')}</span><b>${esc(invName(k))}</b></div><div style="margin-top:6px;display:flex;align-items:center;gap:6px"><input data-rq="${esc(k)}" type="number" min="0" step="0.1" value="${Number(v.qty)||0}" style="width:82px;border:1px solid var(--line);border-radius:9px;padding:6px"><span>${esc(v.unit)}</span>${portion?`<span class="hint">× ${cleanG(v.gramsPerUnit)}g = ${cleanG(total)}g</span>`:''}</div><div class="hint">${esc(v.location||'')} ${portion?'· 소분':''}</div></div><div style="display:flex;gap:6px;flex-direction:column"><button class="btn" data-a="invedit:${esc(k)}">수정</button><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-a="invdelete:${esc(k)}">삭제</button></div></div>`;
   }
-  function cubeRow(b,i){const total=Math.max(0,(Number(b.unitG)||0)*(Number(b.remainingCount)||0));return `<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(b.stockCode||'-')}</span><b>${esc(b.ingredient||'')}</b></div><div style="margin-top:6px"><input data-cq="${i}" type="number" min="0" step="1" value="${Number(b.remainingCount)||0}" style="width:68px;border:1px solid var(--line);border-radius:9px;padding:6px">개 <span class="hint">× ${Number(b.unitG)||0}g = ${Math.ceil(total)}g</span></div><div class="hint">냉동 · 소분${b.madeDate?` · ${esc(b.madeDate)}`:''}</div></div><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-v59-cubedel="${i}">삭제</button></div>`}
+  function cubeRow(b,i){const total=Math.max(0,(Number(b.unitG)||0)*(Number(b.remainingCount)||0));return `<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(baseStockCode(b.stockCode)||'-')}</span><b>${esc(b.ingredient||'')}</b></div><div style="margin-top:6px"><input data-cq="${i}" type="number" min="0" step="1" value="${cleanG(b.remainingCount)}" style="width:68px;border:1px solid var(--line);border-radius:9px;padding:6px">개 <span class="hint">× ${cleanG(b.unitG)}g = ${cleanG(total)}g</span></div><div class="hint">냉동 · 소분${b.madeDate?` · ${esc(b.madeDate)}`:''}</div></div><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-v59-cubedel="${i}">삭제</button></div>`}
   function groupRows(loc){const cb=ensureCodes();let html=Object.entries(inventory||{}).filter(([,v])=>(v.location||'냉동')===loc).map(([k,v])=>rawRow(k,v)).join('');if(loc==='냉동')html+=cb.map(cubeRow).join('');return html||`<p class="hint">${loc} 재고가 없어요.</p>`}
   function stockView(){
     ensureCodes();const opts=inventoryKeys().map(k=>`<option value="${esc(k)}">${esc(invName(k))}</option>`).join('');
