@@ -242,6 +242,8 @@ let sync={url:'',code:''}, es=null, online=false, rt=null, syncFail=false, syncV
 const SYNC_SCHEMA=2;
 const SYNC_KEYS=new Set(['settings2','foods2','shop2','inventory2','prepChecklist2','avatar','cubeInventory2','preparedMealInventory1','mealFeedsV63','mealOpsV63','mealRecipesV63','shoppingStockReceipts1']);
 const SYNCABLE=k=>SYNC_KEYS.has(k)||k.indexOf('m2:')===0;
+const BACKUP_SCHEMA=2;
+const BACKUP_KEYS=['settings2','foods2','shop2','inventory2','prepChecklist2','avatar','cubeInventory2','preparedMealInventory1','mealFeedsV63','mealOpsV63','mealRecipesV63','shoppingStockReceipts1','outingPlaces1','healthProfile1','healthRecords1'];
 const rkOf=k=>k.replace(':','__'), kOf=rk=>rk.replace('__',':');
 const famURL=seg=>sync.url.replace(/\/+$/,'')+'/fam/'+sync.code+(seg?'/'+seg:'')+'.json';
 function newCode(){
@@ -940,7 +942,7 @@ const ICON={
   food:'<path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M16 3c-1.5 2-2 4-2 6s.7 3 2 3v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>',
   set:'<circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
 };
-const TABS=[['cal','식단','cal'],['shop','장보기','shop'],['nut','영양','nut'],['food','재료','food'],['set','설정','set']];
+const TABS=[['cal','식단','cal'],['shop','관리','shop'],['nut','영양','nut'],['food','재료','food'],['set','설정','set']];
 
 function bar(){
   $('bar').innerHTML=`<div class="appbar">
@@ -968,8 +970,8 @@ function vCal(){
   const day=P(today);
   const shopBanner=(day.getDay()>=5||day.getDay()===0)?`<div class="banner b-shop">
       <h3>🛒 주말 준비</h3><p>일요일에는 월~목 4일치, 목요일에는 금~일 3일치를 준비해요.
-      장보기 탭이 이미 다음 주로 맞춰져 있습니다.</p>
-      <div class="row"><button data-a="tab:shop">장보기 · 만들기 열기</button>
+      관리 탭이 다음 주 기준으로 열립니다.</p>
+      <div class="row"><button data-a="tab:shop">관리 열기</button>
       <button data-a="ics">캘린더에 알림 넣기</button></div></div>`:'';
   const tr=trialOf(today), trM=mObj(today,0);
   const trialBanner=(tr&&trM&&trM.trial)?`<div class="banner b-trial">
@@ -1100,7 +1102,7 @@ function vSet(){
       <div class="btnrow"><button class="btn" data-a="ics">장보기 알림 캘린더에 넣기</button></div></div>
     <div class="sec"><h2>가족 공유</h2></div>
     <div class="card">
-      <p class="hint" style="margin:0 0 10px">두 폰에 같은 <b style="color:var(--ink)">가족 코드</b>를 넣으면 먹은 기록·메모·사진·재료 상태가 실시간으로 합쳐집니다.
+      <p class="hint" style="margin:0 0 10px">두 폰에 같은 <b style="color:var(--ink)">가족 코드</b>를 넣으면 식단·섭취기록·재고·장보기·만들기 상태·프로필이 실시간으로 맞춰집니다. 외출·건강기록은 현재 기기에 저장되며 백업으로 옮길 수 있어요.
       ${syncVersionMismatch?'<b style="color:var(--berry)">동기화 데이터 버전이 달라 중지했어요.</b> 두 폰에서 앱을 최신 상태로 다시 열어주세요.'
         :online?'<b style="color:var(--mint)">지금 연결돼 있어요.</b>'
         :syncFail?'<b style="color:var(--berry)">연결에 실패했어요.</b> 주소와 코드를 확인하고, Firebase 규칙을 게시했는지 봐주세요.'
@@ -1135,7 +1137,7 @@ function vSet(){
         <button class="btn" data-a="rescue">화면 복구</button></div>
     </div>
     <div class="sec"><h2>백업</h2></div>
-    <div class="card"><p class="hint">기록은 이 기기의 앱 저장소에 있어요. 아래 칸의 내용을 복사해 두면 다른 곳에서 되살릴 수 있습니다.</p>
+    <div class="card"><p class="hint">식단·섭취기록·재고·만들기·외출·건강 기록을 한 번에 백업합니다. 아래 내용을 복사해 두면 다른 기기에서도 되살릴 수 있어요. 가족공유 주소·코드는 보안상 백업하지 않습니다.</p>
       <div class="fld"><textarea id="sD" rows="4" placeholder="여기에 붙여넣고 불러오기"></textarea></div>
       <div class="btnrow"><button class="btn" data-a="export">내보내기</button>
         <button class="btn" data-a="import">불러오기</button>
@@ -1522,30 +1524,40 @@ document.addEventListener('click',async e=>{
   if(cmd==='checkver'){
     try{
       const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
-      const t=await r.text(); const m=t.match(/const APP_VER='(v\d+)'/);
+      const t=await r.text(); const m=t.match(/version\s*:\s*['\"](v\d+)['\"]/);
       if(m&&m[1]!==APP_VER){document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
         document.getElementById('upd').style.display='flex';
         document.getElementById('updbtn').onclick=()=>location.replace(location.pathname+'?u='+Date.now());
         return toast('새 버전이 있어요')}
       return toast('최신 버전이에요')
     }catch(e){return toast('확인하지 못했어요')}}
-  if(cmd==='export'){const dump={settings,foods,shopChk,inventory,avatar,
-      months:Object.fromEntries(Object.entries(months).map(([k,v])=>[k,v.d]))};
-    $('sD').value=JSON.stringify(dump);return toast('아래 칸을 복사해 두세요')}
+  if(cmd==='export'){
+    const data={};
+    for(const k of BACKUP_KEYS){const v=LS.get(k);if(v!=null)data[k]=v}
+    try{for(let i=0;i<localStorage.length;i++){const kk=localStorage.key(i);if(kk&&kk.indexOf('dj:m2:')===0){const k=kk.slice(3),v=LS.get(k);if(v!=null)data[k]=v}}}catch(e){}
+    const dump={backupSchema:BACKUP_SCHEMA,appVersion:APP_VER,exportedAt:new Date().toISOString(),data};
+    $('sD').value=JSON.stringify(dump);return toast('전체 기록 백업을 만들었어요 · 아래 내용을 복사해 두세요')}
   if(cmd==='import'){try{const o=JSON.parse($('sD').value);
-      if(o.settings){settings=o.settings;await store.set('settings2',settings)}
-      if(o.foods){foods=o.foods;await store.set('foods2',foods)}
-      if(o.shopChk){shopChk=o.shopChk;await store.set('shop2',shopChk)}
-      if(o.inventory){inventory=cleanInventory(o.inventory);await store.set('inventory2',inventory)}
-      if(o.avatar){avatar=o.avatar;await store.set('avatar',avatar)}
-      if(o.months)for(const[k,v]of Object.entries(o.months))await store.set('m2:'+k,v);
+      if(o&&Number(o.backupSchema)>=2&&o.data&&typeof o.data==='object'){
+        for(const [k,v0] of Object.entries(o.data)){
+          if(!(BACKUP_KEYS.includes(k)||k.indexOf('m2:')===0))continue;
+          const v=k==='inventory2'?cleanInventory(v0):v0;await store.set(k,v);
+        }
+      }else{
+        if(o.settings)await store.set('settings2',o.settings);
+        if(o.foods)await store.set('foods2',o.foods);
+        if(o.shopChk)await store.set('shop2',o.shopChk);
+        if(o.inventory)await store.set('inventory2',cleanInventory(o.inventory));
+        if(o.avatar)await store.set('avatar',o.avatar);
+        if(o.months)for(const[k,v]of Object.entries(o.months))await store.set('m2:'+k,v);
+      }
       Object.keys(months).forEach(k=>delete months[k]);await boot();
 /* 배포된 파일이 더 새 버전이면 알려준다 */
 idle(async()=>{
   try{
     const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
     const t=await r.text();
-    const m=t.match(/const APP_VER='(v\d+)'/);
+    const m=t.match(/version\s*:\s*['\"](v\d+)['\"]/);
     if(m&&m[1]!==APP_VER){
       document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
       document.getElementById('upd').style.display='flex';
@@ -1801,7 +1813,7 @@ idle(async()=>{
   try{
     const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
     const t=await r.text();
-    const m=t.match(/const APP_VER='(v\d+)'/);
+    const m=t.match(/version\s*:\s*['\"](v\d+)['\"]/);
     if(m&&m[1]!==APP_VER){
       document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
       document.getElementById('upd').style.display='flex';

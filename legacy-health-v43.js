@@ -13,7 +13,7 @@
   const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
   const readJSON=(k,f)=>{try{const x=JSON.parse(localStorage.getItem(k)||'');return x&&typeof x==='object'?x:f}catch(e){return f}};
   const saveJSON=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
-  const profile=()=>Object.assign({dob:'',jeType:'unknown'},readJSON(PROFILE_KEY,{}));
+  const profile=()=>{const saved=readJSON(PROFILE_KEY,{}),appDob=(typeof settings==='object'&&settings&&settings.birth)||'';return{dob:appDob||String(saved.dob||''),jeType:['unknown','inactivated','live'].includes(saved.jeType)?saved.jeType:'unknown'}};
   const records=()=>readJSON(RECORD_KEY,{});
   const toDate=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(String(s||'')))return null;const [y,m,d]=s.split('-').map(Number);const x=new Date(y,m-1,d);return Number.isNaN(x.getTime())?null:x};
   const today=()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())};
@@ -71,7 +71,7 @@
     return`<button class="card health-entry" data-health-open="1"><div class="health-entry-top"><div><div class="health-entry-title"><span class="health-entry-icon">🩺</span><span>건강관리</span></div><div class="hint" style="margin-top:7px">${esc(line)}</div></div><span class="more">검진·접종 ›</span></div></button>`;
   }
   function profileHtml(p){
-    return`<div class="sec"><h2>기본 설정</h2><span class="more">이 기기에 저장</span></div><div class="card health-profile"><div class="row"><div class="fld"><label>생년월일</label><input id="healthDob" type="date" value="${esc(p.dob)}"></div><div class="fld"><label>일본뇌염 백신</label><select id="healthJe"><option value="unknown" ${p.jeType==='unknown'?'selected':''}>아직 미정</option><option value="inactivated" ${p.jeType==='inactivated'?'selected':''}>불활성화</option><option value="live" ${p.jeType==='live'?'selected':''}>생백신</option></select></div></div><button class="btn pri" data-health-profile-save="1">설정 저장</button><div class="health-source">완료 여부는 자동으로 추정하지 않아요. 이미 받은 검진·접종은 직접 완료 기록해 주세요.</div></div>`;
+    return`<div class="sec"><h2>기본 설정</h2><span class="more">아이 정보 연동</span></div><div class="card health-profile"><div class="row"><div class="fld"><label>생일 · 설정에서 연동</label><input id="healthDob" type="date" value="${esc(p.dob)}" disabled aria-disabled="true"></div><div class="fld"><label>일본뇌염 백신</label><select id="healthJe"><option value="unknown" ${p.jeType==='unknown'?'selected':''}>아직 미정</option><option value="inactivated" ${p.jeType==='inactivated'?'selected':''}>불활성화</option><option value="live" ${p.jeType==='live'?'selected':''}>생백신</option></select></div></div><div class="btnrow"><button class="btn" data-health-settings="1">아이 정보 수정</button><button class="btn pri" data-health-profile-save="1">백신 설정 저장</button></div><div class="health-source">생일은 설정의 아이 정보 한 곳에서만 관리합니다. 완료 여부는 자동으로 추정하지 않아요. 이미 받은 검진·접종은 직접 완료 기록해 주세요.</div></div>`;
   }
   function itemHtml(item,rs){
     const r=stateOf(item.id,rs),st=r.status||'planned';
@@ -110,7 +110,8 @@
     const bk=e.target.closest?.('[data-health-back]');if(bk){e.preventDefault();window.__mgStage='home';render();return}
     const tb=e.target.closest?.('[data-health-tab]');if(tb){e.preventDefault();healthTab=tb.dataset.healthTab||'summary';render(true);return}
     const ur=e.target.closest?.('[data-health-url]');if(ur){e.preventDefault();openExternal(ur.dataset.healthUrl);return}
-    const ps=e.target.closest?.('[data-health-profile-save]');if(ps){e.preventDefault();const dob=document.getElementById('healthDob')?.value||'',je=document.getElementById('healthJe')?.value||'unknown';if(!toDate(dob)){if(typeof toast==='function')toast('생년월일을 입력해 주세요');return}saveJSON(PROFILE_KEY,{dob,jeType:['unknown','inactivated','live'].includes(je)?je:'unknown'});if(typeof toast==='function')toast('건강관리 설정을 저장했어요');render(true);return}
+    const hs=e.target.closest?.('[data-health-settings]');if(hs){e.preventDefault();window.__mgStage='home';if(typeof tab!=='undefined')tab='set';render();return}
+    const ps=e.target.closest?.('[data-health-profile-save]');if(ps){e.preventDefault();const je=document.getElementById('healthJe')?.value||'unknown';saveJSON(PROFILE_KEY,{jeType:['unknown','inactivated','live'].includes(je)?je:'unknown'});if(typeof toast==='function')toast('백신 설정을 저장했어요');render(true);return}
     const sv=e.target.closest?.('[data-health-save]');if(sv){e.preventDefault();const id=sv.dataset.healthSave,rs=records();const q=a=>document.querySelector(`[${a}="${id}"]`);const status=q('data-health-status')?.value||'planned',date=q('data-health-date')?.value||'',clinic=q('data-health-clinic')?.value||'',memo=q('data-health-memo')?.value||'';rs[id]={status:['planned','booked','done','skip'].includes(status)?status:'planned',date,clinic:String(clinic).slice(0,80),memo:String(memo).slice(0,500),updatedAt:Date.now()};saveJSON(RECORD_KEY,rs);if(typeof toast==='function')toast('기록을 저장했어요');render(true);return}
   },true);
 

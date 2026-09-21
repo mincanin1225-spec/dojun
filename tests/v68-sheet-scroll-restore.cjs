@@ -18,7 +18,7 @@ assert(block.includes('restoreSheetPosition();sheetRestoreUntil=0'),'restore win
 assert(!block.includes('window.scrollTo(0,0)'),'sheet close/back must never force the underlying page to the top');
 assert(block.includes("if(!sheetOpen&&sheetRestoreUntil&&Date.now()<sheetRestoreUntil)restoreSheetPosition()"),'keyboard viewport resize must preserve saved scroll');
 assert(block.includes("e.data.type==='dojun-sheet-back'&&sheetOpen"),'hardware back must still close the current sheet');
-assert(index.includes('./legacy-v70.html?r=20260922-v70-preparedonly1'),'index must load the scroll-restoring physical shell');
+assert(index.includes('./legacy-v70.html?r=20260922-v70-manualaudit1'),'index must load the scroll-restoring physical shell');
 assert(sw.includes("'./legacy-v70.html'"),'service worker must precache the scroll-restoring shell');
-assert(sw.includes("const CACHE='dojun-pwa-v70-preparedonly1'"),'scroll-restoring cache generation missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-manualaudit1'"),'scroll-restoring cache generation missing');
 console.log('PASS: closing/back from edit sheets restores the exact underlying page position');
