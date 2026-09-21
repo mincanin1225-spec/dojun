@@ -1,4 +1,4 @@
-const CACHE='dojun-pwa-v70-cookundo1';
+const CACHE='dojun-pwa-v70-cookundo2';
 const CORE=[
   './meal-stock-v66.js','./meal-workflow-v70.js','./legacy-inventory-v61-photo.js',
   './','./index.html','./manifest.webmanifest','./legacy-v70.html',
@@ -20,6 +20,7 @@ self.addEventListener('activate',event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
+const CRITICAL=['/legacy-v70.html','/meal-stock-v66.js','/meal-workflow-v70.js'];
 self.addEventListener('fetch',event=>{
   const req=event.request;
   if(req.method!=='GET')return;
@@ -27,6 +28,14 @@ self.addEventListener('fetch',event=>{
     event.respondWith(fetch(req,{cache:'no-store'}).then(r=>{
       const copy=r.clone();caches.open(CACHE).then(c=>c.put('./index.html',copy)).catch(()=>{});return r;
     }).catch(()=>caches.match('./index.html')));
+    return;
+  }
+  const path=new URL(req.url).pathname;
+  if(CRITICAL.some(x=>path.endsWith(x))){
+    event.respondWith(fetch(req,{cache:'no-store'}).then(r=>{
+      if(r&&r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{})}
+      return r;
+    }).catch(()=>caches.match(req,{ignoreSearch:true})));
     return;
   }
   event.respondWith(caches.match(req,{ignoreSearch:true}).then(cached=>{
