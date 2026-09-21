@@ -35,6 +35,31 @@
    // Network sharing is deliberately after the local transaction, never during a partial write.
    if(changed.length){if(typeof persistInventoryLocal==='function')persistInventoryLocal();changed.forEach(k=>{if(typeof pushInventoryItem==='function')pushInventoryItem(k)})}
  }
+ function legacyWholeMealToken(state,lot,i){
+   const ops=state.ops||{},direct=String(lot.id||lot.stockCode||lot.code||'');
+   if(direct&&ops[direct]?.type==='cook')return direct;
+   const code=String(lot.mealCode||''),name=E.norm(lot.name||'');
+   const hit=Object.entries(ops).find(([,op])=>op?.type==='cook'&&op.lot&&(String(op.lot.id||'')===direct||(code&&String(op.lot.mealCode||'')===code)||(E.norm(op.lot.name||'')===name&&String(op.lot.madeDate||'')===String(lot.madeDate||'')&&Number(op.lot.unitG)===Number(lot.unitG))));
+   return hit?hit[0]:'';
+ }
+ function cleanupLegacyWholeMeals(){
+   const before=snapshot();let next=clone(before),changed=false,restored=0,excluded=0;
+   const candidates=(next.prepared||[]).map((lot,i)=>({lot:clone(lot),i})).filter(x=>E.isWholeMealLot(x.lot)&&!x.lot.legacyWholeMeal);
+   for(const x of candidates){
+     const token=legacyWholeMealToken(next,x.lot,x.i);
+     if(token){
+       try{
+         const result=E.undoCook(next,token);
+         if(!result.already){next=result.state;changed=true;restored++;continue}
+       }catch(e){}
+     }
+     const direct=String(x.lot.id||x.lot.stockCode||x.lot.code||''),idx=(next.prepared||[]).findIndex((lot,i)=>(direct&&String(lot.id||lot.stockCode||lot.code||'')===direct)||(!direct&&i===x.i));
+     if(idx>=0&&!next.prepared[idx].legacyWholeMeal){next.prepared[idx].legacyWholeMeal=true;changed=true;excluded++}
+   }
+   if(changed)commit(before,next);
+   return{restored,excluded};
+ }
+ try{cleanupLegacyWholeMeals()}catch(e){}
  const verified=on=>root.__PPEUNI_SCHEDULE_V58&&root.__PPEUNI_SCHEDULE_V58.entry(on);
  const recipeMap=()=>read(K.recipes,{});
  function model(on,slot){
@@ -182,7 +207,7 @@
    const pieces=unit>1&&Math.abs(c-Math.round(c))<1e-6?' · '+unit+'g×'+Math.round(c):'';
    return '<span class="chip sm">'+esc(stockCode(u))+'</span> '+esc(u.name)+' '+g+'g'+pieces;
  }
- function preparedLots(name){const n=E.norm(name);return read(K.prepared,[]).filter(x=>E.norm(x.name||x.ingredient)===n&&E.amount(x)>0)}
+ function preparedLots(name){const n=E.norm(name);return read(K.prepared,[]).filter(x=>!E.isWholeMealLot(x)&&E.norm(x.name||x.ingredient)===n&&E.amount(x)>0)}
  function preparedAmount(name){return preparedLots(name).reduce((sum,x)=>sum+E.amount(x),0)}
  function preparedSummary(name){
    const lots=preparedLots(name);if(!lots.length)return'';
@@ -537,6 +562,6 @@
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
- root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
+ root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,cleanupLegacyWholeMeals,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
  try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);

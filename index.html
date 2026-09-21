@@ -17,7 +17,7 @@
 <style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:visible}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v70.html?r=20260922-v70-invsync1" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v70.html?r=20260922-v70-preparedonly1" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app');
@@ -49,7 +49,7 @@
             t.onload=function(){
               const u=d.createElement('script');
               u.id='v33-management-script';
-              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260922-v70-invsync1';
+              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260922-v70-preparedonly1';
               u.onload=function(){
                 const v=d.createElement('script');
                 v.id='v34-management-script';
@@ -129,8 +129,8 @@
                                               al.onload=function(){
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
-                                                am.src='./meal-stock-v66.js?r=20260922-v66-invsync1';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v70-invsync1';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.src='./meal-stock-v66.js?r=20260922-v66-preparedonly1';
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v70-preparedonly1';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
                                                 am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
@@ -218,7 +218,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260922-v70-invsync1',KEY='dojun-sw-release';
+  const RELEASE='20260922-v70-preparedonly1',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;
