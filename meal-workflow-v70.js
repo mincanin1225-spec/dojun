@@ -181,8 +181,25 @@
    const pieces=unit>1&&Math.abs(c-Math.round(c))<1e-6?' · '+unit+'g×'+Math.round(c):'';
    return '<span class="chip sm">'+esc(stockCode(u))+'</span> '+esc(u.name)+' '+g+'g'+pieces;
  }
- function preparedAmount(name){
-   const n=E.norm(name);return read(K.prepared,[]).filter(x=>E.norm(x.name||x.ingredient)===n).reduce((sum,x)=>sum+E.amount(x),0);
+ function preparedLots(name){const n=E.norm(name);return read(K.prepared,[]).filter(x=>E.norm(x.name||x.ingredient)===n&&E.amount(x)>0)}
+ function preparedAmount(name){return preparedLots(name).reduce((sum,x)=>sum+E.amount(x),0)}
+ function preparedSummary(name){
+   const lots=preparedLots(name);if(!lots.length)return'';
+   const groups={};for(const x of lots){const u=Number(x.unitG)||0,c=Number(x.remainingCount)||0;if(!(u>0&&c>0))continue;const k=String(u);groups[k]=(groups[k]||0)+c}
+   const parts=Object.entries(groups).map(([u,c])=>Math.round(Number(u)*10)/10+'g × '+(Math.round(c*10)/10)+'개');
+   const total=Math.round(lots.reduce((s,x)=>s+E.amount(x),0)*10)/10;
+   return (parts.length?parts.join(' · ')+' · ':'')+'총 '+total+'g';
+ }
+ function cancelableCook(m){
+   const ops=read(K.ops,{}),lots=read(K.prepared,[]);let found=null;
+   for(const [token,op] of Object.entries(ops)){
+     if(op?.type!=='cook'||!op.lot)continue;
+     const exact=op.lot.mealKey?op.lot.mealKey===m.key:(m.component&&E.norm(op.lot.name)===E.norm(m.name));if(!exact)continue;
+     const lot=lots.find(x=>String(x.id||x.stockCode||x.code||'')===String(token));if(!lot)continue;
+     if(Math.abs(E.amount(lot)-E.amount(op.lot))>1e-6||Number(lot.unitG)!==Number(op.lot.unitG))continue;
+     found={token,lot};
+   }
+   return found;
  }
  function mealReady(m,r){
    if(r&&r.used&&r.used.some(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name))&&(!r.needs||!r.needs.length))return true;
@@ -190,13 +207,14 @@
    return false;
  }
  function mealCard(m,r){
-   const known=m.ingredients.every(x=>x.g>0),done=mealReady(m,r),slot=m.component?'따로 만들기':['아침','점심','저녁'][m.slot],
+   const known=m.ingredients.every(x=>x.g>0),done=mealReady(m,r),undo=cancelableCook(m),stock=preparedSummary(m.name),slot=m.component?'따로 만들기':['아침','점심','저녁'][m.slot],
      ing=m.ingredients.map(x=>esc(x.name)+' '+(x.g>0?x.g+'g':'확인 필요')).join(' · ');
    return '<div class="card" style="margin:10px 0;padding:16px">'+
      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div class="hint">'+(m.component?'밥·반찬':esc(m.on))+' · '+slot+'</div><h3 style="margin:4px 0 0;line-height:1.42">'+esc(m.name)+'</h3></div>'+(done?'<span class="chip sm ok">조리 완료</span>':!known?'<span class="chip sm">분량 확인</span>':'')+'</div>'+
      '<div class="hint" style="margin-top:9px;line-height:1.65;color:var(--ink2)">'+ing+'</div>'+
+     (stock?'<div style="margin-top:9px;padding:9px 10px;border-radius:12px;background:var(--line2)"><b style="font-size:12.5px">현재 조리식 재고</b><div class="hint" style="margin-top:4px">'+esc(stock)+'</div></div>':'')+
      (r?'<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line2)"><b style="font-size:12.5px">사용 재고</b><div class="hint" style="margin-top:5px;line-height:1.7">'+(r.used.length?r.used.map(stockUseText).join('<br>'):'배정된 보유재고 없음')+'</div></div>':'')+
-     '<div style="margin-top:12px"><button class="btn '+(done?'':'pri')+'" style="width:100%" '+(done?'disabled aria-disabled="true"':'data-v63-edit="'+esc(m.key)+'"')+'>'+(done?'✓ 조리 완료':'조리하기')+'</button></div>'+
+     '<div style="margin-top:12px;display:grid;grid-template-columns:'+(done&&undo?'1fr 1fr':'1fr')+';gap:8px"><button class="btn '+(done?'':'pri')+'" style="width:100%" '+(done?'disabled aria-disabled="true"':'data-v63-edit="'+esc(m.key)+'"')+'>'+(done?'✓ 조리 완료':'조리하기')+'</button>'+(done&&undo?'<button class="btn" data-v70-cookundo="'+esc(undo.token)+'">완료 취소</button>':'')+'</div>'+
      (!done&&!known?'<p class="hint" style="margin:7px 0 0">조리 화면에서 재료 분량을 확인한 뒤 소분까지 한 번에 등록해요.</p>':'')+
      '</div>';
  }
@@ -422,6 +440,13 @@
        for(const [n,v] of entries)if(!cur.includes(n)){addPurchasedStock(start,n,v.g);cur.push(n)}
        saveShopChecks();render(true);return toast('구매한 원재료를 재고에 반영했어요');
      }catch(err){return toast(err.message)}
+   }
+   const cookUndo=e.target.closest&&e.target.closest('[data-v70-cookundo]');
+   if(cookUndo){
+     e.preventDefault();e.stopImmediatePropagation();if(locked)return;
+     const token=cookUndo.getAttribute('data-v70-cookundo');if(!confirm('조리 완료를 취소할까요? 만든 조리식 재고를 지우고 사용한 원재료를 복원합니다.'))return;
+     try{locked=true;const s=snapshot(),result=E.undoCook(s,token);if(!result.already)commit(s,result.state);render(true);toast(result.already?'이미 취소된 조리입니다':'조리 완료를 취소하고 재고를 복원했어요')}catch(err){toast(err.message)}finally{locked=false}
+     return;
    }
    const el=e.target.closest&&e.target.closest('[data-v63-edit],[data-v63-feed],[data-v62-complete],[data-v35complete],[data-a^="bdone:"]');if(!el)return;
    e.preventDefault();e.stopImmediatePropagation();

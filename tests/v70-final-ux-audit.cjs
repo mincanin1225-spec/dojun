@@ -28,9 +28,13 @@ assert(flow.includes("done=mealReady(m,r)"),'meal cards must bind actual stock c
 assert(flow.includes('<span class="chip sm ok">조리 완료</span>'),'completed prep card must show completion chip');
 assert(flow.includes("done?'✓ 조리 완료':'조리하기'"),'cooking action must change to completed outside the sheet');
 assert(flow.includes("done?'disabled aria-disabled=\"true\"'"),'completed cooking action must block accidental duplicate stock registration');
+assert(flow.includes('function preparedSummary(name)'),'completed cards must summarize actual prepared quantity');
+assert(flow.includes('현재 조리식 재고'),'completed cards must show current cooked stock quantity');
+assert(flow.includes('data-v70-cookundo'),'completed cards must expose an undo action when safe');
+assert(flow.includes('E.undoCook(s,token)'),'completion undo must use the stock transaction engine');
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v70 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-cookedstatus1'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-cookundo1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
