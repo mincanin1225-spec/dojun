@@ -32,9 +32,12 @@ assert(flow.includes('function preparedSummary(name)'),'completed cards must sum
 assert(flow.includes('현재 조리식 재고'),'completed cards must show current cooked stock quantity');
 assert(flow.includes('data-v70-cookundo'),'completed cards must expose an undo action when safe');
 assert(flow.includes('E.undoCook(s,token)'),'completion undo must use the stock transaction engine');
-assert(index.includes('./legacy-v70.html?r=20260921-v70-cookundo2'),'index must load v70 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260921-v70-cookundo2'),'index must load v70 workflow');
+assert(flow.includes("assigned=new Set((r?.used||[])"),'legacy cooked lots must be linked from the card\'s assigned prepared stock');
+assert(flow.includes("assigned.has(String(token))"),'legacy M-code allocation must resolve the exact cook operation before showing undo');
+assert(flow.includes("undo=cancelableCook(m,r)"),'meal cards must pass their actual stock allocation into legacy undo resolution');
+assert(index.includes('./legacy-v70.html?r=20260921-v70-cookundo3'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260921-v70-cookundo3'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-cookundo2'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-cookundo3'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
