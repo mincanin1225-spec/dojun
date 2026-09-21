@@ -190,16 +190,16 @@
    const total=Math.round(lots.reduce((s,x)=>s+E.amount(x),0)*10)/10;
    return (parts.length?parts.join(' · ')+' · ':'')+'총 '+total+'g';
  }
- function cancelableCook(m){
-   const ops=read(K.ops,{}),lots=read(K.prepared,[]);let found=null;
+ function cancelableCook(m,r){
+   const ops=read(K.ops,{}),lots=read(K.prepared,[]),assigned=new Set((r?.used||[]).filter(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name)).map(u=>String(u.id||''))),found=[];
    for(const [token,op] of Object.entries(ops)){
      if(op?.type!=='cook'||!op.lot)continue;
-     const exact=op.lot.mealKey?op.lot.mealKey===m.key:(m.component&&E.norm(op.lot.name)===E.norm(m.name));if(!exact)continue;
+     const exact=op.lot.mealKey?op.lot.mealKey===m.key:(assigned.has(String(token))||(m.component&&E.norm(op.lot.name)===E.norm(m.name)));if(!exact)continue;
      const lot=lots.find(x=>String(x.id||x.stockCode||x.code||'')===String(token));if(!lot)continue;
      if(Math.abs(E.amount(lot)-E.amount(op.lot))>1e-6||Number(lot.unitG)!==Number(op.lot.unitG))continue;
-     found={token,lot};
+     found.push({token,lot});
    }
-   return found;
+   return found.length===1?found[0]:null;
  }
  function mealReady(m,r){
    if(r&&r.used&&r.used.some(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name))&&(!r.needs||!r.needs.length))return true;
@@ -207,7 +207,7 @@
    return false;
  }
  function mealCard(m,r){
-   const known=m.ingredients.every(x=>x.g>0),done=mealReady(m,r),undo=cancelableCook(m),stock=preparedSummary(m.name),slot=m.component?'따로 만들기':['아침','점심','저녁'][m.slot],
+   const known=m.ingredients.every(x=>x.g>0),done=mealReady(m,r),undo=cancelableCook(m,r),stock=preparedSummary(m.name),slot=m.component?'따로 만들기':['아침','점심','저녁'][m.slot],
      ing=m.ingredients.map(x=>esc(x.name)+' '+(x.g>0?x.g+'g':'확인 필요')).join(' · ');
    return '<div class="card" style="margin:10px 0;padding:16px">'+
      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div class="hint">'+(m.component?'밥·반찬':esc(m.on))+' · '+slot+'</div><h3 style="margin:4px 0 0;line-height:1.42">'+esc(m.name)+'</h3></div>'+(done?'<span class="chip sm ok">조리 완료</span>':!known?'<span class="chip sm">분량 확인</span>':'')+'</div>'+
