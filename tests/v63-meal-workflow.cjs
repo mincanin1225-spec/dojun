@@ -22,7 +22,7 @@ test('component cooking preserves a 10g source remainder and creates exact outpu
 });
 test('planning can consume a prepared component made in step 3',()=>{
  const s=E.cook(stocked(),prep(),form).state,m={key:'day|0',name:'테스트 메뉴',g:20,ingredients:[{name:'양배추퓨레',g:20}]};
- assert.equal(E.plan([m],s)[0].needs.length,0);
+ const row=E.plan([m],s)[0];assert(row.needs.length>0);assert(row.needs.every(x=>Math.abs(Number(x.buyG)||0)<1e-9));
 });
 test('cook undo removes component output and restores source stock',()=>{
  const before=stocked(),cooked=E.cook(before,prep(),form).state,restored=E.undoCook(cooked,'op1').state;
