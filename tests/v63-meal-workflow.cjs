@@ -22,6 +22,14 @@ test('cook preserves 10g remainder and creates exact output',()=>{
 test('shopping does not request materials again after cooking',()=>{
  const s=E.cook(stocked(),menu(),form).state;assert.equal(E.plan([menu()],s)[0].needs.length,0);
 });
+test('cook undo removes output and restores source stock',()=>{
+ const before=stocked(),cooked=E.cook(before,menu(),form).state,restored=E.undoCook(cooked,'op1').state;
+ assert.equal(total(restored,menu().name),0);assert.equal(total(restored,'잡곡무른밥'),500);assert.equal(total(restored,'양배추'),60);assert(!restored.ops.op1);
+});
+test('cook undo refuses after the cooked output was used',()=>{
+ let s=E.cook(stocked(),menu(),form).state;s=E.feed(s,menu()).state;
+ assert.throws(()=>E.undoCook(s,'op1'),/사용·수정/);
+});
 test('feed is idempotent, uses only prepared food, undo restores grams',()=>{
  let s=E.cook(stocked(),menu(),form).state;const before=JSON.stringify(s);s=E.feed(s,menu()).state;assert.equal(total(s,menu().name),0);assert.equal(total(s,'잡곡무른밥'),400);
  assert.deepEqual(E.feed(s,menu()).state,s);assert(E.plan([menu()],s)[0].fed);s=E.undoFeed(s,menu().key).state;assert.equal(total(s,menu().name),120);assert(!s.feeds[menu().key]);
