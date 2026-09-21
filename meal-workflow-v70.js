@@ -246,15 +246,22 @@
    const map={},ops=makeOps();
    for(const r of rows){
      if(r.fed||!r.meal)continue;
-     const m=r.meal,name=E.norm(m.name),key=makeTaskKey(start,name),x=map[key]||(map[key]={key,start,name,requiredG:0,coveredG:0,meals:0,template:m,unknown:false});
-     x.meals++;if(Number(m.g)>0)x.requiredG+=Number(m.g);else x.unknown=true;
-     for(const u of r.used||[])if(u.kind==='prepared'&&E.norm(u.name)===name)x.coveredG+=Number(u.g)||0;
+     const m=r.meal,fullUsed=(r.used||[]).filter(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name)).reduce((s,u)=>s+(Number(u.g)||0),0),
+       ratio=Number(m.g)>0?Math.max(0,Number(m.g)-fullUsed)/Number(m.g):1;
+     for(const ing of m.ingredients||[]){
+       const name=E.norm(ing.name),key=makeTaskKey(start,name),x=map[key]||(map[key]={key,start,name,requiredG:0,coveredG:0,meals:0,unknown:false});
+       x.meals++;if(Number(ing.g)>0)x.requiredG+=Number(ing.g)*ratio;else x.unknown=true;
+     }
+     for(const u of r.used||[]){
+       if(u.kind==='raw'||(u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name)))continue;
+       const name=E.norm(u.name),key=makeTaskKey(start,name),x=map[key];if(x)x.coveredG+=Number(u.g)||0;
+     }
    }
    const lots=read(K.prepared,[]);
    for(const [key,list] of Object.entries(ops)){
      if(!key.startsWith(String(start)+'|')||map[key])continue;
      const last=list[list.length-1],lot=lots.find(x=>String(x.id||x.stockCode||x.code||'')===String(last.token));if(!lot)continue;
-     const name=E.norm(last.op.lot?.name||lot.name),g=E.amount(lot);map[key]={key,start,name,requiredG:Number(last.op.lot?.plannedG)||g,coveredG:g,meals:0,template:null,unknown:false,legacyDone:true};
+     const name=E.norm(last.op.lot?.name||lot.name),g=E.amount(lot);map[key]={key,start,name,requiredG:Number(last.op.lot?.plannedG)||g,coveredG:g,meals:0,unknown:false,legacyDone:true};
    }
    return Object.values(map).map(x=>{
      x.requiredG=Math.round(x.requiredG*10)/10;x.coveredG=Math.round(x.coveredG*10)/10;
@@ -263,6 +270,12 @@
      x.undo=last&&lot&&Math.abs(E.amount(lot)-E.amount(last.op.lot))<1e-6&&Number(lot.unitG)===Number(last.op.lot.unitG)?last.token:null;
      return x;
    });
+ }
+ function makeTemplate(t){
+   const saved=recipeMap()[E.norm(t.name)];
+   if(saved&&Number(saved.yieldG)>0&&saved.ingredients?.length&&!saved.ingredients.some(x=>!(Number(x.g)>0)))return {key:'make:'+t.key,name:t.name,g:Number(saved.yieldG),ingredients:saved.ingredients,steps:saved.steps||'',plannedG:t.missingG};
+   if(!isPreparedOnlyShoppingName(t.name))return {key:'make:'+t.key,name:t.name,g:1,ingredients:[{name:t.name,g:1}],steps:'',plannedG:t.missingG};
+   return null;
  }
  function makeTaskRow(t){
    const ready=t.missingG===0&&!t.unknown,defaultG=t.missingG===null?'':t.missingG,
@@ -287,7 +300,7 @@
      first=p.filter(r=>r.meal.on>=base&&r.meal.on<firstEnd),
      second=p.filter(r=>r.meal.on>=firstEnd&&r.meal.on<secondEnd);
    return nav()+'<div class="sec"><h2>3단계 · 만들기</h2><span class="more">체크만 하면 재고 반영</span></div>'+
-     '<p class="hint">장보기처럼 실제로 만들었는지만 체크하세요. 기본 수량은 이번 식단에 필요한 정량이고, 더 만든 경우에만 실제 만든 양을 수정하면 됩니다.</p>'+
+     '<p class="hint">장보기한 재료를 이번 식단에 쓸 수 있게 준비했는지만 체크하세요. 기본 수량은 이번 식단에 필요한 정량이고, 더 만든 경우에만 실제 만든 양을 수정하면 됩니다.</p>'+
      batchMake('1차 · 월~목',base,firstEnd,first)+batchMake('2차 · 금~일',firstEnd,secondEnd,second);
  }
  function get(k){if(k.startsWith('component:'))return component(decodeURIComponent(k.slice(10)));const [on,s]=k.split('|');return model(on,Number(s))}
@@ -402,11 +415,11 @@
          if(!confirm(name+' 만들기 완료를 취소할까요? 재고와 사용 원재료를 되돌립니다.'))return;
          locked=true;const s=snapshot(),result=E.undoCook(s,task.undo);if(!result.already)commit(s,result.state);render(true);return toast('만들기 완료를 취소했어요');
        }
-       if(!task||!task.template)throw Error('현재 식단의 만들기 항목을 찾지 못했어요');
+       if(!task)throw Error('현재 식단의 만들기 항목을 찾지 못했어요');
        const input=document.querySelector('[data-v71-makeg="'+encodeURIComponent(key)+'"]'),actualG=Number(input?.value);
        if(!Number.isFinite(actualG)||actualG<=0)throw Error('실제 만든 양을 확인해 주세요');
-       if(task.unknown||!(Number(task.template.g)>0)||task.template.ingredients.some(x=>!(Number(x.g)>0)))throw Error(name+' 분량을 먼저 확인해 주세요');
-       const makeToken=token(),meal={...task.template,key:'make:'+key,plannedG:task.missingG||actualG};
+       const meal=makeTemplate(task);if(!meal)throw Error(name+'은 먼저 레시피 분량을 확인해 주세요');
+       const makeToken=token();meal.plannedG=task.missingG||actualG;
        if(!confirm(name+' '+actualG+'g 만들기를 완료했나요?'))return;
        locked=true;const s=snapshot(),result=E.cook(s,meal,{token:makeToken,count:1,unitG:actualG,date:date()});if(!result.already)commit(s,result.state);render(true);toast(name+' '+actualG+'g을 조리식 재고에 반영했어요');
      }catch(err){toast(err.message)}finally{locked=false}
@@ -523,6 +536,6 @@
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
- root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
+ root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
  try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);
