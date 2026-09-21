@@ -108,3 +108,6 @@ jobs:
 
       - name: Simple weekly make checklist
         run: node tests/v70-simple-make-flow.cjs
+
+      - name: Inventory display and family sync schema
+        run: node tests/v70-inventory-sync-fix.cjs
