@@ -26,14 +26,15 @@ for(const f of ['meal-stock-v66.js','meal-workflow-v70.js'])vm.runInContext(fs.r
 
 let html=ctx.vShop();
 assert(html.includes('3단계 · 만들기'));
-assert(html.includes('장보기처럼 실제로 만들었는지만 체크'));
-assert(html.includes('잡곡무른밥 · 닭고기'));
-assert(html.includes('이번 준비 필요 120g'));
-assert(html.includes('value="120"'),'default made amount must be exact current need');
+assert(html.includes('장보기한 재료를 이번 식단에 쓸 수 있게 준비했는지만 체크'));
+assert(html.includes('잡곡무른밥')&&html.includes('닭고기'),'make checklist must be ingredient/prep based, not full-meal based');
+assert(html.includes('이번 준비 필요 20g'),'chicken must show the exact weekly prep need after current cooked stock');
+assert(html.includes('value="20"'),'default made amount must be exact current need');
 assert(html.includes('data-v71-makecheck')&&html.includes('data-v71-makeg'));
 assert(!html.includes('1 · 재료·분량'),'active make page must not require the old cooking editor');
 
-const key=html.match(/data-v71-makecheck="([^"]+)"/)?.[1];assert(key,'make task key missing');
+const matches=[...html.matchAll(/data-v71-makecheck="([^"]+)"/g)].map(x=>x[1]);
+const key=matches.find(x=>decodeURIComponent(x).endsWith('|닭고기'));assert(key,'chicken make task key missing');
 function clickMake(encoded){
   const item={getAttribute:k=>k==='data-v71-makecheck'?encoded:null,hasAttribute:k=>k==='data-v71-makecheck'};
   const event={target:{closest:sel=>sel.includes('data-v71-makecheck')?item:null},preventDefault(){},stopImmediatePropagation(){}};
@@ -41,7 +42,7 @@ function clickMake(encoded){
 }
 clickMake(key);
 let lots=JSON.parse(db.get('dj:preparedMealInventory1'));
-const made=lots.find(x=>x.name==='잡곡무른밥 · 닭고기');assert(made,'checked make task must create prepared stock');
+const made=lots.find(x=>x.name==='닭고기'&&x.id!=='base');assert(made,'checked make task must create cooked ingredient stock');
 assert.equal(made.unitG,140,'edited actual amount must be stored instead of the default');
 assert.equal(made.remainingCount,1);
 assert(ctx.inventory.chicken.qty<100,'making must deduct raw ingredients');
@@ -49,9 +50,9 @@ assert(ctx.inventory.chicken.qty<100,'making must deduct raw ingredients');
 html=ctx.vShop();
 assert(html.includes('필요량 준비됨'));
 assert(html.includes('완료 취소'),'checked make task must behave like a reversible checklist while untouched');
-const undoKey=html.match(/data-v71-makecheck="([^"]+)"/)?.[1];assert(undoKey);
+const undoKey=[...html.matchAll(/data-v71-makecheck="([^"]+)"/g)].map(x=>x[1]).find(x=>decodeURIComponent(x).endsWith('|닭고기'));assert(undoKey);
 clickMake(undoKey);
 lots=JSON.parse(db.get('dj:preparedMealInventory1'));
-assert(!lots.some(x=>x.name==='잡곡무른밥 · 닭고기'),'uncheck must remove the just-made prepared stock');
+assert(!lots.some(x=>x.name==='닭고기'),'uncheck must remove the just-made prepared stock');
 assert(Math.abs(ctx.inventory.chicken.qty-100)<0.001,'uncheck must restore raw ingredients');
 console.log('PASS: make step is a simple editable weekly checklist with safe stock-in and undo');
