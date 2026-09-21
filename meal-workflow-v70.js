@@ -145,8 +145,24 @@
    }
    return totals;
  }
+ function syncCheckedShoppingStock(p){
+   let changed=false;
+   for(const [a,b] of [[0,4],[4,7]]){
+     const start=addD(target(),a),end=addD(target(),b),totals={};
+     for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<end))for(const x of r.needs){
+       if(isPreparedOnlyShoppingName(x.name))continue;
+       const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
+     }
+     for(const [name,v] of Object.entries(totals)){
+       if(!shopChecked(start,name)||v.unknown||!(Number(v.g)>0))continue;
+       if(shoppingReceipts()[shoppingReceiptKey(start,name)])continue;
+       try{addPurchasedStock(start,name,v.g);changed=true}catch(e){}
+     }
+   }
+   return changed;
+ }
  function shopping(){
-   const p=plan();let html=nav()+'<div class="sec"><h2>2단계 · 장보기</h2><span class="more">부족한 원재료만</span></div><p class="hint">이미 있는 재고는 빼고 실제로 사야 할 재료만 보여줘요. <b>구매완료 체크 시 표시된 구매량이 원재료 재고에 자동 반영</b>되어 3단계에서 바로 사용할 수 있어요. 실제 산 양이 다르면 1단계에서 수량만 수정하세요.</p>';
+   let p=plan();if(syncCheckedShoppingStock(p))p=plan();let html=nav()+'<div class="sec"><h2>2단계 · 장보기</h2><span class="more">부족한 원재료만</span></div><p class="hint">이미 있는 재고는 빼고 실제로 사야 할 재료만 보여줘요. <b>구매완료 체크 시 표시된 구매량이 원재료 재고에 자동 반영</b>되어 3단계에서 바로 사용할 수 있어요. 실제 산 양이 다르면 1단계에서 수량만 수정하세요.</p>';
    for(const [label,a,b]of [['1차 · 월~목',0,4],['2차 · 금~일',4,7]]){
      const start=addD(target(),a),totals=batchShoppingTotals(start,addD(target(),b),p);
      const rows=Object.entries(totals).filter(([,v])=>v.g>1e-6||v.unknown);
@@ -458,6 +474,6 @@
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
- root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,addPurchasedStock,rollbackPurchasedStock};
+ root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
  try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);
