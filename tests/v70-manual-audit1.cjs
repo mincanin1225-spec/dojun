@@ -13,7 +13,8 @@ for(const k of ['preparedMealInventory1','mealFeedsV63','mealOpsV63','mealRecipe
 assert(shell.includes("const dump={backupSchema:BACKUP_SCHEMA"),'export must use the full backup envelope');
 assert(shell.includes("Number(o.backupSchema)>=2"),'import must support the full backup envelope');
 assert(shell.includes("k.indexOf('m2:')===0"),'monthly meal records must be included in backup/restore');
-assert(shell.includes("version\\s*:\\s*['\\\"](v\\d+)['\\\"]"),'version checker must parse __DOJUN_RELEASE.version');
+assert(shell.includes("t.match(/version\\s*:\\s*['\\\"](v\\d+)['\\\"]/"),'version checker must parse __DOJUN_RELEASE.version');
+assert(!shell.includes("t.match(/const APP_VER='(v\\d+)'/)"),'stale APP_VER literal matcher must be removed');
 assert(shell.includes('식단·섭취기록·재고·장보기·만들기 상태·프로필'),'family-sharing description must match current synced domains');
 assert(shell.includes('외출·건강기록은 현재 기기에 저장되며 백업으로 옮길 수 있어요'),'local-only domains must be stated clearly');
 
