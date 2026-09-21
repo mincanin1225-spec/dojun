@@ -1,6 +1,6 @@
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
 const db=new Map(),events={},messages=[];let deleted=false,override=null;
-const ctx={console,Date,Math,JSON,Map,Set,Number,String,encodeURIComponent,decodeURIComponent,inventory:{},invName:k=>k,weekCur:'2026-09-21',vShop:()=>'<p>stock</p>',weekList:()=>({}),sheetBatch(){},sheetDay(){},sheetOpen:false,close(){},render(){},toast:m=>messages.push(m),confirm:()=>true,open(){},FormData:class{constructor(f){this.f=f}get(k){return this.f.values[k]}getAll(k){const v=this.f.values[k];return Array.isArray(v)?v:(v==null?[]:[v])}},
+const ctx={console,Date,Math,JSON,Map,Set,Number,String,encodeURIComponent,decodeURIComponent,inventory:{},invName:k=>k,weekCur:'2026-09-21',shopChk:{},store:{set:()=>Promise.resolve()},vShop:()=>'<p>stock</p>',weekList:()=>({}),sheetBatch(){},sheetDay(){},sheetOpen:false,close(){},render(){},toast:m=>messages.push(m),confirm:()=>true,open(){},FormData:class{constructor(f){this.f=f}get(k){return this.f.values[k]}getAll(k){const v=this.f.values[k];return Array.isArray(v)?v:(v==null?[]:[v])}},
  localStorage:{getItem:k=>db.get(k)??null,setItem:(k,v)=>db.set(k,String(v)),removeItem:k=>db.delete(k)},
  document:{addEventListener:(k,f)=>(events[k]??=[]).push(f),querySelector:s=>String(s).includes('[data-offered=')?{value:'120'}:null},
  addEventListener:(k,f)=>(events['window:'+k]??=[]).push(f),
