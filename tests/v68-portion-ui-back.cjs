@@ -1,6 +1,6 @@
 const fs=require('fs'),assert=require('assert/strict');
 const flow=fs.readFileSync('meal-workflow-v68-portion2.js','utf8');
-const shell=fs.readFileSync('legacy-v68-nav2.html','utf8');
+const shell=fs.readFileSync('legacy-v68-scroll3.html','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 new Function(flow);
@@ -17,10 +17,10 @@ assert(shell.includes("parent.postMessage({type:'dojun-sheet-open'}"),'child she
 assert(shell.includes("parent.postMessage({type:'dojun-sheet-close'}"),'child shell must release top-level guard when a sheet closes');
 assert(shell.includes("e.data.type==='dojun-sheet-back'"),'child shell must close sheet on guarded back message');
 
-assert(index.includes("./legacy-v68-nav2.html?r=20260921-v68-nav2"),'index must load navigation-safe shell');
+assert(index.includes("./legacy-v68-scroll3.html?r=20260921-v68-scroll3"),'index must load navigation-safe shell');
 assert(index.includes("./meal-workflow-v68-portion2.js?r=20260921-v68-portion2"),'index must load redesigned portion workflow');
 assert(index.includes("history.pushState({dojunSheetGuard:true}"),'top-level app must create a back guard for open sheets');
 assert(index.includes("frame.contentWindow.postMessage({type:'dojun-sheet-back'}"),'top-level back must be routed to the open sheet');
-assert(sw.includes("const CACHE='dojun-pwa-v68-portionback2'"),'portion/back hotfix cache marker missing');
-assert(sw.includes("'./legacy-v68-nav2.html'")&&sw.includes("'./meal-workflow-v68-portion2.js'"),'new physical files must be precached');
+assert(sw.includes("const CACHE='dojun-pwa-v68-scroll3'"),'portion/back hotfix cache marker missing');
+assert(sw.includes("'./legacy-v68-scroll3.html'")&&sw.includes("'./meal-workflow-v68-portion2.js'"),'new physical files must be precached');
 console.log('PASS: portion registration UI is redesigned and hardware back closes the sheet');
