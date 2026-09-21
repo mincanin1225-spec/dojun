@@ -1,5 +1,5 @@
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
-const db=new Map(),docEvents={},winEvents={};let inputValue='140';
+const db=new Map(),docEvents={},winEvents={};let inputValue='30';
 db.set('dj:preparedMealInventory1',JSON.stringify([{id:'base',name:'잡곡무른밥',unitG:50,remainingCount:10,madeDate:'2026-09-20',mealCode:'M-base'}]));
 const ctx={
   console,Date,Math,JSON,Map,Set,Number,String,encodeURIComponent,decodeURIComponent,
@@ -43,7 +43,7 @@ function clickMake(encoded){
 clickMake(key);
 let lots=JSON.parse(db.get('dj:preparedMealInventory1'));
 const made=lots.find(x=>x.name==='닭고기'&&x.id!=='base');assert(made,'checked make task must create cooked ingredient stock');
-assert.equal(made.unitG,140,'edited actual amount must be stored instead of the default');
+assert.equal(made.unitG,30,'edited actual amount must be stored instead of the default');
 assert.equal(made.remainingCount,1);
 assert(ctx.inventory.chicken.qty<100,'making must deduct raw ingredients');
 
