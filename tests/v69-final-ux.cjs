@@ -23,5 +23,5 @@ assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 �
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v69 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v69 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v69');
-assert(sw.includes("const CACHE='dojun-pwa-v70-shoppingstock1'"),'v69 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-shoppingstock2'"),'v69 cache missing');
 console.log('PASS: final UX is a four-step flow with compact prep cards and separated feeding');
