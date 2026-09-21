@@ -111,3 +111,6 @@ jobs:
 
       - name: Inventory display and family sync schema
         run: node tests/v70-inventory-sync-fix.cjs
+
+      - name: Prepared-only inventory model
+        run: node tests/v70-prepared-only-inventory.cjs
