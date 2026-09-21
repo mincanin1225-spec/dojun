@@ -21,7 +21,9 @@ assert(flow.includes('function makeTasks(rows,start)'),'step 3 must aggregate th
 assert(flow.includes('data-v71-makecheck'),'step 3 must use a checkbox-style completion action');
 assert(flow.includes('data-v71-makeg'),'default make quantity must be editable for extra cooking');
 assert(flow.includes('이번 준비 필요'),'make rows must show the exact required amount');
-assert(flow.includes("meal={...task.template,key:'make:'+key,plannedG:task.missingG||actualG}"),'make completion must use the current menu recipe and planned shortage');
+assert(flow.includes('function makeTemplate(t)'),'make completion must resolve a safe ingredient-prep recipe');
+assert(flow.includes("key:'make:'+t.key"),'make operations must be keyed to the checklist item');
+assert(flow.includes('const meal=makeTemplate(task)'),'make completion must use the checklist ingredient template');
 assert(flow.includes('E.undoCook(s,task.undo)'),'unchecking a safe make completion must restore inventory');
 assert(!flow.includes("batchPrep('1차"),'active prep screen must not render the old per-meal cooking-card flow');
 assert(flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'feeding must require one total offered amount');
