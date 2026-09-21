@@ -18,6 +18,6 @@ assert(flow.includes('2 · 만드는 법'),'steps section missing');
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'active shell must remain v70');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'active workflow must remain v70');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'PWA must cache active files');
-assert(sw.includes("const CACHE='dojun-pwa-v70-unifiedcook1'"),'unified cooking cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-shoppingstock1'"),'unified cooking cache marker missing');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'settings version must remain v70');
 console.log('PASS: structured recipe editing is preserved inside the unified cooking screen');

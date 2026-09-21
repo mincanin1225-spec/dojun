@@ -16,7 +16,7 @@ assert(shell.includes('sheet.querySelectorAll(`[data-a^="rec:${on}|${s}|"]`)'),'
 assert(shell.includes("btn.setAttribute('aria-pressed'"),'reaction buttons must update in place without rebuilding the sheet');
 assert(!shell.includes("if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]'))sheetDay(on);"),'reaction tap must not rebuild the day sheet or erase unsaved menu edits');
 assert(!flow.includes("render(true);if(typeof sheetOpen!=='undefined'&&sheetOpen&&oldSheet)sheetDay(m.on)"),'feed action must not rebuild the sheet and erase unsaved inputs');
-assert((flow.match(/if\(isPreparedOnlyShoppingName\(x\.name\)\)continue/g)||[]).length>=2,'hidden prepared meals must also be excluded from bulk shopping completion');
+assert(flow.includes('function batchShoppingTotals')&&flow.includes('if(isPreparedOnlyShoppingName(x.name))continue'),'prepared meals must be excluded through the shared shopping totals path');
 assert(flow.includes('>조리하기</button>'),'meal cards must use one unified cooking button');
 assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 완료·소분</button>'),'old split cooking buttons must be removed from active cards');
 assert(flow.includes('data-v70-unified'),'recipe, cooking and portion registration must be one screen');
@@ -26,6 +26,6 @@ assert(flow.includes("result=E.cook(s,cooked,form)"),'final submit must still us
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v70 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-unifiedcook1'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-shoppingstock1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
