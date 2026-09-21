@@ -1,5 +1,5 @@
 const fs=require('fs'),assert=require('assert/strict');
-const shell=fs.readFileSync('legacy-v69.html','utf8');
+const shell=fs.readFileSync('legacy-v70.html','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 
@@ -18,7 +18,7 @@ assert(block.includes('restoreSheetPosition();sheetRestoreUntil=0'),'restore win
 assert(!block.includes('window.scrollTo(0,0)'),'sheet close/back must never force the underlying page to the top');
 assert(block.includes("if(!sheetOpen&&sheetRestoreUntil&&Date.now()<sheetRestoreUntil)restoreSheetPosition()"),'keyboard viewport resize must preserve saved scroll');
 assert(block.includes("e.data.type==='dojun-sheet-back'&&sheetOpen"),'hardware back must still close the current sheet');
-assert(index.includes('./legacy-v69.html?r=20260921-v69'),'index must load the scroll-restoring physical shell');
-assert(sw.includes("'./legacy-v69.html'"),'service worker must precache the scroll-restoring shell');
-assert(sw.includes("const CACHE='dojun-pwa-v69-finalux1'"),'scroll-restoring cache generation missing');
+assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load the scroll-restoring physical shell');
+assert(sw.includes("'./legacy-v70.html'"),'service worker must precache the scroll-restoring shell');
+assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit1'"),'scroll-restoring cache generation missing');
 console.log('PASS: closing/back from edit sheets restores the exact underlying page position');
