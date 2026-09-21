@@ -266,7 +266,8 @@
      '</div>'+rows.map(r=>mealCard(r.meal,r)).join('');
  }
  function prep(){
-   const p=plan(),base=target(),firstEnd=addD(base,4),secondEnd=addD(base,7),
+   let p=plan();if(syncCheckedShoppingStock(p))p=plan();
+   const base=target(),firstEnd=addD(base,4),secondEnd=addD(base,7),
      first=p.filter(r=>r.meal.on>=base&&r.meal.on<firstEnd),
      second=p.filter(r=>r.meal.on>=firstEnd&&r.meal.on<secondEnd),
      names=[...new Set(p.flatMap(r=>r.meal.ingredients.map(x=>x.name)))];
