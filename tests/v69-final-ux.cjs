@@ -18,7 +18,7 @@ assert(flow.includes('먹인 재고 차감'),'step 4 must separate feeding stock
 assert(!flow.includes("급여 완료 · 조리식 차감"),'feeding action must not remain inside prep cards');
 assert(!flow.includes("<p class=\"hint\">'+esc(m.source)"),'repeated recipe-source prose must be removed from meal cards');
 assert(flow.includes("사용 재고"),'compact meal cards must still show allocated stock');
-assert(flow.includes('>조리하기</button>'),'prep cards must expose one unified cooking action');
+assert(flow.includes("done?'✓ 조리 완료':'조리하기'"),'prep cards must expose one unified cooking action with completed state');
 assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 완료·소분</button>'),'prep cards must not expose the old split actions');
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v69 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v69 workflow');
