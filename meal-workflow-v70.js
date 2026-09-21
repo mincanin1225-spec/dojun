@@ -235,71 +235,60 @@
    }
    return Object.values(map).filter(x=>x.unknown||x.g>1e-6);
  }
- function prepDoneMap(){return read(K.prep,{})}
- function savePrepDoneMap(map){
-   write(K.prep,map);
-   try{if(typeof store!=='undefined'&&store?.set)Promise.resolve(store.set('prepChecklist2',map)).catch(()=>{})}catch(e){}
+ function makeTaskKey(start,name){return String(start)+'|'+E.norm(name)}
+ function makeOps(){
+   const out={};for(const [token,op] of Object.entries(read(K.ops,{}))){
+     const key=String(op?.lot?.mealKey||'');if(op?.type!=='cook'||!key.startsWith('make:'))continue;
+     const taskKey=key.slice(5);(out[taskKey]||(out[taskKey]=[])).push({token,op});
+   }return out;
  }
- function prepUnit(name){
-   const lots=snapshot().prepared.filter(x=>E.norm(x.name||x.ingredient)===E.norm(name)&&Number(x.unitG)>0)
-     .sort((a,b)=>String(b.madeDate||'').localeCompare(String(a.madeDate||'')));
-   if(lots.length)return Number(lots[0].unitG);
-   return ['잡곡무른밥','잡곡진밥'].includes(E.norm(name))?50:null;
- }
- function prepTasks(rows,start){
-   const map={};
+ function makeTasks(rows,start){
+   const map={},ops=makeOps();
    for(const r of rows){
-     for(const n of r.needs||[]){
-       const name=E.norm(n.name);
-       if(!isPreparedOnlyShoppingName(name))continue;
-       const x=map[name]||(map[name]={name,requiredG:0,missingG:0,unknown:false,mealKeys:new Set(),missingMealKeys:new Set()});
-       x.mealKeys.add(r.meal.key);
-       if(Number(n.g)>0)x.requiredG+=Number(n.g);
-       if(n.buyG===null)x.unknown=true;
-       else if(Number(n.buyG)>0){x.missingG+=Number(n.buyG);x.missingMealKeys.add(r.meal.key)}
-     }
+     if(r.fed||!r.meal)continue;
+     const m=r.meal,name=E.norm(m.name),key=makeTaskKey(start,name),x=map[key]||(map[key]={key,start,name,requiredG:0,coveredG:0,meals:0,template:m,unknown:false});
+     x.meals++;if(Number(m.g)>0)x.requiredG+=Number(m.g);else x.unknown=true;
+     for(const u of r.used||[])if(u.kind==='prepared'&&E.norm(u.name)===name)x.coveredG+=Number(u.g)||0;
    }
-   return Object.values(map).filter(x=>x.unknown||x.missingG>1e-6).map(x=>{
-     const unitG=prepUnit(x.name),missingG=Math.round(x.missingG*10)/10,requiredG=Math.round(x.requiredG*10)/10,
-       coveredG=Math.max(0,Math.round((requiredG-missingG)*10)/10),count=unitG&&missingG>0?Math.ceil(missingG/unitG):null,
-       meals=x.mealKeys.size,missingMeals=x.missingMealKeys.size,coveredMeals=Math.max(0,meals-missingMeals);
-     const key=[start,x.name,missingG,unitG||0,count||0,meals].join('|');
-     return{name:x.name,missingG,requiredG,coveredG,unitG,count,meals,missingMeals,coveredMeals,unknown:x.unknown,key};
+   const lots=read(K.prepared,[]);
+   for(const [key,list] of Object.entries(ops)){
+     if(!key.startsWith(String(start)+'|')||map[key])continue;
+     const last=list[list.length-1],lot=lots.find(x=>String(x.id||x.stockCode||x.code||'')===String(last.token));if(!lot)continue;
+     const name=E.norm(last.op.lot?.name||lot.name),g=E.amount(lot);map[key]={key,start,name,requiredG:Number(last.op.lot?.plannedG)||g,coveredG:g,meals:0,template:null,unknown:false,legacyDone:true};
+   }
+   return Object.values(map).map(x=>{
+     x.requiredG=Math.round(x.requiredG*10)/10;x.coveredG=Math.round(x.coveredG*10)/10;
+     x.missingG=x.unknown?null:Math.max(0,Math.round((x.requiredG-x.coveredG)*10)/10);
+     const list=ops[x.key]||[],last=list[list.length-1],lot=last&&lots.find(v=>String(v.id||v.stockCode||v.code||'')===String(last.token));
+     x.undo=last&&lot&&Math.abs(E.amount(lot)-E.amount(last.op.lot))<1e-6&&Number(lot.unitG)===Number(last.op.lot.unitG)?last.token:null;
+     return x;
    });
  }
- function prepTaskRow(t,done){
-   const makeQty=t.unitG&&t.count?('<b>추가 만들기 '+t.missingG+'g · '+t.unitG+'g × '+t.count+'개</b>'):(t.missingG>0?'<b>추가 만들기 '+t.missingG+'g</b>':'<b>분량 확인 필요</b>');
-   const total=t.requiredG>0?'총 '+t.meals+'끼 필요 · '+t.requiredG+'g':'총 필요량 확인 필요';
-   const have=t.coveredG>0?'보유 재고 배정 · '+t.coveredG+'g'+(t.coveredMeals?' · '+t.coveredMeals+'끼분':''):'보유 준비식 없음';
-   const missing=t.missingG>0?'추가 '+(t.missingMeals||'')+'끼분':'';
-   return '<div class="shop'+(done?' on':'')+'" data-v67-prepdone="'+encodeURIComponent(t.key)+'" style="cursor:pointer"><div class="bx"></div><div class="nm"><b>'+esc(t.name)+'</b><div class="hint" style="margin-top:4px">'+esc(total)+'</div><div class="hint">'+esc(have)+'</div><div style="margin-top:4px">'+makeQty+(missing?' <span class="hint">· '+esc(missing)+'</span>':'')+'</div></div><div class="qt">'+(done?'만들기 완료':'미완료')+'</div></div>';
+ function makeTaskRow(t){
+   const ready=t.missingG===0&&!t.unknown,defaultG=t.missingG===null?'':t.missingG,
+     qty=t.unknown?'분량 확인 필요':('이번 준비 필요 '+t.requiredG+'g'+(t.coveredG>0?' · 재고 '+t.coveredG+'g 반영':''));
+   return '<div class="shop'+(ready?' on':'')+'" style="align-items:center">'+
+     '<button type="button" class="bx" aria-label="'+esc(t.name)+' 만들기 상태" '+(ready&&!t.undo?'disabled':'data-v71-makecheck="'+encodeURIComponent(t.key)+'"')+'></button>'+
+     '<div class="nm"><b>'+esc(t.name)+'</b><div class="hint">'+esc(qty)+'</div>'+
+       (ready?'<div class="hint" style="margin-top:3px">필요량 준비됨</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span></div>')+
+     '</div><div class="qt">'+(ready?(t.undo?'완료 취소':'준비 완료'):'만들었음')+'</div></div>';
  }
- function prepStatus(tasks,doneMap){
-   const done=tasks.filter(t=>doneMap[t.key]?.done).length;
-   return{done,total:tasks.length,all:tasks.length>0&&done===tasks.length};
- }
- function batchPrep(label,start,end,rows){
-   const used=aggregateUsed(rows),missing=aggregateMissing(rows),tasks=prepTasks(rows,start),doneMap=prepDoneMap(),st=prepStatus(tasks,doneMap);
-   const range=start+' ~ '+addD(end,-1);
-   return '<div class="sec"><h2>'+label+' 식단만들기</h2><span class="more">'+range+'</span></div>'+
-     '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">준비할 음식</h3><span class="chip sm '+(st.all?'ok':'')+'">'+(tasks.length?(st.all?'만들기 완료':'만들기 '+st.done+'/'+st.total):'추가 조리 없음')+'</span></div>'+
-     (tasks.length?tasks.map(t=>prepTaskRow(t,!!doneMap[t.key]?.done)).join(''):'<p class="hint">현재 보유한 준비식으로 필요한 양을 충당할 수 있어요.</p>')+
-     (tasks.length?'<div class="btnrow" style="margin-top:10px"><button class="btn '+(st.all?'':'pri')+'" data-v67-prepall="'+start+'">'+(st.all?'완료 취소':'전체 만들기 완료')+'</button></div>':'')+
-     '<p class="hint" style="margin-top:8px">완료 체크는 작업 상태만 기록합니다. 실제 재고 차감은 아래 조리 완료에서 확정해요.</p></div>'+
-     '<div class="card"><h3 style="margin-top:0">꺼낼 재고</h3>'+
-     (used.length?used.map(u=>'<div class="inventory-row"><div style="flex:1">'+stockUseText(u)+(u.location?'<div class="hint">'+esc(u.location)+(u.date?' · '+esc(u.date):'')+'</div>':'')+'</div></div>').join(''):'<p class="hint">배정 가능한 보유재고가 없어요.</p>')+
-     (missing.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line2)"><b>추가 준비 필요</b>'+missing.filter(x=>!isPreparedOnlyShoppingName(x.name)).map(x=>'<div class="hint" style="margin-top:5px">'+esc(x.name)+' · '+(x.unknown?'분량 확인 필요':Math.round(x.g*10)/10+'g 부족')+'</div>').join('')+'</div>':'')+
-     '</div>'+rows.map(r=>mealCard(r.meal,r)).join('');
+ function batchMake(label,start,end,rows){
+   const tasks=makeTasks(rows,start),ready=tasks.filter(t=>t.missingG===0&&!t.unknown).length;
+   return '<div class="sec"><h2>'+label+' 만들기</h2><span class="more">'+start+' ~ '+addD(end,-1)+'</span></div>'+
+     '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">이번 준비량</h3><span class="chip sm '+(tasks.length&&ready===tasks.length?'ok':'')+'">'+(tasks.length?(ready===tasks.length?'만들기 완료':ready+'/'+tasks.length+' 준비'):'추가 만들기 없음')+'</span></div>'+
+     '<p class="hint" style="margin:8px 0 4px">앱이 이번 기간에 필요한 양에서 현재 조리식 재고를 뺀 만큼을 기본값으로 넣어둬요. 더 만들었다면 숫자만 바꾼 뒤 체크하세요.</p>'+
+     (tasks.length?tasks.map(makeTaskRow).join(''):'<p class="hint">현재 조리식 재고로 필요한 양을 모두 준비할 수 있어요.</p>')+
+     '</div>';
  }
  function prep(){
    let p=plan();if(syncCheckedShoppingStock(p))p=plan();
    const base=target(),firstEnd=addD(base,4),secondEnd=addD(base,7),
      first=p.filter(r=>r.meal.on>=base&&r.meal.on<firstEnd),
-     second=p.filter(r=>r.meal.on>=firstEnd&&r.meal.on<secondEnd),
-     names=[...new Set(p.flatMap(r=>r.meal.ingredients.map(x=>x.name)))];
-   return nav()+'<div class="sec"><h2>3단계 · 식단만들기</h2><span class="more">1차 / 2차 배치</span></div><p class="hint">먼저 만들 음식과 꺼낼 재고를 확인하고, 실제 조리가 끝났을 때만 재고를 반영해요.</p>'+
-     batchPrep('1차 · 월~목',base,firstEnd,first)+batchPrep('2차 · 금~일',firstEnd,secondEnd,second)+
-     '<details style="margin-top:14px"><summary>밥·반찬을 따로 만들어 냉동하기</summary>'+names.map(n=>mealCard(component(n))).join('')+'</details>';
+     second=p.filter(r=>r.meal.on>=firstEnd&&r.meal.on<secondEnd);
+   return nav()+'<div class="sec"><h2>3단계 · 만들기</h2><span class="more">체크만 하면 재고 반영</span></div>'+
+     '<p class="hint">장보기처럼 실제로 만들었는지만 체크하세요. 기본 수량은 이번 식단에 필요한 정량이고, 더 만든 경우에만 실제 만든 양을 수정하면 됩니다.</p>'+
+     batchMake('1차 · 월~목',base,firstEnd,first)+batchMake('2차 · 금~일',firstEnd,secondEnd,second);
  }
  function get(k){if(k.startsWith('component:'))return component(decodeURIComponent(k.slice(10)));const [on,s]=k.split('|');return model(on,Number(s))}
  function ingredientRow(x={name:'',g:''}){
@@ -403,6 +392,26 @@
      }
      if(form.hasAttribute('data-v70-unified'))updateUnifiedPreview(form);else updateRecipeTotal(form);return;
    }
+   const makeCheck=e.target.closest&&e.target.closest('[data-v71-makecheck]');
+   if(makeCheck){
+     e.preventDefault();e.stopImmediatePropagation();if(locked)return;
+     const key=decodeURIComponent(makeCheck.getAttribute('data-v71-makecheck')),sep=key.indexOf('|'),start=key.slice(0,sep),name=key.slice(sep+1),
+       end=addD(start,start===target()?4:3),rows=plan().filter(r=>r.meal.on>=start&&r.meal.on<end),task=makeTasks(rows,start).find(t=>t.key===key);
+     try{
+       if(task?.undo){
+         if(!confirm(name+' 만들기 완료를 취소할까요? 재고와 사용 원재료를 되돌립니다.'))return;
+         locked=true;const s=snapshot(),result=E.undoCook(s,task.undo);if(!result.already)commit(s,result.state);render(true);return toast('만들기 완료를 취소했어요');
+       }
+       if(!task||!task.template)throw Error('현재 식단의 만들기 항목을 찾지 못했어요');
+       const input=document.querySelector('[data-v71-makeg="'+CSS.escape(encodeURIComponent(key))+'"]'),actualG=Number(input?.value);
+       if(!Number.isFinite(actualG)||actualG<=0)throw Error('실제 만든 양을 확인해 주세요');
+       if(task.unknown||!(Number(task.template.g)>0)||task.template.ingredients.some(x=>!(Number(x.g)>0)))throw Error(name+' 분량을 먼저 확인해 주세요');
+       const makeToken=token(),meal={...task.template,key:'make:'+key,plannedG:task.missingG||actualG};
+       if(!confirm(name+' '+actualG+'g 만들기를 완료했나요?'))return;
+       locked=true;const s=snapshot(),result=E.cook(s,meal,{token:makeToken,count:1,unitG:actualG,date:date()});if(!result.already)commit(s,result.state);render(true);toast(name+' '+actualG+'g을 조리식 재고에 반영했어요');
+     }catch(err){toast(err.message)}finally{locked=false}
+     return;
+   }
    const prepDone=e.target.closest&&e.target.closest('[data-v67-prepdone],[data-v67-prepall]');
    if(prepDone&&(prepDone.hasAttribute('data-v67-prepdone')||prepDone.hasAttribute('data-v67-prepall'))){
      e.preventDefault();e.stopImmediatePropagation();
@@ -455,10 +464,16 @@
      if(el.hasAttribute('data-v63-edit'))return editor(get(el.getAttribute('data-v63-edit')));
      if(!el.hasAttribute('data-v63-feed'))return toast('새 식단만들기 화면에서 완료해 주세요');
      const m=get(el.getAttribute('data-v63-feed'));if(!m)throw Error('식단이 변경됐어요');
-     const s=snapshot(),undo=!!s.feeds[m.key];if(!confirm(undo?'급여 차감을 취소하고 사용량을 복원할까요?':'실제로 급여한 식사인가요? 조리식 재고를 차감합니다.'))return;
-     locked=true;const next=undo?E.undoFeed(s,m.key):E.feed(s,m);commit(s,next.state);render(true);
-     const lb=['아침','점심','저녁'][m.slot]||'끼니';el.textContent=lb+' · '+(undo?'먹인 재고 차감':'재고 차감 취소');
-     toast(undo?'급여 차감을 취소했어요':'급여한 조리식을 차감했어요');
+     const s=snapshot(),undo=!!s.feeds[m.key],slot=['b','l','d'][m.slot],holder=typeof sheet!=='undefined'?sheet:document,
+       offeredEl=holder.querySelector('[data-offered="'+slot+'"]'),offered=Number(offeredEl?.value);
+     if(!undo){
+       if(typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on))return;
+       if(!Number.isFinite(offered)||offered<=0)throw Error('먼저 제공한 전체 양(g)을 입력해 주세요');
+       if(!confirm('제공한 '+offered+'g을 조리식 재고에서 차감할까요?'))return;
+     }else if(!confirm('급여 차감을 취소하고 사용량을 복원할까요?'))return;
+     locked=true;const next=undo?E.undoFeed(s,m.key):E.feed(s,m,offered);commit(s,next.state);render(true);
+     const lb=['아침','점심','저녁'][m.slot]||'끼니';el.textContent=lb+' · '+(undo?'제공량으로 재고 차감':'재고 차감 취소');
+     toast(undo?'급여 차감을 취소했어요':'제공한 전체 양 '+offered+'g을 재고에서 차감했어요');
    }catch(err){toast(err.message)}finally{locked=false}
  },true);
  document.addEventListener('submit',function(e){
@@ -503,11 +518,11 @@
    }catch(e){}
    const saveBtn=holder.querySelector('[data-a="savday:'+on+'"]');if(saveBtn)saveBtn.textContent='기록 저장';
    const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';
-   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint">위에서 실제 먹은 양과 반응을 입력하고, 냉동 조리식을 사용한 끼니만 아래에서 재고를 차감하세요. 입력한 기록은 마지막 <b>기록 저장</b>으로 저장됩니다.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'먹인 재고 차감')+'</button>':''}).join('')+'</div>';
+   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>에는 꺼내서 먹인 전체 양을, <b>실제 섭취량</b>에는 도준이가 실제로 먹은 양을 입력하세요. 조리식 재고는 제공량 기준으로 차감되고, 섭취기록은 마지막 <b>기록 저장</b>으로 저장됩니다.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'제공량으로 재고 차감')+'</button>':''}).join('')+'</div>';
    holder.querySelector('#v63-feed')?.remove();
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
- root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
+ root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
  try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);
