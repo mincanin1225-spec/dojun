@@ -49,5 +49,5 @@ const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
 assert(flow.includes('구매완료 체크 시 표시된 구매량이 원재료 재고에 자동 반영'),'shopping UI must explain automatic stock-in');
 assert(flow.includes('data-v63-shopg'),'shopping rows must carry the purchase grams into the stock-in action');
 assert(flow.includes('batchShoppingTotals'),'completed shopping rows must remain visible after stock-in recalculates shortages');
-assert(flow.includes('if(syncCheckedShoppingStock(p))p=plan()'),'existing completed checks must migrate into raw stock automatically');
+assert((flow.match(/if\(syncCheckedShoppingStock\(p\)\)p=plan\(\)/g)||[]).length>=2,'existing completed checks must migrate from both shopping and prep entry points');
 console.log('PASS: shopping completion becomes raw stock and step 3 can consume it safely');
