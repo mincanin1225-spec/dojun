@@ -181,15 +181,23 @@
    const pieces=unit>1&&Math.abs(c-Math.round(c))<1e-6?' · '+unit+'g×'+Math.round(c):'';
    return '<span class="chip sm">'+esc(stockCode(u))+'</span> '+esc(u.name)+' '+g+'g'+pieces;
  }
+ function preparedAmount(name){
+   const n=E.norm(name);return read(K.prepared,[]).filter(x=>E.norm(x.name||x.ingredient)===n).reduce((sum,x)=>sum+E.amount(x),0);
+ }
+ function mealReady(m,r){
+   if(r&&r.used&&r.used.some(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name))&&(!r.needs||!r.needs.length))return true;
+   if(m.component&&Number(m.g)>0&&preparedAmount(m.name)+1e-6>=Number(m.g))return true;
+   return false;
+ }
  function mealCard(m,r){
-   const known=m.ingredients.every(x=>x.g>0),slot=m.component?'따로 만들기':['아침','점심','저녁'][m.slot],
+   const known=m.ingredients.every(x=>x.g>0),done=mealReady(m,r),slot=m.component?'따로 만들기':['아침','점심','저녁'][m.slot],
      ing=m.ingredients.map(x=>esc(x.name)+' '+(x.g>0?x.g+'g':'확인 필요')).join(' · ');
    return '<div class="card" style="margin:10px 0;padding:16px">'+
-     '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div class="hint">'+(m.component?'밥·반찬':esc(m.on))+' · '+slot+'</div><h3 style="margin:4px 0 0;line-height:1.42">'+esc(m.name)+'</h3></div>'+(!known?'<span class="chip sm">분량 확인</span>':'')+'</div>'+
+     '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div class="hint">'+(m.component?'밥·반찬':esc(m.on))+' · '+slot+'</div><h3 style="margin:4px 0 0;line-height:1.42">'+esc(m.name)+'</h3></div>'+(done?'<span class="chip sm ok">조리 완료</span>':!known?'<span class="chip sm">분량 확인</span>':'')+'</div>'+
      '<div class="hint" style="margin-top:9px;line-height:1.65;color:var(--ink2)">'+ing+'</div>'+
      (r?'<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line2)"><b style="font-size:12.5px">사용 재고</b><div class="hint" style="margin-top:5px;line-height:1.7">'+(r.used.length?r.used.map(stockUseText).join('<br>'):'배정된 보유재고 없음')+'</div></div>':'')+
-     '<div style="margin-top:12px"><button class="btn pri" style="width:100%" data-v63-edit="'+esc(m.key)+'">조리하기</button></div>'+
-     (!known?'<p class="hint" style="margin:7px 0 0">조리 화면에서 재료 분량을 확인한 뒤 소분까지 한 번에 등록해요.</p>':'')+
+     '<div style="margin-top:12px"><button class="btn '+(done?'':'pri')+'" style="width:100%" '+(done?'disabled aria-disabled="true"':'data-v63-edit="'+esc(m.key)+'"')+'>'+(done?'✓ 조리 완료':'조리하기')+'</button></div>'+
+     (!done&&!known?'<p class="hint" style="margin:7px 0 0">조리 화면에서 재료 분량을 확인한 뒤 소분까지 한 번에 등록해요.</p>':'')+
      '</div>';
  }
  function component(name){const saved=recipeMap()[name];return {key:'component:'+encodeURIComponent(name),name,component:true,g:saved?.yieldG||null,ingredients:saved?.ingredients||[{name,g:null}],steps:saved?.steps||'',source:saved?'사용자 확인 레시피':'원본 조리법·원물 사용량 확인 필요'};}
