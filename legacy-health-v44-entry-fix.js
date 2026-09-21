@@ -1,7 +1,7 @@
 (function(){
   'use strict';
   if(typeof render!=='function')return;
-  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v68';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v69';
   const baseRender=render;
 
   function patchVersion(){
