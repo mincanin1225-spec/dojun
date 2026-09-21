@@ -7,9 +7,16 @@
   const norm=s=>String(s||'').trim().split(/\s*·\s*/).map(x=>aliases[x]||x).join(' · ');
   function amount(lot){return positive(lot.unitG)&&positive(lot.remainingCount)?round(lot.unitG*lot.remainingCount):0}
   function id(lot,i){return lot.id||lot.stockCode||lot.code||'legacy-'+i}
+  function isWholeMealLot(lot){
+    const key=String(lot?.mealKey||''),name=norm(lot?.name||'');
+    if(lot?.legacyWholeMeal)return true;
+    if(/^\d{4}-\d{2}-\d{2}\|\d+$/.test(key))return true;
+    return lot?.source==='meal-prep-v63'&&name.includes(' · ')&&!key.startsWith('make:')&&!key.startsWith('component:');
+  }
   function pool(state,raw=true){
     const rows=[];
     for(const kind of ['prepared','cubes']) (state[kind]||[]).forEach((lot,i)=>{
+      if(kind==='prepared'&&isWholeMealLot(lot))return;
       const lotId=id(lot,i),code=kind==='prepared'?(lot.mealCode||lot.stockCode||lot.code||lotId):(lot.stockCode||lot.code||lotId);
       if(amount(lot))rows.push({kind,i,id:lotId,code,name:norm(lot.name||lot.ingredient),g:amount(lot),date:lot.madeDate||'',unitG:Number(lot.unitG),location:lot.location||'냉동'});
     });
@@ -76,6 +83,7 @@
   }
   function cook(state,meal,form){
     if(state.ops&&state.ops[form.token])return {state,already:true};
+    if(isWholeMealLot({name:meal.name,mealKey:meal.key,source:'meal-prep-v63'}))throw Error('한 끼 전체 메뉴는 재고로 저장하지 않아요');
     if(!form.token||!Number.isInteger(form.count)||form.count<1||!positive(form.unitG)||!positive(meal.g))throw Error('소분 중량·개수를 확인해 주세요');
     const required=meal.ingredients||[];
     if(!required.length||required.some(x=>!positive(x.g)))throw Error('확인되지 않은 재료량이 있어요. 먼저 실제 사용량을 저장해 주세요');
@@ -127,6 +135,6 @@
     for(const u of receipt.used){const lot=next[u.kind][u.i];if(!lot||id(lot,u.i)!==u.id)throw Error('사용한 재고가 수정·삭제되어 자동 복구할 수 없어요');lot.remainingCount=round(amount(lot)+u.g)/Number(lot.unitG);}
     delete next.feeds[key];return {state:splitResiduals(next)};
   }
-  const api={norm,amount,pool,plan,cook,undoCook,feed,undoFeed};
+  const api={norm,amount,pool,plan,cook,undoCook,feed,undoFeed,isWholeMealLot};
   if(typeof module==='object'&&module.exports)module.exports=api;root.MealStockV63=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
