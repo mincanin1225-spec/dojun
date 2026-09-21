@@ -114,3 +114,6 @@ jobs:
 
       - name: Prepared-only inventory model
         run: node tests/v70-prepared-only-inventory.cjs
+
+      - name: Manual-driven whole app audit
+        run: node tests/v70-manual-audit1.cjs
