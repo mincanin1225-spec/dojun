@@ -83,7 +83,7 @@
     for(const x of required){const t=take(rows,x.name,x.g*factor);if(t.left>1e-6)throw Error(x.name+' 재고 부족 '+round(t.left)+'g');used.push(...t.used);}
     let next=mutate(state,used);next.ops=next.ops||{};
     const codes=new Set(next.prepared.map(x=>x.mealCode));let n=1;while(codes.has('M-'+n))n++;
-    const lot={id:form.token,name:meal.name,mealKey:meal.key||'',unitG:form.unitG,remainingCount:form.count,originalCount:form.count,madeDate:form.date,mealCode:'M-'+n,source:'meal-prep-v63'};
+    const lot={id:form.token,name:meal.name,mealKey:meal.key||'',plannedG:positive(meal.plannedG)?Number(meal.plannedG):Number(meal.g),unitG:form.unitG,remainingCount:form.count,originalCount:form.count,madeDate:form.date,mealCode:'M-'+n,source:'meal-prep-v63'};
     next.prepared.push(lot);next.ops[form.token]={type:'cook',used,lot:copy(lot)};
     return {state:splitResiduals(next)};
   }
@@ -109,12 +109,16 @@
     delete next.ops[token];
     return {state:splitResiduals(next)};
   }
-  function feed(state,meal){
+  function feed(state,meal,totalG){
     if(state.feeds&&state.feeds[meal.key])return {state,already:true};
-    const rows=pool(state,false),r=mealNeed(meal,rows);
+    const serveG=positive(totalG)?Number(totalG):Number(meal.g);
+    if(!positive(serveG))throw Error('제공량 확인이 필요해요');
+    const baseG=positive(meal.g)?Number(meal.g):serveG,ratio=serveG/baseG,
+      served={...meal,g:serveG,ingredients:(meal.ingredients||[]).map(x=>({...x,g:positive(x.g)?round(Number(x.g)*ratio):x.g}))},
+      rows=pool(state,false),r=mealNeed(served,rows);
     for(const x of r.needs){if(!positive(x.g))throw Error('급여량 확인이 필요해요');const t=take(rows,x.name,x.g,['prepared','cubes']);if(t.left>1e-6)throw Error(x.name+' 조리식 재고 부족');r.used.push(...t.used);}
     if(!r.used.length)throw Error('차감할 조리식 재고가 없어요');
-    const next=mutate(state,r.used);next.feeds=next.feeds||{};next.feeds[meal.key]={name:meal.name,used:r.used,at:Date.now()};
+    const next=mutate(state,r.used);next.feeds=next.feeds||{};next.feeds[meal.key]={name:meal.name,servedG:serveG,used:r.used,at:Date.now()};
     return {state:splitResiduals(next)};
   }
   function undoFeed(state,key){

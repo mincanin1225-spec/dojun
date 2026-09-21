@@ -34,6 +34,11 @@ test('feed is idempotent, uses only prepared food, undo restores grams',()=>{
  let s=E.cook(stocked(),menu(),form).state;const before=JSON.stringify(s);s=E.feed(s,menu()).state;assert.equal(total(s,menu().name),0);assert.equal(total(s,'잡곡무른밥'),400);
  assert.deepEqual(E.feed(s,menu()).state,s);assert(E.plan([menu()],s)[0].fed);s=E.undoFeed(s,menu().key).state;assert.equal(total(s,menu().name),120);assert(!s.feeds[menu().key]);
 });
+test('feeding uses the offered total grams and undo restores them',()=>{
+ let s=E.cook(stocked(),menu(),form).state;s=E.feed(s,menu(),80).state;
+ assert.equal(total(s,menu().name),40);assert.equal(s.feeds[menu().key].servedG,80);
+ s=E.undoFeed(s,menu().key).state;assert.equal(total(s,menu().name),120);
+});
 test('feeding cubes preserves remainder and cancellation restores total',()=>{
  let s=stocked();s=E.feed(s,menu()).state;assert.equal(total(s,'양배추'),40);assert(s.cubes.every(x=>Number.isInteger(x.remainingCount)));s=E.undoFeed(s,menu().key).state;assert.equal(total(s,'양배추'),60);assert.equal(total(s,'잡곡무른밥'),500);
 });
