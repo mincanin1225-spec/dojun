@@ -10,7 +10,7 @@ ctx.window=ctx;vm.createContext(ctx);
 for(const f of ['meal-stock-v66.js','meal-workflow-v69.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 const K={prep:'dj:preparedMealInventory1',cube:'dj:cubeInventory2'};
 db.set(K.prep,JSON.stringify([{id:'base',name:'잡곡무른죽',unitG:50,remainingCount:10}]));db.set(K.cube,JSON.stringify([{id:'veg',ingredient:'양배추',unitG:30,remainingCount:10}]));
-assert(ctx.vShop().includes('밥·반찬을 따로 만들어'));assert(ctx.vShop().includes('원본 조리법 미등록'));
+assert(ctx.vShop().includes('밥·반찬을 따로 만들어'));assert(!ctx.vShop().includes('원본 조리법 미등록'));assert(ctx.vShop().includes('분량·레시피'));
 function submit(kind,key,values){const f={values,matches:()=>true,getAttribute:k=>k===kind?key:null,hasAttribute:k=>k===kind};events.submit.forEach(fn=>fn({target:f,preventDefault(){},stopImmediatePropagation(){}}))}
 function feed(key){const el={hasAttribute:k=>k==='data-v63-feed',getAttribute:()=>key};events.click.forEach(fn=>fn({target:{closest:()=>el},preventDefault(){},stopImmediatePropagation(){}}))}
 const values={token:'one',unitG:'120',count:'1',date:'2026-09-19'};
