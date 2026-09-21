@@ -5,7 +5,7 @@ const patch=fs.readFileSync(path.join(root,'legacy-fixes-v39.js'),'utf8');
 new Function(patch);
 assert(/legacy-fixes-v39\.js\?v=20260916-v(?:39|40)/.test(index),'v39 patch must load before any newer patch with a fresh cache key');
 assert(/legacy-outing-v38\.js\?v=20260916-v(?:39|40)/.test(index),'v38 outing behavior must be preserved before v39 fix');
-assert(patch.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v67'"),'displayed app version must come from the canonical release inside the v39 patch');
+assert(patch.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v68'"),'displayed app version must come from the canonical release inside the v39 patch');
 assert(patch.includes('/버전\\s*v24\\b/'),'legacy v24 display must be replaced');
 assert(patch.includes("data-a=\"checkver\""),'version check action must be intercepted');
 assert(patch.includes("window.top.location.href=url"),'external map opening must have same-window top fallback');
