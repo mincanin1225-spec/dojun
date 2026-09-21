@@ -102,3 +102,6 @@ jobs:
 
       - name: v70 final UX audit
         run: node tests/v70-final-ux-audit.cjs
+
+      - name: Shopping completion to raw stock
+        run: node tests/v70-shopping-stock-flow.cjs
