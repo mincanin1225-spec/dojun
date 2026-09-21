@@ -17,7 +17,7 @@
 <style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:visible}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v70.html?r=20260921-v70" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v70.html?r=20260921-v70-cookundo2" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app');
@@ -129,8 +129,8 @@
                                               al.onload=function(){
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
-                                                am.src='./meal-stock-v66.js?r=20260921-v66';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260921-v70';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.src='./meal-stock-v66.js?r=20260921-v66-cookundo2';
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260921-v70-cookundo2';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
                                                 am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
@@ -216,7 +216,23 @@
 })();
 </script>
 <script>
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  const RELEASE='20260921-v70-cookundo2',KEY='dojun-sw-release';
+  let reloading=false;
+  function reloadOnce(){
+    if(reloading||localStorage.getItem(KEY)===RELEASE)return;
+    reloading=true;localStorage.setItem(KEY,RELEASE);location.reload();
+  }
+  navigator.serviceWorker.addEventListener('controllerchange',reloadOnce);
+  window.addEventListener('load',async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register('./sw.js?r='+RELEASE,{updateViaCache:'none'});
+      await reg.update();
+      if(reg.active&&String(reg.active.scriptURL||'').includes(RELEASE))reloadOnce();
+    }catch(e){}
+  });
+})();
 </script>
 </body>
 </html>
