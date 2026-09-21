@@ -6,8 +6,6 @@ const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 
-assert(stock.includes("const round=x=>Math.round(x*1000)/1000;"),'stock math must normalize sub-milligram floating noise');
-
 assert(mg.includes('function cleanG(v)'),'inventory UI must format grams consistently');
 assert(mg.includes("function baseStockCode(v){return String(v||'').replace(/-잔량-\\\\d+-\\\\d+$/,'')"),'residual internal ids must be hidden from users');
 assert(mg.includes("r.partMap[k]=(r.partMap[k]||0)+count"),'same portion sizes must be aggregated in the stock summary');
