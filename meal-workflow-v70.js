@@ -110,8 +110,8 @@
      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div style="min-width:0"><div class="hint">'+(m.component?'밥·반찬':esc(m.on))+' · '+slot+'</div><h3 style="margin:4px 0 0;line-height:1.42">'+esc(m.name)+'</h3></div>'+(!known?'<span class="chip sm">분량 확인</span>':'')+'</div>'+
      '<div class="hint" style="margin-top:9px;line-height:1.65;color:var(--ink2)">'+ing+'</div>'+
      (r?'<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line2)"><b style="font-size:12.5px">사용 재고</b><div class="hint" style="margin-top:5px;line-height:1.7">'+(r.used.length?r.used.map(stockUseText).join('<br>'):'배정된 보유재고 없음')+'</div></div>':'')+
-     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><button class="btn" data-v63-edit="'+esc(m.key)+'">분량·레시피</button><button class="btn pri" data-v68-portion="'+esc(m.key)+'" '+(!known?'disabled':'')+'>조리 완료·소분</button></div>'+
-     (!known?'<p class="hint" style="margin:7px 0 0">먼저 분량을 확인하면 소분 등록을 할 수 있어요.</p>':'')+
+     '<div style="margin-top:12px"><button class="btn pri" style="width:100%" data-v63-edit="'+esc(m.key)+'">조리하기</button></div>'+
+     (!known?'<p class="hint" style="margin:7px 0 0">조리 화면에서 재료 분량을 확인한 뒤 소분까지 한 번에 등록해요.</p>':'')+
      '</div>';
  }
  function component(name){const saved=recipeMap()[name];return {key:'component:'+encodeURIComponent(name),name,component:true,g:saved?.yieldG||null,ingredients:saved?.ingredients||[{name,g:null}],steps:saved?.steps||'',source:saved?'사용자 확인 레시피':'원본 조리법·원물 사용량 확인 필요'};}
@@ -200,6 +200,28 @@
  function ingredientRow(x={name:'',g:''}){
    return '<div class="re-ing-row" data-v68-ing-row><div class="re-ing-name"><input name="ingredientName" type="text" value="'+esc(x.name||'')+'" placeholder="재료명" autocomplete="off" required></div><div class="re-ing-g"><input name="ingredientG" type="number" step="0.1" min="0.1" value="'+(x.g||'')+'" inputmode="decimal" required><span>g</span></div><button type="button" class="re-remove" data-v68-remove-ing aria-label="재료 삭제">×</button></div>';
  }
+ function readRecipeForm(form){
+   const fd=new FormData(form),names=fd.getAll('ingredientName'),grams=fd.getAll('ingredientG');
+   if(names.length!==grams.length||!names.length)throw Error('재료를 확인해 주세요');
+   const ingredients=names.map((raw,i)=>{const name=E.norm(String(raw)),g=Number(grams[i]);if(!name||!Number.isFinite(g)||g<=0)throw Error('재료명과 양을 확인해 주세요');return{name,g}});
+   const yieldG=Number(fd.get('yieldG'));if(!Number.isFinite(yieldG)||yieldG<=0)throw Error('기준 완성량을 확인해 주세요');
+   return{fd,ingredients,yieldG,steps:String(fd.get('steps')||'')};
+ }
+ function saveRecipeData(m,data){
+   const map=recipeMap();map[m.name]={ingredients:data.ingredients,yieldG:data.yieldG,steps:data.steps};write(K.recipes,map);
+ }
+ function updateUnifiedPreview(form){
+   updateRecipeTotal(form);
+   if(!form)return;
+   const unit=Number(form.querySelector('[name="unitG"]')?.value)||0,count=Number(form.querySelector('[name="count"]')?.value)||0,
+     total=Math.round(unit*count*10)/10,yieldG=Number(form.querySelector('[name="yieldG"]')?.value)||0,
+     totalEl=form.querySelector('[data-v70-total]'),useEl=form.querySelector('[data-v70-use]');
+   if(totalEl)totalEl.textContent=(total||0)+'g';
+   if(useEl){
+     const ratio=yieldG>0?total/yieldG:0,names=[...form.querySelectorAll('[name="ingredientName"]')],grams=[...form.querySelectorAll('[name="ingredientG"]')];
+     useEl.innerHTML=names.map((el,i)=>{const name=E.norm(String(el.value||'')),g=Number(grams[i]?.value)||0;return '<div class="pe-use-row"><span>'+esc(name||'재료')+'</span><b>'+(g>0&&ratio>0?Math.round(g*ratio*10)/10+'g':'분량 확인 필요')+'</b></div>'}).join('');
+   }
+ }
  function updateRecipeTotal(form){
    if(!form)return;
    const total=[...form.querySelectorAll('[name="ingredientG"]')].reduce((n,el)=>n+(Number(el.value)||0),0),
@@ -215,13 +237,15 @@
  function editor(m){
    const rows=(m.ingredients&&m.ingredients.length?m.ingredients:[{name:'',g:''}]).map(ingredientRow).join('');
    open('<style>'+
-     '.recipe-editor-v68{padding:0 0 72px}.recipe-editor-v68 *{box-sizing:border-box}.re-head{padding:2px 2px 14px}.re-kicker{font-size:12px;font-weight:900;color:var(--peach);margin-bottom:5px}.re-title{font-size:20px;font-weight:900;line-height:1.42;color:var(--ink);word-break:keep-all}.re-desc{font-size:12.5px;line-height:1.65;color:var(--muted);margin-top:7px}.re-card{background:#fff;border:1px solid var(--line2);border-radius:20px;padding:16px;margin:0 0 12px;box-shadow:0 7px 22px rgba(74,64,56,.045)}.re-section-title{font-size:14px;font-weight:900;margin-bottom:12px}.re-field-label{font-size:11.5px;color:var(--muted);font-weight:800;margin-bottom:6px}.re-yield{display:flex;align-items:center;gap:8px}.re-yield input{width:120px;border:1.5px solid var(--line);border-radius:13px;padding:11px 12px;font:inherit;font-size:17px;font-weight:800;background:#fff;color:var(--ink);text-align:right}.re-unit{font-size:14px;font-weight:800;color:var(--ink2)}.re-ing-list{display:flex;flex-direction:column;gap:8px}.re-ing-row{display:grid;grid-template-columns:minmax(0,1fr) 94px 34px;gap:7px;align-items:center}.re-ing-name input,.re-ing-g input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 11px;font:inherit;font-size:13.5px;background:#fff;color:var(--ink)}.re-ing-g{display:flex;align-items:center;gap:5px}.re-ing-g input{text-align:right}.re-ing-g span{font-size:12px;font-weight:800;color:var(--muted)}.re-remove{width:32px;height:32px;border:0;border-radius:50%;background:var(--line2);color:var(--muted);font-size:19px;line-height:1}.re-add{margin-top:10px;width:100%;border:1.5px dashed var(--line);background:#fff;border-radius:12px;padding:10px;font-size:12.5px;font-weight:800;color:var(--ink2)}.re-totalbox{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line2)}.re-total-label{font-size:11.5px;color:var(--muted);font-weight:800}.re-total{font-size:19px;font-weight:900}.re-diff{font-size:11.5px;font-weight:800;text-align:right}.re-diff.ok{color:var(--mint)}.re-diff.warn{color:var(--peach)}.re-steps{width:100%;min-height:112px;border:1.5px solid var(--line);border-radius:14px;padding:12px;font:inherit;font-size:13.5px;line-height:1.6;background:#fff;color:var(--ink);resize:vertical}.re-actions{position:sticky;bottom:-24px;display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin:16px -16px -24px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,rgba(255,248,241,.86),var(--bg) 28%);backdrop-filter:blur(10px);z-index:3}.re-actions .btn{width:100%;padding:12px 16px}.re-actions .pri{font-size:14px}@media(max-width:360px){.re-ing-row{grid-template-columns:minmax(0,1fr) 86px 32px}.re-card{padding:14px}}'+
-     '</style><div class="recipe-editor-v68"><div class="re-head"><div class="re-kicker">분량 확인/수정</div><div class="re-title">'+esc(m.name)+'</div><div class="re-desc">한 번 만들 기준량이에요. 재료별 양만 간단히 확인하거나 수정하면 됩니다.</div></div>'+
-     '<form data-v63-recipe="'+esc(m.key)+'"><div class="re-card"><div class="re-section-title">기준 정보</div><div class="re-field-label">기준 완성량</div><div class="re-yield"><input name="yieldG" type="number" step="0.1" min="0.1" value="'+(m.g||'')+'" inputmode="decimal" required><span class="re-unit">g</span></div></div>'+
-     '<div class="re-card"><div class="re-section-title">재료</div><div class="re-ing-list" data-v68-ingredients>'+rows+'</div><button type="button" class="re-add" data-v68-add-ing>＋ 재료 추가</button><div class="re-totalbox"><div><div class="re-total-label">재료 합계</div><div class="re-total" data-v68-total>0g</div></div><div class="re-diff" data-v68-diff></div></div></div>'+
-     '<div class="re-card"><div class="re-section-title">만드는 법 <span class="hint" style="font-weight:600">· 선택</span></div><textarea class="re-steps" name="steps" rows="4" placeholder="예) 소고기를 익혀 잘게 다지고, 채소는 무르게 익힌 뒤 함께 섞어요.">'+esc(m.steps||'')+'</textarea></div>'+
-     '<div class="re-actions"><button type="button" class="btn" data-v68-recipe-cancel>취소</button><button class="btn pri" type="submit">저장</button></div></form></div>');
-   setTimeout(()=>updateRecipeTotal(document.querySelector('[data-v63-recipe]')),0);
+     '.cook-editor-v70{padding:0 0 82px}.cook-editor-v70 *{box-sizing:border-box}.re-head{padding:2px 2px 14px}.re-kicker{font-size:12px;font-weight:900;color:var(--peach);margin-bottom:5px}.re-title{font-size:20px;font-weight:900;line-height:1.42;color:var(--ink);word-break:keep-all}.re-desc{font-size:12.5px;line-height:1.65;color:var(--muted);margin-top:7px}.re-card,.pe-card{background:#fff;border:1px solid var(--line2);border-radius:20px;padding:16px;margin:0 0 12px;box-shadow:0 7px 22px rgba(74,64,56,.045)}.re-section-title,.pe-title-sm{font-size:14px;font-weight:900;margin-bottom:12px}.re-field-label,.pe-field label{display:block;font-size:11.5px;color:var(--muted);font-weight:800;margin-bottom:6px}.re-yield,.pe-input-wrap{display:flex;align-items:center;gap:8px}.re-yield input,.pe-input-wrap input,.pe-field input[type="date"]{width:100%;border:1.5px solid var(--line);border-radius:13px;padding:11px 12px;font:inherit;font-size:16px;font-weight:800;background:#fff;color:var(--ink)}.re-yield input{max-width:150px;text-align:right}.pe-input-wrap input{text-align:right}.re-unit,.pe-unit{font-size:12px;font-weight:800;color:var(--muted)}.re-ing-list{display:flex;flex-direction:column;gap:8px}.re-ing-row{display:grid;grid-template-columns:minmax(0,1fr) 94px 34px;gap:7px;align-items:center}.re-ing-name input,.re-ing-g input{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:10px 11px;font:inherit;font-size:13.5px;background:#fff;color:var(--ink)}.re-ing-g{display:flex;align-items:center;gap:5px}.re-ing-g input{text-align:right}.re-ing-g span{font-size:12px;font-weight:800;color:var(--muted)}.re-remove{width:32px;height:32px;border:0;border-radius:50%;background:var(--line2);color:var(--muted);font-size:19px;line-height:1}.re-add{margin-top:10px;width:100%;border:1.5px dashed var(--line);background:#fff;border-radius:12px;padding:10px;font-size:12.5px;font-weight:800;color:var(--ink2)}.re-totalbox,.pe-totalbox{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line2)}.re-total{font-size:19px;font-weight:900}.re-diff{font-size:11.5px;font-weight:800;text-align:right}.re-diff.ok{color:var(--mint)}.re-diff.warn{color:var(--peach)}.re-steps{width:100%;min-height:96px;border:1.5px solid var(--line);border-radius:14px;padding:12px;font:inherit;font-size:13.5px;line-height:1.6;background:#fff;color:var(--ink);resize:vertical}.pe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.pe-total-label{font-size:11.5px;color:var(--muted);font-weight:800}.pe-total{font-size:22px;font-weight:900}.pe-use-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line2);font-size:13px}.pe-use-row:last-child{border-bottom:0}.pe-warning{font-size:12px;line-height:1.6;color:var(--peach);font-weight:800;margin-top:10px}.recipe-save{width:100%;margin-top:12px}.cook-actions{position:sticky;bottom:-24px;display:grid;grid-template-columns:.8fr 1.7fr;gap:9px;margin:16px -16px -24px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,rgba(255,248,241,.86),var(--bg) 28%);backdrop-filter:blur(10px);z-index:3}.cook-actions .btn{width:100%;padding:12px 13px}@media(max-width:360px){.re-ing-row{grid-template-columns:minmax(0,1fr) 86px 32px}.re-card,.pe-card{padding:14px}.pe-grid{grid-template-columns:1fr}}'+
+     '</style><div class="cook-editor-v70"><div class="re-head"><div class="re-kicker">조리하기</div><div class="re-title">'+esc(m.name)+'</div><div class="re-desc">재료와 분량을 확인하고, 실제로 만든 뒤 소분량까지 입력하면 재고 반영까지 한 번에 끝나요.</div></div>'+
+     '<form data-v63-recipe="'+esc(m.key)+'" data-v70-unified>'+
+     '<div class="re-card"><div class="re-section-title">1 · 재료·분량</div><div class="re-field-label">기준 완성량</div><div class="re-yield"><input name="yieldG" type="number" step="0.1" min="0.1" value="'+(m.g||'')+'" inputmode="decimal" required><span class="re-unit">g</span></div><div class="re-ing-list" data-v68-ingredients style="margin-top:14px">'+rows+'</div><button type="button" class="re-add" data-v68-add-ing>＋ 재료 추가</button><div class="re-totalbox"><div><div class="pe-total-label">재료 합계</div><div class="re-total" data-v68-total>0g</div></div><div class="re-diff" data-v68-diff></div></div><button type="button" class="btn recipe-save" data-v70-save-recipe>레시피만 저장</button></div>'+
+     '<div class="re-card"><div class="re-section-title">2 · 만드는 법 <span class="hint" style="font-weight:600">· 선택</span></div><textarea class="re-steps" name="steps" rows="4" placeholder="예) 소고기를 익혀 잘게 다지고, 채소는 무르게 익힌 뒤 함께 섞어요.">'+esc(m.steps||'')+'</textarea></div>'+
+     '<div class="pe-card"><div class="pe-title-sm">3 · 완성량·소분</div><div class="pe-grid"><div class="pe-field"><label>1개 중량</label><div class="pe-input-wrap"><input name="unitG" type="number" min="0.1" step="0.1" inputmode="decimal" required value="'+(m.g||'')+'"><span class="pe-unit">g</span></div></div><div class="pe-field"><label>개수</label><div class="pe-input-wrap"><input name="count" type="number" min="1" step="1" inputmode="numeric" required value="1"><span class="pe-unit">개</span></div></div></div><div class="pe-totalbox"><div><div class="pe-total-label">실제 총 완성량</div><div class="pe-total" data-v70-total>0g</div></div></div><div class="pe-field" style="margin-top:14px"><label>제조일</label><input name="date" type="date" required value="'+date()+'"></div></div>'+
+     '<div class="pe-card"><div class="pe-title-sm">4 · 재고 반영 예상</div><div data-v70-use></div><div class="pe-warning">조리 완료를 누르면 실제 완성량 비율에 맞춰 위 재료를 차감하고, 소분한 조리식을 새 재고로 등록해요.</div></div>'+
+     '<input name="token" type="hidden" value="'+token()+'"><div class="cook-actions"><button type="button" class="btn" data-v68-recipe-cancel>취소</button><button class="btn pri" type="submit">조리 완료 · 재고 반영</button></div></form></div>');
+   setTimeout(()=>updateUnifiedPreview(document.querySelector('[data-v70-unified]')),0);
  }
  function updatePortionPreview(form){
    if(!form)return;
@@ -257,18 +281,22 @@
      const m=get(portionCtl.getAttribute('data-v68-portion'));if(!m)return toast('식단이 변경됐어요');
      return portionEditor(m);
    }
-   const recipeCtl=e.target.closest&&e.target.closest('[data-v68-add-ing],[data-v68-remove-ing],[data-v68-recipe-cancel]');
-   if(recipeCtl&&(recipeCtl.hasAttribute('data-v68-add-ing')||recipeCtl.hasAttribute('data-v68-remove-ing')||recipeCtl.hasAttribute('data-v68-recipe-cancel'))){
+   const recipeCtl=e.target.closest&&e.target.closest('[data-v68-add-ing],[data-v68-remove-ing],[data-v68-recipe-cancel],[data-v70-save-recipe]');
+   if(recipeCtl&&(recipeCtl.hasAttribute('data-v68-add-ing')||recipeCtl.hasAttribute('data-v68-remove-ing')||recipeCtl.hasAttribute('data-v68-recipe-cancel')||recipeCtl.hasAttribute('data-v70-save-recipe'))){
      e.preventDefault();e.stopImmediatePropagation();
      if(recipeCtl.hasAttribute('data-v68-recipe-cancel'))return close();
      const form=recipeCtl.closest('[data-v63-recipe]');if(!form)return;
+     if(recipeCtl.hasAttribute('data-v70-save-recipe')){
+       try{const m=get(form.getAttribute('data-v63-recipe'));if(!m)throw Error('식단이 변경됐어요');const data=readRecipeForm(form);saveRecipeData(m,data);render(true);toast('레시피를 저장했어요')}catch(err){toast(err.message)}
+       return;
+     }
      if(recipeCtl.hasAttribute('data-v68-add-ing')){
        const list=form.querySelector('[data-v68-ingredients]');if(list)list.insertAdjacentHTML('beforeend',ingredientRow());
      }else{
        const row=recipeCtl.closest('[data-v68-ing-row]'),rows=form.querySelectorAll('[data-v68-ing-row]');
        if(row&&rows.length>1)row.remove();else if(row){row.querySelector('[name="ingredientName"]').value='';row.querySelector('[name="ingredientG"]').value=''}
      }
-     updateRecipeTotal(form);return;
+     if(form.hasAttribute('data-v70-unified'))updateUnifiedPreview(form);else updateRecipeTotal(form);return;
    }
    const prepDone=e.target.closest&&e.target.closest('[data-v67-prepdone],[data-v67-prepall]');
    if(prepDone&&(prepDone.hasAttribute('data-v67-prepdone')||prepDone.hasAttribute('data-v67-prepall'))){
@@ -315,11 +343,15 @@
    try{
      const fd=new FormData(f),k=f.getAttribute('data-v63-form')||f.getAttribute('data-v63-recipe'),m=get(k);if(!m)throw Error('식단이 변경됐어요');
      if(f.hasAttribute('data-v63-recipe')){
-       const names=fd.getAll('ingredientName'),grams=fd.getAll('ingredientG');
-       if(names.length!==grams.length||!names.length)throw Error('재료를 확인해 주세요');
-       const ingredients=names.map((raw,i)=>{const name=E.norm(String(raw)),g=Number(grams[i]);if(!name||!Number.isFinite(g)||g<=0)throw Error('재료명과 양을 확인해 주세요');return{name,g}});
-       const yieldG=Number(fd.get('yieldG'));if(!Number.isFinite(yieldG)||yieldG<=0)throw Error('완성량을 확인해 주세요');
-       const map=recipeMap();map[m.name]={ingredients,yieldG,steps:String(fd.get('steps')||'')};write(K.recipes,map);close();render(true);return toast('분량을 저장했어요');
+       const data=readRecipeForm(f);
+       if(!f.hasAttribute('data-v70-unified')){saveRecipeData(m,data);close();render(true);return toast('분량을 저장했어요')}
+       const form={token:String(data.fd.get('token')),count:Number(data.fd.get('count')),unitG:Number(data.fd.get('unitG')),date:String(data.fd.get('date'))};
+       if(!/^\d{4}-\d{2}-\d{2}$/.test(form.date)||form.date>date())throw Error('실제 제조일을 확인해 주세요');
+       if(!Number.isFinite(form.count)||form.count<1||!Number.isFinite(form.unitG)||form.unitG<=0)throw Error('소분 정보를 확인해 주세요');
+       if(!confirm(m.name+' '+form.unitG+'g × '+form.count+'개 조리를 완료했나요?'))return;
+       saveRecipeData(m,data);locked=true;
+       const s=snapshot(),cooked={...m,ingredients:data.ingredients,g:data.yieldG,steps:data.steps},result=E.cook(s,cooked,form);
+       if(!result.already)commit(s,result.state);close();render(true);return toast(result.already?'이미 반영된 조리입니다':'조리식 재고를 등록했어요');
      }
      const form={token:String(fd.get('token')),count:Number(fd.get('count')),unitG:Number(fd.get('unitG')),date:String(fd.get('date'))};
      if(!/^\d{4}-\d{2}-\d{2}$/.test(form.date)||form.date>date())throw Error('실제 제조일을 확인해 주세요');
@@ -329,7 +361,9 @@
  },true);
  document.addEventListener('input',function(e){
    const recipeForm=e.target.closest&&e.target.closest('[data-v63-recipe]');
-   if(recipeForm&&(e.target.name==='ingredientG'||e.target.name==='yieldG'))updateRecipeTotal(recipeForm);
+   if(recipeForm&&(e.target.name==='ingredientG'||e.target.name==='ingredientName'||e.target.name==='yieldG'||e.target.name==='unitG'||e.target.name==='count')){
+     if(recipeForm.hasAttribute('data-v70-unified'))updateUnifiedPreview(recipeForm);else updateRecipeTotal(recipeForm);
+   }
    const portionForm=e.target.closest&&e.target.closest('[data-v63-form]');
    if(portionForm&&(e.target.name==='unitG'||e.target.name==='count'))updatePortionPreview(portionForm);
  },true);
