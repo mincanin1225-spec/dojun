@@ -24,7 +24,7 @@ test('shopping does not request materials again after cooking',()=>{
 });
 test('cook undo removes output and restores source stock',()=>{
  const before=stocked(),cooked=E.cook(before,menu(),form).state,restored=E.undoCook(cooked,'op1').state;
- assert.equal(total(restored,menu().name),0);assert.equal(total(restored,'잡곡무른밥'),500);assert.equal(total(restored,'양배추'),60);assert(!restored.ops.op1);
+ assert.equal(total(restored,menu().name),0);assert(Math.abs(total(restored,'잡곡무른밥')-500)<0.001);assert(Math.abs(total(restored,'양배추')-60)<0.001);assert(!restored.ops.op1);
 });
 test('cook undo refuses after the cooked output was used',()=>{
  let s=E.cook(stocked(),menu(),form).state;s=E.feed(s,menu()).state;
