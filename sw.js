@@ -1,6 +1,6 @@
-const CACHE='dojun-pwa-v67-prepcheck1';
+const CACHE='dojun-pwa-v67-prepsummary2';
 const CORE=[
-  './meal-stock-v66.js','./meal-workflow-v67.js','./legacy-inventory-v61-photo.js',
+  './meal-stock-v66.js','./meal-workflow-v67-summary2.js','./legacy-inventory-v61-photo.js',
   './','./index.html','./manifest.webmanifest','./legacy-v67.html',
   './icons/icon-192.svg','./icons/icon-512.svg',
   './legacy-management-v29.js','./legacy-management-v30.js','./legacy-management-v31.js',

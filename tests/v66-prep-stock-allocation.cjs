@@ -19,7 +19,7 @@ const ctx={
   __PPEUNI_SCHEDULE_V58:{entry:()=>({stage:'late',meals:Array.from({length:3},()=>({base:'잡곡무른밥',t:'닭고기 브로콜리'}))})}
 };
 ctx.window=ctx;vm.createContext(ctx);
-for(const f of ['meal-stock-v66.js','meal-workflow-v67.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
+for(const f of ['meal-stock-v66.js','meal-workflow-v67-summary2.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 
 const pool=ctx.MealStockV63.pool({
   prepared:JSON.parse(db.get('dj:preparedMealInventory1')),

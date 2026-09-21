@@ -12,5 +12,5 @@ assert(mg35.includes('전체 구매완료')&&mg35.includes('완료 취소'),'who
 assert(mg35.includes('data-v33check'),'existing per-item purchase checkbox must remain');
 assert(mg35.includes("store.set('shop2',shopChk)"),'shopping completion must persist in existing shopChk storage');
 assert(index.includes('legacy-management-v35.js?v=20260916-v40&r=20260921-v63-shopstatus1'),'fresh shopping module cache token missing');
-assert(sw.includes("const CACHE='dojun-pwa-v67-prepcheck1'"),'shopping hotfix PWA cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v67-prepsummary2'"),'shopping hotfix PWA cache missing');
 console.log('PASS: shopping completion status and batch toggle restored');

@@ -89,3 +89,5 @@ jobs:
         run: node tests/v66-canonical-shell-version.cjs
       - name: Prep completion checklist
         run: node tests/v67-prep-completion.cjs
+      - name: Prep summary clarity
+        run: node tests/v67-prep-summary-clarity.cjs
