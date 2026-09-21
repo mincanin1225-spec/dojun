@@ -95,3 +95,5 @@ jobs:
         run: node tests/v68-recipe-editor-ui.cjs
       - name: Portion UI and back navigation
         run: node tests/v68-portion-ui-back.cjs
+      - name: Sheet scroll restoration
+        run: node tests/v68-sheet-scroll-restore.cjs
