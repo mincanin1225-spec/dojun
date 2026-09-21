@@ -1,6 +1,6 @@
 (function(){
   'use strict';
-  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v68';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v69';
   const PROFILE_KEY='dj:healthProfile1';
   const RECORD_KEY='dj:healthRecords1';
   const HASH_PREFIX='#healthImport=';

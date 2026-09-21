@@ -2,7 +2,7 @@
   'use strict';
   if(typeof render!=='function'||typeof bar!=='function')return;
 
-  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v68';
+  const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v69';
   const baseRender=render;
   let careStage='home';
   let healthActive=false;
