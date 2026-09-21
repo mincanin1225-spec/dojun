@@ -238,8 +238,10 @@ const store={
 };
 
 /* ══════════ 가족 공유 (Firebase 실시간 데이터베이스) ══════════ */
-let sync={url:'',code:''}, es=null, online=false, rt=null, syncFail=false;
-const SYNCABLE=k=>k==='settings2'||k==='foods2'||k==='shop2'||k==='inventory2'||k==='prepChecklist2'||k==='avatar'||k.indexOf('m2:')===0;
+let sync={url:'',code:''}, es=null, online=false, rt=null, syncFail=false, syncVersionMismatch=false;
+const SYNC_SCHEMA=2;
+const SYNC_KEYS=new Set(['settings2','foods2','shop2','inventory2','prepChecklist2','avatar','cubeInventory2','preparedMealInventory1','mealFeedsV63','mealOpsV63','mealRecipesV63','shoppingStockReceipts1']);
+const SYNCABLE=k=>SYNC_KEYS.has(k)||k.indexOf('m2:')===0;
 const rkOf=k=>k.replace(':','__'), kOf=rk=>rk.replace('__',':');
 const famURL=seg=>sync.url.replace(/\/+$/,'')+'/fam/'+sync.code+(seg?'/'+seg:'')+'.json';
 function newCode(){
@@ -273,7 +275,7 @@ function scheduleRender(){clearTimeout(rt);rt=setTimeout(async()=>{
   if(!months[`${y}-${pad(m)}`])await ensureM(y,m);
   render(true)},250)}
 async function pushAllLocal(remote){
-  const keys=['settings2','foods2','shop2','inventory2','prepChecklist2','avatar'];
+  const keys=[...SYNC_KEYS];
   try{for(let i=0;i<localStorage.length;i++){const kk=localStorage.key(i);
     if(kk&&kk.indexOf('dj:m2:')===0)keys.push(kk.slice(3))}}catch(e){}
   for(const k of keys){
@@ -283,7 +285,7 @@ async function pushAllLocal(remote){
 }
 function syncStop(){try{if(es)es.close()}catch(e){}es=null;online=false}
 function syncStart(){
-  syncStop(); syncFail=false;
+  syncStop(); syncFail=false; syncVersionMismatch=false;
   if(!sync.url||!sync.code)return;
   try{es=new EventSource(famURL(''))}catch(e){return}
   let fails=0;
@@ -291,14 +293,25 @@ function syncStart(){
     let m,changed=false;try{m=JSON.parse(ev.data)}catch(e){return}
     fails=0;
     if(m.path==='/'){
-      const d=m.data||{};
-      for(const rk in d){if(applyRemote(rk,d[rk]))changed=true}
+      const d=m.data||{},remoteSchema=Number(d._syncVersion||0);
+      if(remoteSchema&&remoteSchema!==SYNC_SCHEMA){
+        syncVersionMismatch=true;syncFail=false;online=false;
+        try{if(es)es.close()}catch(e){}es=null;scheduleRender();return;
+      }
+      if(!remoteSchema){try{fetch(famURL('_syncVersion'),{method:'PUT',body:JSON.stringify(SYNC_SCHEMA)}).catch(()=>{})}catch(e){}}
+      for(const rk in d){if(rk!=='_syncVersion'&&applyRemote(rk,d[rk]))changed=true}
       const was=online; online=true; if(!was)changed=true;
       clearRemoteInventoryResetV59().then(ok=>{if(ok)syncPush('inventory2',inventory)}).catch(()=>{});
       flushInventoryDeletes();
       pushAllLocal(d);
     }else{
       const seg=m.path.replace(/^\//,'').split('/')[0];
+      if(seg==='_syncVersion'){
+        const remoteSchema=Number(m.data||0);
+        if(remoteSchema&&remoteSchema!==SYNC_SCHEMA){syncVersionMismatch=true;online=false;try{if(es)es.close()}catch(e){}es=null;scheduleRender()}
+        return;
+      }
+      if(syncVersionMismatch)return;
       if(m.path.split('/').length>2){
         fetch(famURL(seg)).then(r=>r.json()).then(v=>{if(applyRemote(seg,v))scheduleRender()}).catch(()=>{});
         return;
@@ -1088,7 +1101,8 @@ function vSet(){
     <div class="sec"><h2>가족 공유</h2></div>
     <div class="card">
       <p class="hint" style="margin:0 0 10px">두 폰에 같은 <b style="color:var(--ink)">가족 코드</b>를 넣으면 먹은 기록·메모·사진·재료 상태가 실시간으로 합쳐집니다.
-      ${online?'<b style="color:var(--mint)">지금 연결돼 있어요.</b>'
+      ${syncVersionMismatch?'<b style="color:var(--berry)">동기화 데이터 버전이 달라 중지했어요.</b> 두 폰에서 앱을 최신 상태로 다시 열어주세요.'
+        :online?'<b style="color:var(--mint)">지금 연결돼 있어요.</b>'
         :syncFail?'<b style="color:var(--berry)">연결에 실패했어요.</b> 주소와 코드를 확인하고, Firebase 규칙을 게시했는지 봐주세요.'
         :sync.url?'연결하는 중이에요.':'아직 연결되지 않았어요.'}</p>
       <div class="fld"><label>데이터베이스 주소</label>
@@ -1096,7 +1110,7 @@ function vSet(){
       <div class="fld"><label>가족 코드 (두 폰에 똑같이)</label>
         <input id="syC" value="${esc(sync.code)}" placeholder="연결 누르면 자동으로 만들어집니다"></div>
       <div class="btnrow">
-        <button class="btn pri" data-a="syncsave">${syncFail?'다시 연결':'연결'}</button>
+        <button class="btn pri" data-a="syncsave">${syncFail||syncVersionMismatch?'다시 연결':'연결'}</button>
         <button class="btn" data-a="synccode">코드 새로 만들기</button>
         <button class="btn" data-a="synccopy">코드 복사</button>
         ${sync.url?'<button class="btn warn" data-a="syncoff">연결 끊기</button>':''}
@@ -1114,7 +1128,7 @@ function vSet(){
     </div>
     <div class="sec"><h2>앱 정보</h2></div>
     <div class="card">
-      <p class="hint" style="margin:0 0 10px">버전 <b style="color:var(--ink)">${APP_VER}</b>
+      <p class="hint" style="margin:0 0 10px">버전 <b style="color:var(--ink)">${APP_VER}</b> · 동기화 데이터 v${SYNC_SCHEMA}
       · 마지막 동작 ${esc(lastTap)}<br>화면이 멈춘 것처럼 보이면 아래 복구를 눌러보세요. 기록은 지워지지 않습니다.</p>
       <div class="btnrow" style="margin-top:0">
         <button class="btn" data-a="checkver">최신 버전 확인</button>
