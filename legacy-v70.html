@@ -1524,7 +1524,7 @@ document.addEventListener('click',async e=>{
   if(cmd==='checkver'){
     try{
       const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
-      const t=await r.text(); const m=t.match(/const APP_VER='(v\d+)'/);
+      const t=await r.text(); const m=t.match(/version\s*:\s*['\"](v\d+)['\"]/);
       if(m&&m[1]!==APP_VER){document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
         document.getElementById('upd').style.display='flex';
         document.getElementById('updbtn').onclick=()=>location.replace(location.pathname+'?u='+Date.now());
@@ -1557,7 +1557,7 @@ idle(async()=>{
   try{
     const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
     const t=await r.text();
-    const m=t.match(/const APP_VER='(v\d+)'/);
+    const m=t.match(/version\s*:\s*['\"](v\d+)['\"]/);
     if(m&&m[1]!==APP_VER){
       document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
       document.getElementById('upd').style.display='flex';
@@ -1813,7 +1813,7 @@ idle(async()=>{
   try{
     const r=await fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'});
     const t=await r.text();
-    const m=t.match(/const APP_VER='(v\d+)'/);
+    const m=t.match(/version\s*:\s*['\"](v\d+)['\"]/);
     if(m&&m[1]!==APP_VER){
       document.getElementById('updtxt').textContent=`새 버전 ${m[1]} 이 나왔어요 (지금 ${APP_VER})`;
       document.getElementById('upd').style.display='flex';
