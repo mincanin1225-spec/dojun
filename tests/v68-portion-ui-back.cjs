@@ -21,6 +21,6 @@ assert(index.includes("./legacy-v70.html?r=20260921-v70"),'index must load navig
 assert(index.includes("./meal-workflow-v70.js?r=20260921-v70"),'index must load unified cooking workflow');
 assert(index.includes("history.pushState({dojunSheetGuard:true}"),'top-level app must create a back guard for open sheets');
 assert(index.includes("frame.contentWindow.postMessage({type:'dojun-sheet-back'}"),'top-level back must be routed to the open sheet');
-assert(sw.includes("const CACHE='dojun-pwa-v70-shoppingstock3'"),'unified cooking cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-cookedstatus1'"),'unified cooking cache marker missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'active files must be precached');
 console.log('PASS: portion registration and recipe editing share one cooking screen with safe back navigation');
