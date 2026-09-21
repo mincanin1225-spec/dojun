@@ -1,0 +1,23 @@
+const fs=require('fs'),assert=require('assert/strict');
+const flow=fs.readFileSync('meal-workflow-v68.js','utf8');
+const index=fs.readFileSync('index.html','utf8');
+const sw=fs.readFileSync('sw.js','utf8');
+const shell=fs.readFileSync('legacy-v68.html','utf8');
+new Function(flow);
+
+assert(flow.includes('분량 확인/수정'),'new editor title missing');
+assert(flow.includes('class="recipe-editor-v68"'),'new mobile editor wrapper missing');
+assert(flow.includes('name="ingredientName"')&&flow.includes('name="ingredientG"'),'ingredients must use row inputs');
+assert(!flow.includes('name="ingredients" rows="7"'),'legacy free-form ingredient textarea must be removed');
+assert(flow.includes('data-v68-add-ing')&&flow.includes('data-v68-remove-ing'),'ingredient add/remove controls missing');
+assert(flow.includes('data-v68-total')&&flow.includes('updateRecipeTotal'),'ingredient total calculation missing');
+assert(flow.includes("fd.getAll('ingredientName')")&&flow.includes("fd.getAll('ingredientG')"),'submit must read structured rows');
+assert(flow.includes('.re-actions{position:sticky'),'mobile sticky action bar missing');
+assert(flow.includes('data-v68-recipe-cancel'),'cancel action missing');
+assert(flow.includes('만드는 법 <span class="hint"'),'steps card missing');
+assert(index.includes('./legacy-v68.html?r=20260921-v68'),'active shell must be v68');
+assert(index.includes('./meal-workflow-v68.js?r=20260921-v68'),'active workflow must be v68');
+assert(sw.includes("'./legacy-v68.html'")&&sw.includes("'./meal-workflow-v68.js'"),'PWA must cache v68 physical files');
+assert(sw.includes("const CACHE='dojun-pwa-v68-recipeui1'"),'v68 recipe editor cache marker missing');
+assert(shell.includes("name:'도준이키우기',version:'v68'"),'settings version must be v68');
+console.log('PASS: v68 recipe editor uses structured mobile inputs and cache-safe physical files');

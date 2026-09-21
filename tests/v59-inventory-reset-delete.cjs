@@ -5,7 +5,7 @@ const mg33=fs.readFileSync('legacy-management-v33.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 
-assert(html.includes("version:'v67'"),'canonical release must be v61');
+assert(html.includes("version:'v68'"),'canonical release must be v61');
 assert(html.includes('resetInventoryV59IfNeeded'),'one-time inventory reset helper missing');
 assert(html.includes('inventoryTombstones1'),'inventory delete tombstones missing');
 assert(html.includes('data-a="invdelete:'),'inventory edit sheet needs a delete button');

@@ -18,7 +18,7 @@ const ctx={
   __PPEUNI_SCHEDULE_V58:{entry:()=>({stage:'late',meals:Array.from({length:3},()=>({base:'잡곡무른밥',t:'닭고기'}))})}
 };
 ctx.window=ctx;vm.createContext(ctx);
-for(const f of ['meal-stock-v66.js','meal-workflow-v67-summary2.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
+for(const f of ['meal-stock-v66.js','meal-workflow-v68.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 
 const html=ctx.vShop();
 const first=html.split('2차 식단만들기')[0];
