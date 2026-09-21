@@ -12,11 +12,14 @@ assert(flow.includes("summary.textContent='조리법 보기'"),'day recipes shou
 assert(flow.includes("saveBtn.textContent='기록 저장'"),'day save action should be explicit');
 assert(flow.includes("holder.insertBefore(box,actionRow)"),'step 4 must appear before final save actions');
 assert(flow.includes("el.textContent=lb+' · '+(undo?'먹인 재고 차감':'재고 차감 취소')"),'feed action should update in place');
+assert(shell.includes("sheet.querySelectorAll(\`[data-a^=\\\"rec:\${on}|\${s}|\\\"]\`)"),'reaction update must stay inside the current day sheet');
+assert(shell.includes("btn.setAttribute('aria-pressed'"),'reaction buttons must update in place without rebuilding the sheet');
+assert(!shell.includes("if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]'))sheetDay(on);"),'reaction tap must not rebuild the day sheet or erase unsaved menu edits');
 assert(!flow.includes("render(true);if(typeof sheetOpen!=='undefined'&&sheetOpen&&oldSheet)sheetDay(m.on)"),'feed action must not rebuild the sheet and erase unsaved inputs');
 assert((flow.match(/if\(isPreparedOnlyShoppingName\(x\.name\)\)continue/g)||[]).length>=2,'hidden prepared meals must also be excluded from bulk shopping completion');
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'index must load v70 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit1'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit2'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
