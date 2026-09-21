@@ -9,9 +9,9 @@ const ctx={
   localStorage:{getItem:k=>db.get(k)??null,setItem:(k,v)=>db.set(k,String(v)),removeItem:k=>db.delete(k)},
   document:{addEventListener:(k,f)=>(events[k]??=[]).push(f),querySelector:()=>null},
   addD:(on,n)=>new Date(new Date(on+'T00:00:00Z').getTime()+86400000*n).toISOString().slice(0,10),
-  mText:()=> '잡곡무른밥 · 양배추',isDel:()=>false,
+  mText:()=> '잡곡무른밥 · 양배추 · 당근',isDel:()=>false,
   __mgStage:'shop',__mgWeekTarget:'current',
-  __PPEUNI_SCHEDULE_V58:{entry:()=>({stage:'late',meals:Array.from({length:3},()=>({base:'잡곡무른밥',t:'양배추'}))})}
+  __PPEUNI_SCHEDULE_V58:{entry:()=>({stage:'late',meals:Array.from({length:3},()=>({base:'잡곡무른밥',t:'양배추 당근'}))})}
 };
 ctx.window=ctx;vm.createContext(ctx);
 for(const f of ['meal-stock-v66.js','meal-workflow-v69.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
