@@ -1377,7 +1377,13 @@ async function setRec(on,s,c){
   if(!hasLog(cur))delete L[s];
   if(!Object.keys(L).length)delete M.d.logs[on];
   await saveM(on);render();
-  if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]'))sheetDay(on);
+  if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]')){
+    const selected=cur.s||'';
+    sheet.querySelectorAll(`[data-a^="rec:${on}|${s}|"]`).forEach(btn=>{
+      const a=btn.getAttribute('data-a')||'';
+      btn.setAttribute('aria-pressed',a===`rec:${on}|${s}|${selected}`?'true':'false');
+    });
+  }
 }
 async function setFood(k,s){foods[k]={...(foods[k]||{}),s,at:today};await store.set('foods2',foods);
   regenAll();close();render();toast(s==='ok'?'도입 완료로 옮겼어요':s==='avoid'?'식단에서 뺐어요':'미도입으로 되돌렸어요')}

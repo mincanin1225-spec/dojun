@@ -18,6 +18,6 @@ assert(flow.includes('만드는 법 <span class="hint"'),'steps card missing');
 assert(index.includes('./legacy-v70.html?r=20260921-v70'),'active shell must be v68');
 assert(index.includes('./meal-workflow-v70.js?r=20260921-v70'),'active workflow must be v68');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'PWA must cache v68 physical files');
-assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit1'"),'v68 recipe editor cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-finalaudit2'"),'v68 recipe editor cache marker missing');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'settings version must be v68');
 console.log('PASS: v68 recipe editor uses structured mobile inputs and cache-safe physical files');
