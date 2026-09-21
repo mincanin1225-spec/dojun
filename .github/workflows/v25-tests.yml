@@ -99,3 +99,6 @@ jobs:
         run: node tests/v68-sheet-scroll-restore.cjs
       - name: Final four-step UX polish
         run: node tests/v69-final-ux.cjs
+
+      - name: v70 final UX audit
+        run: node tests/v70-final-ux-audit.cjs
