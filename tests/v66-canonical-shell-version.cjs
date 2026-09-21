@@ -11,5 +11,5 @@ assert(index.includes('<iframe id="app" src="./legacy-v67.html?r=20260921-v67"')
 assert(!index.includes('<iframe id="app" src="./legacy-v24.html'),'index must not launch the old physical shell');
 assert(ui.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v67'"),'settings UI must read canonical v66');
 assert(sw.includes("'./legacy-v67.html'"),'service worker must cache the physical v67 shell');
-assert(sw.includes("const CACHE='dojun-pwa-v67-prepcheck1'"),'v67 shell cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v67-prepsummary2'"),'v67 shell cache marker missing');
 console.log('PASS: app shell, settings version and active feature generation all point to v67');
