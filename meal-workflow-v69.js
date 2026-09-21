@@ -162,7 +162,7 @@
    return{done,total:tasks.length,all:tasks.length>0&&done===tasks.length};
  }
  function batchPrep(label,start,end,rows){
-   const used=aggregateUsed(rows),missing=aggregateMissing(rows),tasks=prepTasks(rows,start),doneMap=prepDoneMap(),st=prepStatus(tasks,doneMap);
+   const used=aggregateUsed(rows),missing=aggregateMissing(rows).filter(x=>!isPreparedOnlyShoppingName(x.name)),tasks=prepTasks(rows,start),doneMap=prepDoneMap(),st=prepStatus(tasks,doneMap);
    const range=start+' ~ '+addD(end,-1);
    return '<div class="sec"><h2>'+label+' 식단만들기</h2><span class="more">'+range+'</span></div>'+
      '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">준비할 음식</h3><span class="chip sm '+(st.all?'ok':'')+'">'+(tasks.length?(st.all?'만들기 완료':'만들기 '+st.done+'/'+st.total):'추가 조리 없음')+'</span></div>'+
@@ -171,7 +171,7 @@
      '<p class="hint" style="margin-top:8px">완료 체크는 작업 상태만 기록합니다. 실제 재고 차감은 아래 조리 완료에서 확정해요.</p></div>'+
      '<div class="card"><h3 style="margin-top:0">꺼낼 재고</h3>'+
      (used.length?used.map(u=>'<div class="inventory-row"><div style="flex:1">'+stockUseText(u)+(u.location?'<div class="hint">'+esc(u.location)+(u.date?' · '+esc(u.date):'')+'</div>':'')+'</div></div>').join(''):'<p class="hint">배정 가능한 보유재고가 없어요.</p>')+
-     (missing.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line2)"><b>추가 준비 필요</b>'+missing.filter(x=>!isPreparedOnlyShoppingName(x.name)).map(x=>'<div class="hint" style="margin-top:5px">'+esc(x.name)+' · '+(x.unknown?'분량 확인 필요':Math.round(x.g*10)/10+'g 부족')+'</div>').join('')+'</div>':'')+
+     (missing.length?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line2)"><b>추가 준비 필요</b>'+missing.map(x=>'<div class="hint" style="margin-top:5px">'+esc(x.name)+' · '+(x.unknown?'분량 확인 필요':Math.round(x.g*10)/10+'g 부족')+'</div>').join('')+'</div>':'')+
      '</div>'+rows.map(r=>mealCard(r.meal,r)).join('');
  }
  function prep(){
@@ -278,7 +278,7 @@
        i<0?list.push(name):list.splice(i,1);
      }else{
        const start=shop.getAttribute('data-v63-shopall'),key=shopKey(start),p=plan(),end=addD(start,start===target()?4:3),names=[];
-       const totals={};for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<end))for(const x of r.needs){const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG}
+       const totals={};for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<end))for(const x of r.needs){if(isPreparedOnlyShoppingName(x.name))continue;const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG}
        for(const [n,v] of Object.entries(totals))if(v.g>1e-6||v.unknown)names.push(n);
        const cur=shopChk[key]||[],all=names.length>0&&names.every(n=>cur.includes(n));shopChk[key]=all?[]:names;
      }
@@ -291,8 +291,9 @@
      if(el.hasAttribute('data-v63-edit'))return editor(get(el.getAttribute('data-v63-edit')));
      if(!el.hasAttribute('data-v63-feed'))return toast('새 식단만들기 화면에서 완료해 주세요');
      const m=get(el.getAttribute('data-v63-feed'));if(!m)throw Error('식단이 변경됐어요');
-     const s=snapshot(),undo=!!s.feeds[m.key];if(!confirm(undo?'급여 차감을 취소하고 사용량을 복원할까요?':'실제로 급여한 식사인가요? 조리식 재고를 차감합니다.'))return;
-     locked=true;const next=undo?E.undoFeed(s,m.key):E.feed(s,m);commit(s,next.state);toast(undo?'급여 차감을 취소했어요':'급여한 조리식을 차감했어요');render(true);if(typeof sheetOpen!=='undefined'&&sheetOpen&&oldSheet)sheetDay(m.on);
+     const s=snapshot(),undo=!!s.feeds[m.key];if(!confirm(undo?'먹인 재고 차감을 취소하고 사용량을 복원할까요?':'실제로 먹인 식사인가요? 조리식 재고를 차감합니다.'))return;
+     locked=true;const next=undo?E.undoFeed(s,m.key):E.feed(s,m);commit(s,next.state);toast(undo?'먹인 재고 차감을 취소했어요':'먹인 조리식 재고를 차감했어요');render(true);
+     if(typeof sheetOpen!=='undefined'&&sheetOpen&&el.isConnected){const lb=['아침','점심','저녁'][m.slot]||'식사';el.textContent=lb+' · '+(undo?'먹인 재고 차감':'재고 차감 취소')}
    }catch(err){toast(err.message)}finally{locked=false}
  },true);
  document.addEventListener('submit',function(e){
@@ -318,7 +319,7 @@
    const portionForm=e.target.closest&&e.target.closest('[data-v63-form]');
    if(portionForm&&(e.target.name==='unitG'||e.target.name==='count'))updatePortionPreview(portionForm);
  },true);
- if(oldSheet){sheetDay=function(on){oldSheet(on);const holder=typeof sheet!=='undefined'?sheet:document.querySelector('.sheet');if(!holder)return;const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint">위 끼니에서 실제 먹은 양과 반응을 기록하고, 냉동 조리식을 꺼내 먹였다면 아래에서 재고만 차감하세요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'먹인 재고 차감')+'</button>':''}).join('')+'</div>';holder.querySelector('#v63-feed')?.remove();holder.appendChild(box)};root.sheetDay=sheetDay;}
+ if(oldSheet){sheetDay=function(on){oldSheet(on);const holder=typeof sheet!=='undefined'?sheet:document.querySelector('.sheet');if(!holder)return;const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint">위 끼니에서 실제 먹은 양과 반응을 기록하고, 냉동 조리식을 꺼내 먹였다면 아래에서 재고만 차감하세요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'먹인 재고 차감')+'</button>':''}).join('')+'</div>';holder.querySelector('#v63-feed')?.remove();const saveBtn=holder.querySelector('[data-a="savday:'+on+'"]'),saveRow=saveBtn&&saveBtn.closest('.btnrow');if(saveRow)holder.insertBefore(box,saveRow);else holder.appendChild(box)};root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
  root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot};
  try{render(true)}catch(e){}

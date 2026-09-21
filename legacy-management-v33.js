@@ -20,19 +20,19 @@
   const isPrepWeekend=()=>{try{const d=P(today).getDay();return d===6||d===0}catch(e){return false}};
 
   function nav(){
-    const s=window.__mgStage,b=targetBase(),weekend=isPrepWeekend();
-    return `<div class="card" style="padding:10px;margin-bottom:12px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-        <button class="chip ${window.__mgWeekTarget==='current'?'ok':''}" data-v33week="current">이번 주</button>
-        <button class="chip ${window.__mgWeekTarget==='next'?'ok':''}" data-v33week="next">다음 주 준비${weekend?' · 시작':''}</button>
+    const s=window.__mgStage,next=window.__mgWeekTarget==='next',feedDay=typeof today==='string'?today:targetBase();
+    return `<div class="card" style="padding:12px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px">
+        <button class="chip ${!next?'ok':''}" data-v33week="current">이번 주</button>
+        <button class="chip ${next?'ok':''}" data-v33week="next">다음 주</button>
       </div>
-      <div class="hint" style="margin:0 2px 9px">${window.__mgWeekTarget==='next'?`다음 주 ${weekTitle(b)}를 미리 준비 중이에요.`:`${weekend?'토요일·일요일에는 다음 주 준비를 같이 확인할 수 있어요.':'이번 주 식단과 재고를 관리해요.'}`}</div>
-      <div class="chips" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-        <button class="chip ${s==='stock'?'ok':''}" data-mg="stock">1 재고관리</button>
-        <button class="chip ${s==='shop'?'ok':''}" data-mg="shop">2 장보기</button>
-        <button class="chip ${s==='prep'?'ok':''}" data-mg="prep">3 식단만들기</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        <button class="btn ${s==='stock'?'pri':''}" data-mg="stock">1 · 재고</button>
+        <button class="btn ${s==='shop'?'pri':''}" data-mg="shop">2 · 장보기</button>
+        <button class="btn ${s==='prep'?'pri':''}" data-mg="prep">3 · 만들기</button>
+        <button class="btn" data-a="day:${feedDay}" ${next?'disabled':''}>4 · 먹이기·기록</button>
       </div>
-      ${s!=='home'?'<div style="margin-top:9px"><button class="more" data-mg="home">‹ 선택한 주 식단표로</button></div>':''}
+      <div class="hint" style="margin:9px 2px 0">${next?'다음 주 준비는 1~3단계까지 진행해요.':'재고 확인부터 먹인 뒤 기록까지 한 흐름으로 관리해요.'}</div>
     </div>`;
   }
 

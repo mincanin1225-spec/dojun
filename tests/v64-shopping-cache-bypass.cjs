@@ -6,6 +6,6 @@ new Function(flow);
 assert(index.includes("./meal-workflow-v69.js?r=20260921-v69"),'index must load the new physical workflow filename');
 assert(!index.includes("./meal-workflow-v63.js?r=20260921-v63-shopcheck2"),'index must not keep loading the stale physical workflow filename');
 assert(sw.includes("'./meal-workflow-v69.js'"),'service worker must precache the new workflow filename');
-assert(sw.includes("const CACHE='dojun-pwa-v69-finalux1'"),'new cache generation missing');
+assert(sw.includes("const CACHE='dojun-pwa-v69-finalux2'"),'new cache generation missing');
 assert(flow.includes('data-v63-shopcheck')&&flow.includes('data-v63-shopall'),'new workflow file must contain visible shopping checks');
 console.log('PASS: physical filename hard-bypasses stale shopping workflow cache under v65');

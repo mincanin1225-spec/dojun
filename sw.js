@@ -1,4 +1,4 @@
-const CACHE='dojun-pwa-v69-finalux1';
+const CACHE='dojun-pwa-v69-finalux2';
 const CORE=[
   './meal-stock-v66.js','./meal-workflow-v69.js','./legacy-inventory-v61-photo.js',
   './','./index.html','./manifest.webmanifest','./legacy-v69.html',

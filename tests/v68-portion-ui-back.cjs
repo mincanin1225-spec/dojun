@@ -21,6 +21,6 @@ assert(index.includes("./legacy-v69.html?r=20260921-v69"),'index must load navig
 assert(index.includes("./meal-workflow-v69.js?r=20260921-v69"),'index must load redesigned portion workflow');
 assert(index.includes("history.pushState({dojunSheetGuard:true}"),'top-level app must create a back guard for open sheets');
 assert(index.includes("frame.contentWindow.postMessage({type:'dojun-sheet-back'}"),'top-level back must be routed to the open sheet');
-assert(sw.includes("const CACHE='dojun-pwa-v69-finalux1'"),'portion/back hotfix cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v69-finalux2'"),'portion/back hotfix cache marker missing');
 assert(sw.includes("'./legacy-v69.html'")&&sw.includes("'./meal-workflow-v69.js'"),'new physical files must be precached');
 console.log('PASS: portion registration UI is redesigned and hardware back closes the sheet');
