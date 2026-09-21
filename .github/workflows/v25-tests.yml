@@ -93,3 +93,5 @@ jobs:
         run: node tests/v67-prep-summary-clarity.cjs
       - name: Recipe editor mobile UI
         run: node tests/v68-recipe-editor-ui.cjs
+      - name: Portion UI and back navigation
+        run: node tests/v68-portion-ui-back.cjs

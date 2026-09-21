@@ -21,7 +21,7 @@ const ctx={
   __PPEUNI_SCHEDULE_V58:{entry:()=>({stage:'late',meals:Array.from({length:3},()=>({base:'잡곡무른밥',t:'닭고기'}))})}
 };
 ctx.window=ctx;vm.createContext(ctx);
-for(const f of ['meal-stock-v66.js','meal-workflow-v68.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
+for(const f of ['meal-stock-v66.js','meal-workflow-v68-portion2.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 
 let html=ctx.vShop();
 assert(html.includes('1차 식단만들기'),'first batch must exist');
@@ -50,7 +50,7 @@ const firstTask=html.match(/data-v67-prepdone="([^"]+)"/)?.[1];
 assert(firstTask&&decodeURIComponent(firstTask)!==decodeURIComponent(m[1]),'changed required quantity must use a new task identity');
 assert(html.includes('만들기 0/1'),'old completion must not silently complete changed plan');
 
-const shell=fs.readFileSync('legacy-v68.html','utf8');
+const shell=fs.readFileSync('legacy-v68-nav2.html','utf8');
 assert(shell.includes("k==='prepChecklist2'"),'prep checklist must be family-syncable');
 assert(shell.includes("'prepChecklist2'"),'family sync push list must include prep checklist');
 console.log('PASS: v67 prep tasks show portions/counts, persist completion, reset on plan changes, and sync');

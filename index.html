@@ -17,7 +17,7 @@
 <style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:visible}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v68.html?r=20260921-v68" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v68-nav2.html?r=20260921-v68-nav2" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app');
@@ -130,7 +130,7 @@
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
                                                 am.src='./meal-stock-v66.js?r=20260921-v66';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v68.js?r=20260921-v68';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v68-portion2.js?r=20260921-v68-portion2';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
                                                 am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
@@ -182,6 +182,37 @@
   }
   frame.addEventListener('load',inject);
   try{inject()}catch(e){reveal()}
+})();
+</script>
+<script>
+(function(){
+  const frame=document.getElementById('app');
+  let sheetGuard=false,consumeGuard=false;
+  function armSheetGuard(){
+    if(sheetGuard)return;
+    sheetGuard=true;
+    try{history.pushState({dojunSheetGuard:true},'')}catch(e){sheetGuard=false}
+  }
+  function releaseSheetGuard(){
+    if(!sheetGuard)return;
+    sheetGuard=false;
+    if(history.state&&history.state.dojunSheetGuard){
+      consumeGuard=true;
+      try{history.back()}catch(e){consumeGuard=false}
+      setTimeout(()=>{consumeGuard=false},500);
+    }
+  }
+  addEventListener('message',e=>{
+    if(e.source!==frame.contentWindow||e.origin!==location.origin||!e.data)return;
+    if(e.data.type==='dojun-sheet-open')armSheetGuard();
+    else if(e.data.type==='dojun-sheet-close')releaseSheetGuard();
+  });
+  addEventListener('popstate',()=>{
+    if(consumeGuard){consumeGuard=false;return}
+    if(!sheetGuard)return;
+    sheetGuard=false;
+    try{frame.contentWindow.postMessage({type:'dojun-sheet-back'},location.origin)}catch(e){}
+  });
 })();
 </script>
 <script>
