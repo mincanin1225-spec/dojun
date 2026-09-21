@@ -6,7 +6,8 @@
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const clone=x=>JSON.parse(JSON.stringify(x));
  const read=(key,fallback)=>{const s=localStorage.getItem(key);return s===null?fallback:JSON.parse(s)};
- const write=(key,v)=>localStorage.setItem(key,JSON.stringify(v));
+ const MEAL_SYNC_KEYS=new Set(['cubeInventory2','preparedMealInventory1','mealFeedsV63','mealOpsV63','mealRecipesV63','shoppingStockReceipts1','prepChecklist2']);
+ const write=(key,v)=>{localStorage.setItem(key,JSON.stringify(v));const k=String(key).replace(/^dj:/,'');if(MEAL_SYNC_KEYS.has(k)&&typeof root.syncPush==='function')try{root.syncPush(k,v)}catch(e){}};
  const oldView=vShop,oldSheet=typeof sheetDay==='function'?sheetDay:null,oldBatch=typeof sheetBatch==='function'?sheetBatch:null;
  let locked=false,failed=false;
  const date=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
