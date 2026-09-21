@@ -89,6 +89,7 @@
    return '<div class="card" style="margin:12px 0"><div class="hint">'+(m.component?'밥·반찬 따로 만들기':esc(m.on)+' '+['아침','점심','저녁'][m.slot])+'</div><h3>'+esc(m.name)+'</h3>'+
      '<p class="hint">'+esc(m.source)+'</p><p>'+m.ingredients.map(x=>esc(x.name)+' '+(x.g>0?x.g+'g':'분량 확인 필요')).join(' · ')+'</p>'+
      (r?'<div style="margin-top:10px"><b>이 끼니에 사용할 재고</b><div class="hint" style="margin-top:5px">'+(r.used.length?r.used.map(stockUseText).join('<br>'):'배정된 보유재고 없음')+'</div></div>':'')+
+     (!m.steps?'<p class="hint" style="margin-top:10px">원본 조리법 미등록 — 확인된 내용만 저장해 주세요.</p>':'')+
      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"><button class="btn" data-v63-edit="'+esc(m.key)+'">분량·레시피</button><button class="btn pri" data-v68-portion="'+esc(m.key)+'" '+(!known?'disabled':'')+'>조리 완료·소분</button></div>'+
      (!known?'<p class="hint" style="margin-top:7px">소분 등록 전 분량을 먼저 확인해 주세요.</p>':'')+
      (m.component?'':'<div class="btnrow" style="margin-top:10px"><button class="btn" data-v63-feed="'+esc(m.key)+'">'+(fed?'급여 차감 취소':'급여 완료 · 조리식 차감')+'</button></div>')+
