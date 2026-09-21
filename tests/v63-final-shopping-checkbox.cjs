@@ -14,7 +14,7 @@ const ctx={
   __PPEUNI_SCHEDULE_V58:{entry:()=>({stage:'late',meals:Array.from({length:3},()=>({base:'잡곡무른밥',t:'양배추'}))})}
 };
 ctx.window=ctx;vm.createContext(ctx);
-for(const f of ['meal-stock-v66.js','meal-workflow-v67.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
+for(const f of ['meal-stock-v66.js','meal-workflow-v67-summary2.js'])vm.runInContext(fs.readFileSync(f,'utf8'),ctx);
 
 let html=ctx.vShop();
 assert(html.includes('data-v63-shopcheck'),'final v63 shopping renderer must show item checkboxes');
