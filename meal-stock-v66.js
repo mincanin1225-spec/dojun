@@ -83,8 +83,30 @@
     for(const x of required){const t=take(rows,x.name,x.g*factor);if(t.left>1e-6)throw Error(x.name+' 재고 부족 '+round(t.left)+'g');used.push(...t.used);}
     let next=mutate(state,used);next.ops=next.ops||{};
     const codes=new Set(next.prepared.map(x=>x.mealCode));let n=1;while(codes.has('M-'+n))n++;
-    const lot={id:form.token,name:meal.name,unitG:form.unitG,remainingCount:form.count,originalCount:form.count,madeDate:form.date,mealCode:'M-'+n,source:'meal-prep-v63'};
+    const lot={id:form.token,name:meal.name,mealKey:meal.key||'',unitG:form.unitG,remainingCount:form.count,originalCount:form.count,madeDate:form.date,mealCode:'M-'+n,source:'meal-prep-v63'};
     next.prepared.push(lot);next.ops[form.token]={type:'cook',used,lot:copy(lot)};
+    return {state:splitResiduals(next)};
+  }
+  function undoCook(state,token){
+    const receipt=state.ops&&state.ops[token];
+    if(!receipt||receipt.type!=='cook')return {state,already:true};
+    const next=copy(state),made=receipt.lot||{},idx=next.prepared.findIndex((x,i)=>id(x,i)===id(made,i));
+    if(idx<0)throw Error('완료한 조리식 재고를 찾을 수 없어 자동 취소할 수 없어요');
+    const cur=next.prepared[idx],expected=amount(made),current=amount(cur);
+    if(Math.abs(current-expected)>1e-6||Number(cur.unitG)!==Number(made.unitG))throw Error('완료한 조리식 재고가 이미 사용·수정되어 자동 취소할 수 없어요');
+    next.prepared.splice(idx,1);
+    for(const u of receipt.used||[]){
+      if(u.kind==='raw'){
+        const v=next.raw&&next.raw[u.i];if(!v)throw Error('사용한 원재료 재고가 없어 자동 복구할 수 없어요');
+        const factor=v.unit==='g'?1:Number(v.gramsPerUnit);if(!positive(factor)||Math.abs(factor-Number(u.unitG||factor))>1e-6)throw Error('사용한 원재료 단위가 변경되어 자동 복구할 수 없어요');
+        v.qty=round(Number(v.qty)+Number(u.g)/factor);continue;
+      }
+      const arr=next[u.kind]||[],lot=arr.find((x,i)=>id(x,i)===u.id);
+      if(!lot)throw Error('사용한 재고가 삭제되어 자동 복구할 수 없어요');
+      if(Number(lot.unitG)!==Number(u.unitG))throw Error('사용한 재고 단위가 변경되어 자동 복구할 수 없어요');
+      lot.remainingCount=round((amount(lot)+Number(u.g))/Number(lot.unitG));
+    }
+    delete next.ops[token];
     return {state:splitResiduals(next)};
   }
   function feed(state,meal){
@@ -101,6 +123,6 @@
     for(const u of receipt.used){const lot=next[u.kind][u.i];if(!lot||id(lot,u.i)!==u.id)throw Error('사용한 재고가 수정·삭제되어 자동 복구할 수 없어요');lot.remainingCount=round(amount(lot)+u.g)/Number(lot.unitG);}
     delete next.feeds[key];return {state:splitResiduals(next)};
   }
-  const api={norm,amount,pool,plan,cook,feed,undoFeed};
+  const api={norm,amount,pool,plan,cook,undoCook,feed,undoFeed};
   if(typeof module==='object'&&module.exports)module.exports=api;root.MealStockV63=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
