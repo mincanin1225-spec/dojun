@@ -20,5 +20,5 @@ assert(block.includes("if(!sheetOpen&&sheetRestoreUntil&&Date.now()<sheetRestore
 assert(block.includes("e.data.type==='dojun-sheet-back'&&sheetOpen"),'hardware back must still close the current sheet');
 assert(index.includes('./legacy-v69.html?r=20260921-v69'),'index must load the scroll-restoring physical shell');
 assert(sw.includes("'./legacy-v69.html'"),'service worker must precache the scroll-restoring shell');
-assert(sw.includes("const CACHE='dojun-pwa-v69-finalux1'"),'scroll-restoring cache generation missing');
+assert(sw.includes("const CACHE='dojun-pwa-v69-finalux2'"),'scroll-restoring cache generation missing');
 console.log('PASS: closing/back from edit sheets restores the exact underlying page position');
