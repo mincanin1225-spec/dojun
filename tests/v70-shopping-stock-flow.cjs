@@ -7,7 +7,7 @@ const localStorage={
 };
 const ctx={
   console,Date,Math,JSON,Object,Array,Set,Map,Number,String,encodeURIComponent,decodeURIComponent,
-  inventory:{},invName:k=>k==='beef'?'소고기':k,inventoryKeys:()=>['beef'],
+  inventory:{},invName:k=>k==='beef'?'소고기':k,inventoryKeys:()=>['beef'],shopChk:{'mg29|2026-09-21':['소고기']},
   persistInventoryLocal(){},pushInventoryItem:k=>pushed.push(k),
   weekCur:'2026-09-21',vShop:()=>'<p>stock</p>',mText:()=>'',render(){},toast(){},close(){},open(){},
   localStorage,
@@ -21,7 +21,7 @@ vm.runInContext(fs.readFileSync('meal-workflow-v70.js','utf8'),ctx);
 
 const W=ctx.__MEAL_WORKFLOW_V63;
 assert(W&&typeof W.addPurchasedStock==='function','shopping stock helper missing');
-W.addPurchasedStock('2026-09-21','소고기',20);
+assert.equal(W.syncCheckedShoppingStock([{meal:{on:'2026-09-21'},needs:[{name:'소고기',buyG:20}]}]),true,'legacy checked shopping item should migrate into raw stock');
 assert.equal(ctx.inventory.beef.qty,20);
 assert.equal(ctx.inventory.beef.unit,'g');
 assert.equal(ctx.inventory.beef.location,'냉장');
@@ -49,4 +49,5 @@ const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
 assert(flow.includes('구매완료 체크 시 표시된 구매량이 원재료 재고에 자동 반영'),'shopping UI must explain automatic stock-in');
 assert(flow.includes('data-v63-shopg'),'shopping rows must carry the purchase grams into the stock-in action');
 assert(flow.includes('batchShoppingTotals'),'completed shopping rows must remain visible after stock-in recalculates shortages');
+assert(flow.includes('if(syncCheckedShoppingStock(p))p=plan()'),'existing completed checks must migrate into raw stock automatically');
 console.log('PASS: shopping completion becomes raw stock and step 3 can consume it safely');
