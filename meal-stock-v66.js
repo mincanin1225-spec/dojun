@@ -10,8 +10,8 @@
   function isWholeMealLot(lot){
     const key=String(lot?.mealKey||''),name=norm(lot?.name||'');
     if(lot?.legacyWholeMeal)return true;
-    if(/^\d{4}-\d{2}-\d{2}\|\d+$/.test(key))return true;
-    return lot?.source==='meal-prep-v63'&&name.includes(' · ')&&!key.startsWith('make:')&&!key.startsWith('component:');
+    if(name.includes(' · '))return true;
+    return /^\d{4}-\d{2}-\d{2}\|\d+$/.test(key);
   }
   function pool(state,raw=true){
     const rows=[];
