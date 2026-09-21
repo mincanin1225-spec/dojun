@@ -403,7 +403,7 @@
          locked=true;const s=snapshot(),result=E.undoCook(s,task.undo);if(!result.already)commit(s,result.state);render(true);return toast('만들기 완료를 취소했어요');
        }
        if(!task||!task.template)throw Error('현재 식단의 만들기 항목을 찾지 못했어요');
-       const input=document.querySelector('[data-v71-makeg="'+CSS.escape(encodeURIComponent(key))+'"]'),actualG=Number(input?.value);
+       const input=document.querySelector('[data-v71-makeg="'+encodeURIComponent(key)+'"]'),actualG=Number(input?.value);
        if(!Number.isFinite(actualG)||actualG<=0)throw Error('실제 만든 양을 확인해 주세요');
        if(task.unknown||!(Number(task.template.g)>0)||task.template.ingredients.some(x=>!(Number(x.g)>0)))throw Error(name+' 분량을 먼저 확인해 주세요');
        const makeToken=token(),meal={...task.template,key:'make:'+key,plannedG:task.missingG||actualG};
