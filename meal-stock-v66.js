@@ -1,7 +1,7 @@
 (function(root){
   'use strict';
   const copy=x=>JSON.parse(JSON.stringify(x));
-  const round=x=>Math.round(x*1000)/1000;
+  const round=x=>Math.round(x*1000000)/1000000;
   const positive=x=>Number.isFinite(Number(x))&&Number(x)>0;
   const aliases={'잡곡무른죽':'잡곡무른밥','비타민':'비타민채','달걀':'계란','치즈':'아기 치즈','닭':'닭고기'};
   const norm=s=>String(s||'').trim().split(/\s*·\s*/).map(x=>aliases[x]||x).join(' · ');
