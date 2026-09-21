@@ -6,7 +6,7 @@ new Function(flow);
 assert(index.includes("./meal-workflow-v70.js?r=20260922-v70-invsync1"),'index must load the new physical workflow filename');
 assert(!index.includes("./meal-workflow-v63.js?r=20260921-v63-shopcheck2"),'index must not keep loading the stale physical workflow filename');
 assert(sw.includes("'./meal-workflow-v70.js'"),'service worker must precache the new workflow filename');
-assert(sw.includes("const CRITICAL=['/legacy-v70.html','/meal-stock-v66.js','/meal-workflow-v70.js']"),'critical active assets must use the network-first path');
+assert(sw.includes("const CRITICAL=['/legacy-v70.html','/meal-stock-v66.js','/meal-workflow-v70.js','/legacy-management-v33.js']"),'critical active assets must use the network-first path');
 assert(sw.includes("fetch(req,{cache:'no-store'})"),'critical assets must bypass stale HTTP/cache reads');
 assert(index.includes("const RELEASE='20260922-v70-invsync1'"),'index must carry the current PWA release marker');
 assert(index.includes("navigator.serviceWorker.addEventListener('controllerchange',reloadOnce)"),'new service worker must auto-refresh the open PWA once');
