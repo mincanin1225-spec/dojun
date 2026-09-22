@@ -11,7 +11,7 @@ assert(flow.includes("t.includes('재고 자동 차감')"),'outdated legacy auto
 assert(flow.includes("summary.textContent='조리법 보기'"),'day recipes should be collapsed on mobile');
 assert(flow.includes("saveBtn.textContent='기록 저장'"),'day save action should be explicit');
 assert(flow.includes("holder.insertBefore(box,actionRow)"),'step 4 must appear before final save actions');
-assert(flow.includes("el.textContent=lb+' · '+(undo?'제공량으로 재고 차감':'재고 차감 취소')"),'feed action should update in place');
+assert(flow.includes("el.textContent=lb+' · '+(undo?'먹임 기록':'먹임 기록 취소')"),'feed action should update in place');
 assert(shell.includes('sheet.querySelectorAll(`[data-a^="rec:${on}|${s}|"]`)'),'reaction update must stay inside the current day sheet');
 assert(shell.includes("btn.setAttribute('aria-pressed'"),'reaction buttons must update in place without rebuilding the sheet');
 assert(!shell.includes("if(sheet.classList.contains('on')&&sheet.querySelector('[data-menu]'))sheetDay(on);"),'reaction tap must not rebuild the day sheet or erase unsaved menu edits');
@@ -26,11 +26,12 @@ assert(flow.includes("key:'make:'+t.key"),'make operations must be keyed to the 
 assert(flow.includes('const meal=makeTemplate(task)'),'make completion must use the checklist ingredient template');
 assert(flow.includes('E.undoCook(s,task.undo)'),'unchecking a safe make completion must restore inventory');
 assert(!flow.includes("batchPrep('1차"),'active prep screen must not render the old per-meal cooking-card flow');
-assert(flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'feeding must require one total offered amount');
-assert(flow.includes('E.feed(s,m,offered)'),'feeding stock must use the offered total grams');
-assert(index.includes('./legacy-v70.html?r=20260922-v70-coreflowfix2'),'index must load v70 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260922-v70-feedfix2'),'index must load v70 workflow');
+assert(!flow.includes('E.feed(s,m,offered)'),'feeding must not deduct stock — stock only moves at the make step');
+assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must not restore stock');
+assert(flow.includes('next.feeds[m.key]={name:m.name'),'feeding must record the meal without touching stock');
+assert(index.includes('./legacy-v70.html?r=20260922-v70-recordonly1'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260922-v70-recordonly1'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-feedfix2'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-recordonly1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
