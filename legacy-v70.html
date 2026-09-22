@@ -457,6 +457,7 @@ let avatar=null, foods={}, shopChk={}, months={}, inventory={};
 let shopPart='weekday';
 const REACTIONS=[['good','잘 먹음'],['normal','보통'],['little','조금 먹음'],['refused','거부']];
 let tab='cal', today=isoOf(new Date()), cursorM=today;
+let nutWeekCur=monOf(today);
 let weekCur=(function(){const d=P(today).getDay();
   return (d===0||d>=5)?addD(monOf(today),7):monOf(today)})();
 
@@ -742,6 +743,7 @@ function mObj(on,i){const M=fixM(months[mk(on)]);if(!M)return null;
   const o=M.d.ov[on];if(o&&o[i])return null;
   if(isDel(on))return null;
   const p=M.plan[on];return p?p[i]:null}
+const dayHasCustom=on=>[0,1,2].some(i=>!!mText(on,i)&&!mObj(on,i));
 const hasAny=on=>!!(mText(on,0)||mText(on,1)||mText(on,2));
 const lg=on=>{const M=fixM(months[mk(on)]);return(M&&M.d.logs[on])||{}};
 const saveM=async on=>{const k=mk(on),M=fixM(months[k]);if(!M)return;
@@ -768,7 +770,7 @@ function mealNut(on,i){
   add(m.fruit.k,A.fruit); add('oil',.7);
   return acc;
 }
-function dayNut(on){const t=Array(9).fill(0);let has=0;
+function dayNut(on){if(dayHasCustom(on))return null;const t=Array(9).fill(0);let has=0;
   for(let i=0;i<3;i++){const n=mealNut(on,i);if(n){has=1;for(let j=0;j<9;j++)t[j]+=n[j]}}
   return has?t:null}
 
@@ -1024,19 +1026,19 @@ function vShop(){
 
 /* --- 영양 --- */
 function vNut(){
-  const days=[];for(let i=0;i<7;i++)days.push(addD(weekCur,i));
-  const tot=Array(9).fill(0);let n=0;
+  const days=[];for(let i=0;i<7;i++)days.push(addD(nutWeekCur,i));
+  const customDays=days.filter(dayHasCustom),tot=Array(9).fill(0);let n=0;
   days.forEach(on=>{const d=dayNut(on);if(d){n++;for(let j=0;j<9;j++)tot[j]+=d[j]}});
   const avg=n?tot.map(x=>x/n):Array(9).fill(0);
-  const A=stage(weekCur), ml=MLV[A.key];
+  const A=stage(nutWeekCur), ml=MLV[A.key];
   const fmt=v=>v>=100?Math.round(v):v>=10?v.toFixed(0):v.toFixed(1);
   const rows=NUTS.map(t=>{
     const food=avg[t.i], milk=MILK100[t.i]*ml/100, sum=food+milk, ref=t.ref;
     const fp=Math.min(100,food/ref*100), mp=Math.min(100-fp,milk/ref*100);
     const low=sum<ref*.8;
-    return `<div class="nut"><div class="h"><b>${t.n}</b>
-      <span>이유식 <em>${fmt(food)}</em> + 수유 ${fmt(milk)} ${t.u} · 기준 ${fmt(ref)}</span></div>
-      <div class="tr2"><i class="f${low?' low':''}" style="width:${fp}%"></i><i class="m" style="width:${mp}%"></i></div></div>`}).join('');
+    return '<div class="nut"><div class="h"><b>'+t.n+'</b>'+
+      '<span>이유식 <em>'+fmt(food)+'</em> + 수유 '+fmt(milk)+' '+t.u+' · 기준 '+fmt(ref)+'</span></div>'+
+      '<div class="tr2"><i class="f'+(low?' low':'')+'" style="width:'+fp+'%"></i><i class="m" style="width:'+mp+'%"></i></div></div>'}).join('');
   const cats=[
     ['붉은고기',v=>'#F2925C',on=>[0,1,2].filter(i=>{const m=mObj(on,i);return m&&(m.main.p.red||m.side.p==='beef')}).length,1],
     ['생선',v=>'#77A8D8',on=>[0,1,2].filter(i=>{const m=mObj(on,i);return m&&m.main.p.fish}).length,0],
@@ -1044,27 +1046,28 @@ function vNut(){
     ['과일',v=>'#E2809B',on=>{const s=new Set();[0,1,2].forEach(i=>{const m=mObj(on,i);if(m)s.add(m.fruit.k)});return s.size},2],
     ['지방원',v=>'#F3C65C',on=>[0,1,2].filter(i=>{const m=mObj(on,i);return m&&(m.main.p.fish||m.side.f.fat||m.fruit.fat)}).length,1]
   ];
-  const heads=days.map(on=>`<div class="hd">${WD[P(on).getDay()]}</div>`).join('');
+  const heads=days.map(on=>'<div class="hd">'+WD[P(on).getDay()]+'</div>').join('');
   const bal=cats.map(([nm,col,fn,goal])=>{
-    const cells=days.map(on=>{const c=fn(on);
-      return `<div class="bcell" style="background:${c?col():'var(--line2)'};opacity:${c>=goal?1:c?.5:1};color:${c?'#fff':'var(--muted)'}">${c||''}</div>`}).join('');
-    return `<div class="rl">${nm}</div>${cells}`}).join('');
-  const e=P(addD(weekCur,6));
-  return `<div class="sec"><div class="nav">
-      <button class="rd" data-a="wk:-1">‹</button>
-      <b>${P(weekCur).getMonth()+1}/${P(weekCur).getDate()} – ${e.getMonth()+1}/${e.getDate()}</b>
-      <button class="rd" data-a="wk:1">›</button></div></div>
-    <div class="sec" style="margin-top:4px"><h2>하루 평균 영양</h2><span class="more">${A.label} 기준</span></div>
-    <div class="card">${rows}
-      <div class="lg"><span><i style="background:var(--mint)"></i>이유식 3끼</span>
-        <span><i style="background:var(--sky)"></i>수유 ${ml}ml 추정</span>
-        <span><i style="background:var(--line2)"></i>남은 몫</span></div></div>
-    <p class="hint" style="margin:10px 2px 0">일반 식품성분표로 계산한 <b>추정치</b>예요. 수유는 조제분유 ${ml}ml 기준입니다.
-    모유는 철분이 훨씬 낮으니 모유수유 중이라면 이유식에서 철을 더 챙겨주세요.</p>
-    <div class="sec"><h2>식단 밸런스</h2><span class="more">한 주</span></div>
-    <div class="card"><div class="balgrid"><div></div>${heads}${bal}</div>
-      <p class="hint" style="margin-top:10px">숫자는 그날의 끼니 수 또는 가짓수예요. 진한 칸이 하루 목표를 채운 날입니다.
-      붉은 고기는 하루 1끼, 채소는 하루 4가지, 과일은 2가지, 지방원은 하루 1끼가 목표예요.</p></div>`;
+    const cells=days.map(on=>{if(dayHasCustom(on))return '<div class="bcell" style="background:var(--line2);color:var(--muted)">–</div>';const x=fn(on);
+      return '<div class="bcell" style="background:'+(x?col():'var(--line2)')+';opacity:'+(x>=goal?1:x?.5:1)+';color:'+(x?'#fff':'var(--muted)')+'">'+(x||'')+'</div>'}).join('');
+    return '<div class="rl">'+nm+'</div>'+cells}).join('');
+  const e=P(addD(nutWeekCur,6)),customNote=customDays.length
+    ?'<p class="hint" style="margin:8px 2px 0"><b>'+customDays.length+'일은 직접 수정한 메뉴가 있어 자동 영양 계산에서 제외했어요.</b> 임의 메뉴의 재료·분량을 추측해서 수치를 만들지 않습니다.</p>'
+    :'';
+  return '<div class="sec"><div class="nav">'+
+      '<button class="rd" data-a="wk:-1">‹</button>'+
+      '<b>'+P(nutWeekCur).getMonth()+1+'/'+P(nutWeekCur).getDate()+' – '+e.getMonth()+1+'/'+e.getDate()+'</b>'+
+      '<button class="rd" data-a="wk:1">›</button></div></div>'+
+    '<div class="sec" style="margin-top:4px"><h2>하루 평균 영양</h2><span class="more">'+n+'일 자동계산</span></div>'+
+    '<div class="card">'+rows+
+      '<div class="lg"><span><i style="background:var(--mint)"></i>계획 식단</span>'+
+        '<span><i style="background:var(--sky)"></i>수유 '+ml+'ml 추정</span>'+
+        '<span><i style="background:var(--line2)"></i>남은 몫</span></div></div>'+
+    '<p class="hint" style="margin:10px 2px 0"><b>실제 섭취량이 아니라 계획 식단 기준 예상 영양</b>입니다. 일반 식품성분표로 계산한 추정치이고, 수유는 조제분유 '+ml+'ml 기준이에요. 모유수유 중이라면 실제 수유량·영양은 다를 수 있습니다.</p>'+
+    customNote+
+    '<div class="sec"><h2>식단 밸런스</h2><span class="more">한 주</span></div>'+
+    '<div class="card"><div class="balgrid"><div></div>'+heads+bal+'</div>'+
+      '<p class="hint" style="margin-top:10px">숫자는 그날의 끼니 수 또는 가짓수예요. 직접 수정한 메뉴가 있는 날은 – 로 표시합니다. 진한 칸이 하루 목표를 채운 날입니다. 붉은 고기는 하루 1끼, 채소는 하루 4가지, 과일은 2가지, 지방원은 하루 1끼가 목표예요.</p></div>';
 }
 
 /* --- 재료 --- */
@@ -1076,7 +1079,7 @@ function vFood(){
     <p class="hint" style="margin:-6px 0 8px">${d}</p>
     <div class="card"><div class="chips">${l.length?l.map(chip).join(''):'<span class="hint">없음</span>'}</div></div>`;
   return `<p class="hint" style="margin-bottom:4px">식단은 <b style="color:var(--ink)">도입 완료</b>한 재료로만 짜여요.
-    아직 안 먹여본 재료는 3일에 하나씩 아침에 소량으로 들어가고, 반응을 기록하면 목록이 옮겨집니다. 이름 옆 · 는 알레르기 주의 식품이에요.</p>
+    아직 안 먹여본 재료는 3일에 하나씩 아침에 소량으로 들어갑니다. 새 재료 안내에서 결과를 선택하거나 재료 상세에서 상태를 정하면 목록이 옮겨집니다. 이름 옆 · 는 알레르기 주의 식품이에요.</p>
     ${sec('아직 안 먹여봤어요',g.new,'월령이 되면 순서대로 하나씩 시도합니다.')}
     ${sec('도입 완료',g.ok,'식단에 자유롭게 들어갑니다.')}
     ${sec('먹이지 않음',g.avoid,'반응이 있었거나 제외한 재료. 식단에서 완전히 빠집니다.')}
@@ -1427,8 +1430,9 @@ document.addEventListener('click',async e=>{
   if(cmd==='today'){cursorM=today;await ensureM(+today.slice(0,4),+today.slice(5,7));return render()}
   if(cmd==='mon'){const y=+cursorM.slice(0,4),m=+cursorM.slice(5,7)+ +arg;const d=new Date(y,m-1,1);
     cursorM=isoOf(d);await ensureM(d.getFullYear(),d.getMonth()+1);return render()}
-  if(cmd==='wk'){weekCur=addD(weekCur,7*(+arg));
-    for(let i=0;i<7;i++){const on=addD(weekCur,i);await ensureM(+on.slice(0,4),+on.slice(5,7))}
+  if(cmd==='wk'){if(tab==='nut')nutWeekCur=addD(nutWeekCur,7*(+arg));else weekCur=addD(weekCur,7*(+arg));
+    const base=tab==='nut'?nutWeekCur:weekCur;
+    for(let i=0;i<7;i++){const on=addD(base,i);await ensureM(+on.slice(0,4),+on.slice(5,7))}
     return render()}
   if(cmd==='day'){await ensureM(+arg.slice(0,4),+arg.slice(5,7));return sheetDay(arg)}
   if(cmd==='rec'){e.stopPropagation();const[on,s,c]=arg.split('|');if(sheetOpen&&sheet.querySelector('[data-offered]')&&!saveFeedbackFields(on))return;return setRec(on,s,c)}
@@ -1437,8 +1441,11 @@ document.addEventListener('click',async e=>{
   if(cmd==='chk'){const l=shopChk[shopBatch().key]||(shopChk[shopBatch().key]=[]);
     const i=l.indexOf(arg);i<0?l.push(arg):l.splice(i,1);await store.set('shop2',shopChk);return render()}
   if(cmd==='uncheck'){shopChk[shopBatch().key]=[];await store.set('shop2',shopChk);return render()}
-  if(cmd==='allok'){ALL.forEach(x=>{if(stat(x.k)==='new')foods[x.k]={s:'ok',at:today}});
-    await store.set('foods2',foods);regenAll();render();return toast('모두 도입 완료로 바꿨어요')}
+  if(cmd==='allok'){const age=ageM(today)??9,eligible=ALL.filter(x=>stat(x.k)==='new'&&(x.minM||0)<=age);
+    if(!eligible.length)return toast('현재 월령에서 바꿀 미도입 재료가 없어요');
+    if(!confirm('현재 월령에서 먹을 수 있는 미도입 재료 '+eligible.length+'개를 모두 도입 완료로 바꿀까요? 실제로 이미 먹어본 재료일 때만 사용해 주세요.'))return;
+    eligible.forEach(x=>foods[x.k]={s:'ok',at:today});
+    await store.set('foods2',foods);regenAll();render();return toast(eligible.length+'개를 도입 완료로 바꿨어요')}
   if(cmd==='reshuffle'){const k=cursorM.slice(0,7);months[k].d.variant=(months[k].d.variant||0)+1;
     const[y,m]=k.split('-').map(Number);const v=months[k].d.variant;
     const previous=months[k].plan;months[k].d.fixedPlan=months[k].d.fixedPlan||{};
