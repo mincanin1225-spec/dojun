@@ -41,12 +41,12 @@ assert(outingCleanup.includes("#outingModal #outLat,#outingModal #outLng"),'obso
 assert(outingSeed.includes("if(localStorage.getItem(STORAGE_KEY)!==null){window.__outingPlaces=readRaw();return 0}"),'deleted seed places must stay deleted');
 assert(!outingSeed.includes('nominatim.openstreetmap.org'),'outing must not perform unused background geocoding');
 
-assert(index.includes('legacy-v70.html?r=20260922-v71-recordonly3'));
-assert(index.includes('legacy-outing-v36.js?v=20260916-v40&r=20260922-v71-recordonly3'));
-assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v71-recordonly3'));
-assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v71-recordonly3'));
-assert(index.includes('legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v71-recordonly3'));
-assert(index.includes("const RELEASE='20260922-v71-recordonly3'"));
-assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly3'"));
+assert(index.includes('legacy-v70.html?r=20260922-v72-recordonly4'));
+assert(index.includes('legacy-outing-v36.js?v=20260916-v40&r=20260922-v72-recordonly4'));
+assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v72-recordonly4'));
+assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v72-recordonly4'));
+assert(index.includes('legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v72-recordonly4'));
+assert(index.includes("const RELEASE='20260922-v72-recordonly4'"));
+assert(sw.includes("const CACHE='dojun-pwa-v72-recordonly4'"));
 assert(sw.includes("'/legacy-outing-v36.js'"),'outing heading fix must be network-first');
 console.log('PASS: manual audit 2 keeps nutrition, ingredient state, and outing copy honest');
