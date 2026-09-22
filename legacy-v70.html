@@ -1623,15 +1623,19 @@ function saveFeedbackFields(on,forceSlot=''){
   for(const el of sheet.querySelectorAll('[data-offered]')){
     const slot=el.dataset.offered,o=el.value.trim(),e=sheet.querySelector(`[data-eaten="${slot}"]`).value.trim();
     if((o&&(!Number.isFinite(+o)||+o<0))||(e&&(!o||!Number.isFinite(+e)||+e<0||+e>+o))){toast('섭취량은 제공량 이하로 입력해 주세요');return false}
-    const cur={...(lg(on)[slot]||{})},auto=el.dataset.autoOffered==='1';
+    const prev={...(lg(on)[slot]||{})},cur={...prev},auto=el.dataset.autoOffered==='1';
+    const extra=sheet.querySelector(`[data-extra="${slot}"]`),extraVal=extra?extra.value.trim():'';
+    const f=sheet.querySelector(`[data-formreaction="${slot}"]`),formVal=f?f.value:'',ings={};
+    if(f)sheet.querySelectorAll('[data-ingredient]').forEach(x=>{const[s,k]=x.dataset.ingredient.split('|');if(s===slot&&x.value)ings[k]=x.value});
+    const memo=sheet.querySelector(`[data-memo="${slot}"]`),memoVal=memo?memo.value.trim():'';
+    const changed=String(prev.eaten_g??'')!==e||String(prev.extra_foods??'')!==extraVal||
+      String(prev.formReaction??'')!==formVal||String(prev.memo??'')!==memoVal||
+      JSON.stringify(prev.ingredients||{})!==JSON.stringify(ings);
     if(e)cur.eaten_g=+e;else delete cur.eaten_g;
-    const extra=sheet.querySelector(`[data-extra="${slot}"]`);if(extra&&extra.value.trim())cur.extra_foods=extra.value.trim();else delete cur.extra_foods;
-    const f=sheet.querySelector(`[data-formreaction="${slot}"]`);
-    if(f){cur.formReaction=f.value;cur.ingredients={};
-      sheet.querySelectorAll('[data-ingredient]').forEach(x=>{const[s,k]=x.dataset.ingredient.split('|');if(s===slot&&x.value)cur.ingredients[k]=x.value})}
-    const memo=sheet.querySelector(`[data-memo="${slot}"]`);if(memo)cur.memo=memo.value.trim();
-    const hasEntered=!!(e||(extra&&extra.value.trim())||(f&&f.value)||(memo&&memo.value.trim())||Object.keys(cur.ingredients||{}).length);
-    if(o&&(!auto||forceSlot===slot||hasEntered))cur.offered_g=+o;else if(auto&&forceSlot!==slot&&!hasEntered)delete cur.offered_g;else if(!o)delete cur.offered_g;
+    if(extraVal)cur.extra_foods=extraVal;else delete cur.extra_foods;
+    if(f){cur.formReaction=formVal;cur.ingredients=ings}
+    if(memo)cur.memo=memoVal;
+    if(o&&(!auto||forceSlot===slot||changed))cur.offered_g=+o;else if(auto&&forceSlot!==slot&&!changed)delete cur.offered_g;else if(!o)delete cur.offered_g;
     captureMeal(on,slot,cur);pending[slot]=cur;
   }
   if(Object.keys(pending).length){const M=fixM(months[mk(on)]),L=M.d.logs[on]||(M.d.logs[on]={});
