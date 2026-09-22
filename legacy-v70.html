@@ -1096,7 +1096,7 @@ function vSet(){
           <div class="hint">${esc(ageTxt(today))} · ${stage(today).label}</div>
           <button class="btn" style="margin-top:6px;padding:5px 12px" data-a="avatar">사진 넣기</button></div></div>
       <div class="fld"><label>이름</label><input id="sN" value="${esc(settings.name)}"></div>
-      <div class="fld"><label>생일</label><input id="sB" type="date" value="${esc(settings.birth)}"></div>
+      <div class="fld"><label>생일</label><input id="sB" type="date" max="${today}" value="${esc(settings.birth)}"></div>
       <div class="btnrow"><button class="btn pri" data-a="savesettings">저장</button></div>
     </div>
     <div class="sec"><h2>앱처럼 쓰기</h2></div>
@@ -1144,7 +1144,7 @@ function vSet(){
       <div class="fld"><textarea id="sD" rows="4" placeholder="여기에 붙여넣고 불러오기"></textarea></div>
       <div class="btnrow"><button class="btn" data-a="export">내보내기</button>
         <button class="btn" data-a="import">불러오기</button>
-        <button class="btn warn" data-a="clearlogs">이 달 기록 지우기</button></div></div>
+        <button class="btn warn" data-a="clearlogs">이 달 섭취기록 지우기</button></div></div>
     <p class="hint" style="margin:16px 2px">영양 수치와 분량은 일반적인 참고값이에요. 성장이나 알레르기가 걱정되면 소아청소년과나 영양사와 상의하세요.</p>`;
 }
 
@@ -1453,8 +1453,10 @@ document.addEventListener('click',async e=>{
     months[k].d.reco=buildPreferences();
     months[k].plan=genMonth(y,m,v,months[k].d.reco);Object.assign(months[k].plan,unpackPlan(months[k].d.fixedPlan));cachePlan(k,v,months[k].plan);
     await store.set('m2:'+k,months[k].d);render();return toast('메뉴를 새로 뽑았어요')}
-  if(cmd==='clearlogs'){if(!confirm('이 달의 먹은 기록을 모두 지울까요?'))return;
-    const k=cursorM.slice(0,7);months[k].d.logs={};await store.set('m2:'+k,months[k].d);render();return toast('지웠어요')}
+  if(cmd==='clearlogs'){const k=cursorM.slice(0,7),[yy,mm]=k.split('-');
+    if(!confirm(yy+'년 '+Number(mm)+'월의 섭취량·반응·메모 기록을 지울까요? 재고 차감과 식단은 그대로 유지됩니다.'))return;
+    if(!months[k])await ensureM(Number(yy),Number(mm));
+    months[k].d.logs={};await store.set('m2:'+k,months[k].d);render();return toast('섭취기록만 지웠어요 · 재고와 식단은 유지했어요')}
   if(cmd==='ics'){const t=icsFor(addD(weekCur,7));
     if(!download('이유식-장보기-알림.ics',t,'text/calendar')){open('<h2>캘린더 알림</h2><div class="fld"><textarea rows="8">'+esc(t)+'</textarea></div><p class="hint">이 내용을 .ics 파일로 저장해 캘린더에 넣어주세요.</p><div class="btnrow"><button class="btn" data-a="close">닫기</button></div>')}
     else toast('파일을 열어 캘린더에 추가하세요');return}
@@ -1464,7 +1466,9 @@ document.addEventListener('click',async e=>{
       open('<h2>장보기 목록</h2><div class="fld"><textarea rows="12">'+esc(txt)+'</textarea></div><div class="btnrow"><button class="btn" data-a="close">닫기</button></div>')}
     return}
   if(cmd==='avatar')return $('avfile').click();
-  if(cmd==='savesettings'){settings.name=$('sN').value.trim()||'우리 아이';settings.birth=$('sB').value;
+  if(cmd==='savesettings'){const birth=$('sB').value,dob=P(birth),now=P(today);
+    if(!birth||Number.isNaN(dob.getTime())||dob>now)return toast('아이 생일을 오늘 이전의 올바른 날짜로 입력해 주세요');
+    settings.name=$('sN').value.trim()||'우리 아이';settings.birth=birth;
     await store.set('settings2',settings);regenAll();render();return toast('저장했어요')}
   if(cmd==='savefood'){foods[arg]={...(foods[arg]||{s:stat(arg)}),memo:$('fM').value.trim()};
     await store.set('foods2',foods);close();render();return toast('저장했어요')}
@@ -1545,6 +1549,7 @@ document.addEventListener('click',async e=>{
     const dump={backupSchema:BACKUP_SCHEMA,appVersion:APP_VER,exportedAt:new Date().toISOString(),data};
     $('sD').value=JSON.stringify(dump);return toast('전체 기록 백업을 만들었어요 · 아래 내용을 복사해 두세요')}
   if(cmd==='import'){try{const o=JSON.parse($('sD').value);
+      if(!confirm('백업 내용을 이 기기에 불러올까요? 같은 항목의 현재 데이터는 백업 내용으로 덮어씁니다.'))return;
       if(o&&Number(o.backupSchema)>=2&&o.data&&typeof o.data==='object'){
         for(const [k,v0] of Object.entries(o.data)){
           if(!(BACKUP_KEYS.includes(k)||k.indexOf('m2:')===0))continue;
