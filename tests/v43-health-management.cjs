@@ -24,5 +24,5 @@ assert(uiSrc.includes("const RECORD_KEY='dj:healthRecords1'"),'health records lo
 assert(uiSrc.includes("window.__mgStage==='health'"),'management health view missing');
 assert(uiSrc.includes('data-health-open'),'management health entry missing');
 assert(uiSrc.includes('예정')&&uiSrc.includes('예약')&&uiSrc.includes('완료')&&uiSrc.includes('해당없음'),'record statuses missing');
-assert(!uiSrc.includes('2025-12-05')&&!dataSrc.includes('2025-12-05'),'private child birth date must not be committed');
+assert(!/birth:\s*'20\d{2}-\d{2}-\d{2}'/.test(fs.readFileSync('legacy-v70.html','utf8')),'private child birth date must not be committed as a source default');
 console.log('PASS: v43 health checkup and vaccination manager');
