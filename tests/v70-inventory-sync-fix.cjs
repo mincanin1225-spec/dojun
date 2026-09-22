@@ -23,8 +23,8 @@ assert(shell.includes('동기화 데이터 버전이 달라 중지했어요'),'s
 assert(flow.includes('const MEAL_SYNC_KEYS=new Set'),'meal workflow must declare synced state keys');
 assert(flow.includes("typeof root.syncPush==='function'"),'meal workflow writes must forward to family sync when connected');
 
-assert(index.includes('legacy-management-v33.js?v=20260916-v40&r=20260922-v71-recordonly3'),'inventory renderer must use a fresh release URL');
-assert(index.includes("const RELEASE='20260922-v71-recordonly3'"),'PWA release marker must refresh');
-assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly3'"),'PWA cache marker must refresh');
+assert(index.includes('legacy-management-v33.js?v=20260916-v40&r=20260922-v72-recordonly4'),'inventory renderer must use a fresh release URL');
+assert(index.includes("const RELEASE='20260922-v72-recordonly4'"),'PWA release marker must refresh');
+assert(sw.includes("const CACHE='dojun-pwa-v72-recordonly4'"),'PWA cache marker must refresh');
 assert(sw.includes("'/legacy-management-v33.js'"),'active inventory renderer must be network-first');
 console.log('PASS: inventory floating display and family sync schema guard are covered');
