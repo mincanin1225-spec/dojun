@@ -28,9 +28,9 @@ assert(flow.includes('E.undoCook(s,task.undo)'),'unchecking a safe make completi
 assert(!flow.includes("batchPrep('1차"),'active prep screen must not render the old per-meal cooking-card flow');
 assert(flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'feeding must require one total offered amount');
 assert(flow.includes('E.feed(s,m,offered)'),'feeding stock must use the offered total grams');
-assert(index.includes('./legacy-v70.html?r=20260922-v70-manualaudit1'),'index must load v70 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260922-v70-manualaudit1'),'index must load v70 workflow');
+assert(index.includes('./legacy-v70.html?r=20260922-v70-manualaudit2'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260922-v70-manualaudit2'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v70'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v70-manualaudit1'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v70-manualaudit2'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
