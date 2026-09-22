@@ -99,15 +99,9 @@
      return wrap.innerHTML;
    }catch(e){return nav()+html}
  }
- function plan(){
-   const base=target();
-   if(root.__mgWeekTarget!=='next')return E.plan(meals(base,7),snapshot());
-   // 다음 주 준비량은 이번 주에 아직 남은(오늘 이후, 먹이기 전) 끼니가 쓸 재고를 먼저 예약한 뒤 계산한다.
-   // 그러지 않으면 주말에 다음 주를 준비할 때 토·일에 먹을 재고까지 남는 재고로 세어 부족분이 0으로 나온다.
-   const now=typeof today==='string'?today:date(),
-     rest=meals(weekCur,7).filter(m=>m.on>=now&&m.on<base);
-   return E.plan([...rest,...meals(base,7)],snapshot()).filter(r=>r.meal.on>=base);
- }
+ // 준비식은 만들기 단위로 이미 배정이 끝났고, 실제 남은 양은 1단계에서 사람이 맞춘 값이 정답이다.
+ // 그래서 끼니 단위로 재고를 예약할 필요가 없다.
+ function plan(){return E.plan(meals(target(),7),snapshot())}
  const PREPARED_ONLY_SHOP_EXCLUDE=new Set(['잡곡무른밥','잡곡진밥','쌀구기자닭죽','당근톳밥','강낭콩밥','밥 (조리 후)']);
  function isPreparedOnlyShoppingName(name){return PREPARED_ONLY_SHOP_EXCLUDE.has(E.norm(name))}
  function shopKey(start){return 'mg29|'+start}
@@ -503,18 +497,22 @@
      if(el.hasAttribute('data-v63-edit'))return editor(get(el.getAttribute('data-v63-edit')));
      if(!el.hasAttribute('data-v63-feed'))return toast('새 식단만들기 화면에서 완료해 주세요');
      const m=get(el.getAttribute('data-v63-feed'));if(!m)throw Error('식단이 변경됐어요');
+     // 먹이기는 기록만 남긴다. 재고는 만들기에서만 자동으로 줄고, 준비식 수량은 1단계에서 사람이 직접 맞춘다.
+     // 꺼내서 먹인 음식은 되돌아오지 않고 실제 남은 양은 통을 열어봐야 알 수 있으므로, 급여 체크가 재고의 정답이 될 수 없다.
      const s=snapshot(),undo=!!s.feeds[m.key],slot=['b','l','d'][m.slot],holder=typeof sheet!=='undefined'?sheet:document,
        offeredEl=holder.querySelector('[data-offered="'+slot+'"]');
      if(!undo&&offeredEl&&!String(offeredEl.value||'').trim()&&Number.isFinite(Number(m.g))&&Number(m.g)>0)offeredEl.value=String(Math.round(Number(m.g)*10)/10);
      const offered=Number(offeredEl?.value);
-     if(!undo){
-       if(typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on))return;
-       if(!Number.isFinite(offered)||offered<=0)throw Error('먼저 제공한 전체 양(g)을 입력해 주세요');
-       if(!confirm('제공한 '+offered+'g을 조리식 재고에서 차감할까요?'))return;
-     }else if(!confirm('급여 차감을 취소하고 사용량을 복원할까요?'))return;
-     locked=true;const next=undo?E.undoFeed(s,m.key):E.feed(s,m,offered);commit(s,next.state);render(true);
-     const lb=['아침','점심','저녁'][m.slot]||'끼니';el.textContent=lb+' · '+(undo?'제공량으로 재고 차감':'재고 차감 취소');
-     toast(undo?'급여 차감을 취소했어요':'제공한 전체 양 '+offered+'g을 재고에서 차감했어요');
+     if(undo&&!confirm('먹임 기록을 취소할까요?'))return;
+     locked=true;
+     // 섭취기록과 완료 체크는 같이 저장되어야 한다. 한쪽만 남으면 "저장했는데 체크가 풀렸다"가 된다.
+     if(!undo&&typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on)){locked=false;return}
+     const next={...s,feeds:{...s.feeds}};
+     if(undo)delete next.feeds[m.key];
+     else next.feeds[m.key]={name:m.name,servedG:Number.isFinite(offered)&&offered>0?offered:null,used:[],at:Date.now()};
+     commit(s,next);render(true);
+     const lb=['아침','점심','저녁'][m.slot]||'끼니';el.textContent=lb+' · '+(undo?'먹임 기록':'먹임 기록 취소');
+     toast(undo?'먹임 기록을 취소했어요':'먹임으로 기록했어요');
    }catch(err){toast(err.message)}finally{locked=false}
  },true);
  document.addEventListener('submit',function(e){
@@ -558,9 +556,9 @@
      }
    }catch(e){}
    const saveBtn=holder.querySelector('[data-a="savday:'+on+'"]');if(saveBtn)saveBtn.textContent='기록 저장';
-   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0){el.value=String(Math.round(g*10)/10);el.dataset.autoBase='1';}})}catch(e){}
+   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0)el.placeholder='기준 '+(Math.round(g*10)/10)+'g';})}catch(e){}
    const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';
-   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>은 식단 기준량으로 자동 입력돼요. 실제로 다르게 준 날만 고치고, <b>실제 섭취량</b>만 입력하면 됩니다. 치즈·바나나처럼 곁들인 음식은 각 끼니의 <b>추가로 먹인 것</b>에 적어 주세요. 재고는 제공량 기준으로 차감되고 기록은 마지막 <b>기록 저장</b>으로 저장됩니다.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'제공량으로 재고 차감')+'</button>':''}).join('')+'</div>';
+   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>에는 꺼내서 먹인 전체 양을, <b>실제 섭취량</b>에는 도준이가 실제로 먹은 양을 입력하세요. 이 기록은 재고를 줄이지 않아요. 준비식이 실제로 얼마나 남았는지는 <b>1단계 재고</b>에서 직접 확인하고 고쳐주세요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'먹임 기록 취소':'먹임 기록')+'</button>':''}).join('')+'</div>';
    holder.querySelector('#v63-feed')?.remove();
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}

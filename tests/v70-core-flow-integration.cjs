@@ -113,35 +113,36 @@ assert.equal(ctx.inventory.beef.qty,60,'make completion must consume exactly 80g
 beefTask=W.makeTasks(W.plan().filter(r=>r.meal.on>='2026-09-21'&&r.meal.on<'2026-09-25'),'2026-09-21').find(x=>x.name==='소고기');
 assert.equal(beefTask.missingG,0,'made amount must immediately satisfy the first-batch prep number');
 
-// 4) 다음 주 준비는 이번 주의 아직 안 먹은 끼니가 쓸 재고를 먼저 예약한다.
-// 보유 140g(원재료 60 + 준비식 80), 오늘 9/22 기준 이번 주 잔여 6끼=120g.
-// 따라서 다음 주 140g 중 실제로 돌려쓸 수 있는 건 20g뿐이고 부족분은 120g이다.
+// 4) 준비식은 만들기 단위로 이미 배정이 끝났으므로, 다음 주 계산은 현재 재고를 그대로 본다.
+// 보유 140g(원재료 60 + 준비식 80), 다음 주 필요 140g -> 부족분 0.
 ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),120,'next week must not count stock already reserved for the rest of this week');
+assert.equal(totalBuy('소고기'),0,'next week planning must use the stock that actually exists');
 
-// 5) 오늘의 예정 끼니를 먹이면 재고도 20g 줄지만 예약 필요량도 20g 줄기 때문에 다음 주 부족분은 그대로다.
+// 5) 먹이기는 기록일 뿐이다. 체크해도 재고는 1g도 움직이지 않아야 한다.
+ctx.__mgWeekTarget='current';
+const rawBefore=ctx.inventory.beef.qty,prepBefore=preparedG('소고기');
+clickFeed('2026-09-22|0');
+assert.equal(preparedG('소고기'),prepBefore,'feeding must not touch prepared stock');
+assert.equal(ctx.inventory.beef.qty,rawBefore,'feeding must not touch raw stock');
+assert(W.snapshot().feeds['2026-09-22|0'],'feeding must be recorded');
+ctx.__mgWeekTarget='next';
+assert.equal(totalBuy('소고기'),0,'a feeding record must not change any shopping number');
+
+// 6) 먹이기 취소도 기록만 지운다.
 ctx.__mgWeekTarget='current';
 clickFeed('2026-09-22|0');
-assert.equal(preparedG('소고기'),60,'feeding today must consume its 20g beef component');
-ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),120,'a planned remaining meal was already reserved, so feeding it must not double-count the shortage');
+assert.equal(preparedG('소고기'),prepBefore,'un-feeding must not touch prepared stock');
+assert.equal(ctx.inventory.beef.qty,rawBefore,'un-feeding must not touch raw stock');
+assert(!W.snapshot().feeds['2026-09-22|0'],'un-feeding must clear the record');
 
-// 6) 오늘 먹이기 취소도 재고와 예약량을 함께 되돌려 다음 주 부족분을 유지해야 한다.
+// 7) 준비식 수량을 사람이 직접 고치면 그 값이 곧바로 장보기/만들기 필요량에 반영되어야 한다.
+// (수요일 점검: 실제로 열어보니 덜 남았다 -> 수량 수정 -> 장보기가 늘어난다)
+const prep=JSON.parse(db.get('dj:preparedMealInventory1'));
+const beefLot=prep.find(x=>x.name==='소고기');
+beefLot.remainingCount=0;
+db.set('dj:preparedMealInventory1',JSON.stringify(prep));
+assert.equal(preparedG('소고기'),0,'manual correction must take effect immediately');
 ctx.__mgWeekTarget='current';
-clickFeed('2026-09-22|0');
-assert.equal(preparedG('소고기'),80,'undoing today feed must restore prepared beef');
-ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),120,'undoing a reserved meal must keep the same next-week shortage');
+assert.equal(totalBuy('소고기'),80,'manually zeroing prepared stock must raise the shopping shortage by the same amount');
 
-// 7) 예약 범위 밖인 지난 끼니를 뒤늦게 기록하면 그만큼 실제 가용재고가 줄어 다음 주 부족분이 증가해야 한다.
-ctx.__mgWeekTarget='current';
-clickFeed('2026-09-21|0');
-assert.equal(preparedG('소고기'),60,'late logging a past meal must consume its 20g beef component');
-ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),140,'late consumption outside the reserved window must immediately raise next-week shortage');
-ctx.__mgWeekTarget='current';
-clickFeed('2026-09-21|0');
-ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),120,'undoing the late past feed must restore next-week availability');
-
-console.log('PASS: inventory -> shopping -> make -> feed -> reserved next-week preparation stays numerically linked');
+console.log('PASS: inventory -> shopping -> make drives every number; feeding only records');
