@@ -99,7 +99,15 @@
      return wrap.innerHTML;
    }catch(e){return nav()+html}
  }
- function plan(){return E.plan(meals(target(),7),snapshot())}
+ function plan(){
+   const base=target();
+   if(root.__mgWeekTarget!=='next')return E.plan(meals(base,7),snapshot());
+   // 다음 주 준비량은 이번 주에 아직 남은(오늘 이후, 먹이기 전) 끼니가 쓸 재고를 먼저 예약한 뒤 계산한다.
+   // 그러지 않으면 주말에 다음 주를 준비할 때 토·일에 먹을 재고까지 남는 재고로 세어 부족분이 0으로 나온다.
+   const now=typeof today==='string'?today:date(),
+     rest=meals(weekCur,7).filter(m=>m.on>=now&&m.on<base);
+   return E.plan([...rest,...meals(base,7)],snapshot()).filter(r=>r.meal.on>=base);
+ }
  const PREPARED_ONLY_SHOP_EXCLUDE=new Set(['잡곡무른밥','잡곡진밥','쌀구기자닭죽','당근톳밥','강낭콩밥','밥 (조리 후)']);
  function isPreparedOnlyShoppingName(name){return PREPARED_ONLY_SHOP_EXCLUDE.has(E.norm(name))}
  function shopKey(start){return 'mg29|'+start}
@@ -309,8 +317,8 @@
    return '<div class="shop'+(ready?' on':'')+'" style="align-items:center">'+
      '<button type="button" class="bx" aria-label="'+esc(t.name)+' 만들기 상태" '+(ready&&!t.undo?'disabled':'data-v71-makecheck="'+encodeURIComponent(t.key)+'"')+'></button>'+
      '<div class="nm"><b>'+esc(t.name)+'</b><div class="hint">'+esc(qty)+'</div>'+
-       (ready?'<div class="hint" style="margin-top:3px">필요량 준비됨</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span></div>')+
-     '</div><div class="qt">'+(ready?(t.undo?'완료 취소':'준비 완료'):'만들었음')+'</div></div>';
+       (ready?'<div class="hint" style="margin-top:3px">필요량 준비됨</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span><button type="button" class="btn" data-v63-edit="component:'+encodeURIComponent(t.name)+'" style="padding:6px 10px;font-size:11.5px;flex:none">재료·분량</button></div>')+
+     '</div><div class="qt"'+(ready&&!t.undo?'':' data-v71-makecheck="'+encodeURIComponent(t.key)+'" style="cursor:pointer"')+'>'+(ready?(t.undo?'완료 취소':'준비 완료'):'만들었음')+'</div></div>';
  }
  function batchMake(label,start,end,rows){
    const tasks=makeTasks(rows,start),ready=tasks.filter(t=>t.missingG===0&&!t.unknown).length;
@@ -444,26 +452,15 @@
        if(!task)throw Error('현재 식단의 만들기 항목을 찾지 못했어요');
        const input=document.querySelector('[data-v71-makeg="'+encodeURIComponent(key)+'"]'),actualG=Number(input?.value);
        if(!Number.isFinite(actualG)||actualG<=0)throw Error('실제 만든 양을 확인해 주세요');
-       const meal=makeTemplate(task);if(!meal)throw Error(name+'은 먼저 레시피 분량을 확인해 주세요');
+       const meal=makeTemplate(task);if(!meal)throw Error(name+'은 [재료·분량] 버튼에서 재료와 분량을 먼저 저장해 주세요');
        const makeToken=token();meal.plannedG=task.missingG||actualG;
        if(!confirm(name+' '+actualG+'g 만들기를 완료했나요?'))return;
        locked=true;const s=snapshot(),result=E.cook(s,meal,{token:makeToken,count:1,unitG:actualG,date:date()});if(!result.already)commit(s,result.state);render(true);toast(name+' '+actualG+'g을 조리식 재고에 반영했어요');
      }catch(err){toast(err.message)}finally{locked=false}
      return;
    }
-   const prepDone=e.target.closest&&e.target.closest('[data-v67-prepdone],[data-v67-prepall]');
-   if(prepDone&&(prepDone.hasAttribute('data-v67-prepdone')||prepDone.hasAttribute('data-v67-prepall'))){
-     e.preventDefault();e.stopImmediatePropagation();
-     const map=prepDoneMap();
-     if(prepDone.hasAttribute('data-v67-prepdone')){
-       const key=decodeURIComponent(prepDone.getAttribute('data-v67-prepdone'));
-       if(map[key]?.done)delete map[key];else map[key]={done:true,completedAt:new Date().toISOString()};
-     }else{
-       const start=prepDone.getAttribute('data-v67-prepall'),end=addD(start,start===target()?4:3),rows=plan().filter(r=>r.meal.on>=start&&r.meal.on<end),tasks=prepTasks(rows,start),all=tasks.length>0&&tasks.every(t=>map[t.key]?.done);
-       for(const t of tasks){if(all)delete map[t.key];else map[t.key]={done:true,completedAt:new Date().toISOString()}}
-     }
-     savePrepDoneMap(map);render(true);return;
-   }
+   // v67 체크리스트 핸들러는 제거했다. v70 화면은 해당 속성을 만들지 않고,
+   // 참조하던 prepDoneMap/savePrepDoneMap/prepTasks 는 v70에 정의가 없어 호출되면 즉시 터진다.
    const shop=e.target.closest&&e.target.closest('[data-v63-shopcheck],[data-v63-shopall]');
    if(shop&&(shop.hasAttribute('data-v63-shopcheck')||shop.hasAttribute('data-v63-shopall'))){
      e.preventDefault();e.stopImmediatePropagation();
@@ -472,7 +469,8 @@
          const [start,enc]=shop.getAttribute('data-v63-shopcheck').split('|'),name=decodeURIComponent(enc),key=shopKey(start),list=shopChk[key]||(shopChk[key]=[]),i=list.indexOf(name),g=Number(shop.getAttribute('data-v63-shopg'));
          if(i<0){
            if(!(g>0))throw Error(name+' 구매량을 먼저 확인해 주세요');
-           addPurchasedStock(start,name,g);list.push(name);saveShopChecks();render(true);return toast(name+' '+g+'g을 구매재고에 반영했어요');
+           const add=addPurchasedStock(start,name,g);list.push(name);saveShopChecks();render(true);
+           return toast(add.added?name+' '+g+'g을 구매재고에 반영했어요':name+'은 이미 반영된 구매예요 · 재고는 그대로 뒀어요 (필요하면 1단계에서 수량을 고쳐주세요)');
          }
          list.splice(i,1);const back=rollbackPurchasedStock(start,name);saveShopChecks();render(true);
          return toast(back.rolledBack?'구매완료를 취소하고 자동 반영 재고도 되돌렸어요':'구매 체크만 취소했어요 · 이미 사용·수정된 재고는 유지했어요');
@@ -485,8 +483,10 @@
        }
        if(entries.some(([,v])=>v.unknown||!(Number(v.g)>0)))throw Error('구매량 확인이 필요한 재료가 있어요');
        for(const [n,v] of entries)if(!cur.includes(n))shoppingStockTarget(n,v.g);
-       for(const [n,v] of entries)if(!cur.includes(n)){addPurchasedStock(start,n,v.g);cur.push(n)}
-       saveShopChecks();render(true);return toast('구매한 원재료를 재고에 반영했어요');
+       let kept=0;
+       for(const [n,v] of entries)if(!cur.includes(n)){if(!addPurchasedStock(start,n,v.g).added)kept++;cur.push(n)}
+       saveShopChecks();render(true);
+       return toast(kept?'구매완료로 표시했어요 · '+kept+'개는 이미 반영된 구매라 재고를 그대로 뒀어요':'구매한 원재료를 재고에 반영했어요');
      }catch(err){return toast(err.message)}
    }
    const cookUndo=e.target.closest&&e.target.closest('[data-v70-cookundo]');
