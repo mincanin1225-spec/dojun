@@ -1,7 +1,7 @@
 /* v70 핵심 흐름 교차검증 고정 테스트
    - 같은 이름 준비식 만들기는 원재료만 사용
    - 다른 준비식을 재료로 쓰는 합법 경로는 유지
-   - 다음 주 준비는 이번 주 잔여 식사를 먼저 예약
+   - 먹이기는 기록만 남기고 재고를 건드리지 않음
    - 구매완료 재체크는 중복 입고 금지
    - 사진시드/준비식 UI는 동기화·표시 안전성 유지 */
 const vm=require('node:vm'),fs=require('node:fs'),assert=require('node:assert/strict');
@@ -75,14 +75,26 @@ function harness(opts={}){
   assert.equal(E.pool(out,false).filter(x=>x.name==='소고기채소볼').reduce((s,x)=>s+x.g,0),30);
 }
 
-// 3) 다음 주는 이번 주 남은 끼니가 쓸 재고를 먼저 예약한다.
+// 3) 먹이기는 기록이다. 재고가 하나도 없어도 저장되고, 어떤 숫자도 움직이지 않는다.
 {
   const h=harness({
     prepared:[{id:'b',name:'소고기',unitG:140,remainingCount:1,madeDate:'2026-09-20',mealCode:'M-b'},
               {id:'r',name:'잡곡무른밥',unitG:100,remainingCount:28,madeDate:'2026-09-20',mealCode:'M-r'}]
   });
   h.ctx.__mgWeekTarget='next';
-  assert.equal(h.buyG('소고기'),120,'six remaining meals must reserve 120g before next-week planning');
+  assert.equal(h.buyG('소고기'),0,'next week must plan against the stock that actually exists');
+  h.ctx.__mgWeekTarget='current';
+  const before=h.preparedG('소고기');
+  h.dispatch({'data-v63-feed':'2026-09-22|0'});
+  assert(h.W.snapshot().feeds['2026-09-22|0'],'feeding must be recorded');
+  assert.equal(h.preparedG('소고기'),before,'feeding must not deduct prepared stock');
+}
+
+// 3-b) 준비식이 전혀 없어도 먹이기 기록은 저장되어야 한다.
+{
+  const h=harness({prepared:[]});
+  h.dispatch({'data-v63-feed':'2026-09-22|0'});
+  assert(h.W.snapshot().feeds['2026-09-22|0'],'feeding must be recordable with no prepared stock at all');
 }
 
 // 4) 구매완료 취소가 재고수정 때문에 롤백되지 못한 뒤 재체크해도 중복 입고하지 않는다.
@@ -121,33 +133,35 @@ function harness(opts={}){
 }
 
 
-// 7) 단호박 조각/큐브처럼 소분 표시가 붙은 준비식을 먼저 쓰고, 부족하면 같은 이름 일반 재고까지 이어서 쓴다.
+// 7) 단호박 조각/큐브처럼 소분 표시가 붙은 준비식도 기본 재료명으로 인식한다.
 {
   const E=require('../meal-stock-v66.js');
   const state={
     prepared:[{id:'rice',name:'잡곡무른밥',unitG:100,remainingCount:1,mealCode:'M-r'}],
-    cubes:[{id:'pumpkin-piece',ingredient:'단호박 조각',unitG:10,remainingCount:1,stockCode:'A-p'}],
-    raw:{pumpkin:{displayName:'단호박',unit:'g',qty:10,location:'냉장'}},ops:{},feeds:{}
+    cubes:[{id:'pumpkin-piece',ingredient:'단호박 조각',unitG:10,remainingCount:2,stockCode:'A-p'}],
+    raw:{pumpkin:{displayName:'단호박',unit:'g',qty:100,location:'냉장'}},ops:{},feeds:{}
   };
-  const meal={key:'2026-09-21|1',name:'잡곡무른밥 · 단호박',g:120,ingredients:[{name:'잡곡무른밥',g:100},{name:'단호박',g:20}]};
-  const fed=E.feed(state,meal,120).state;
-  assert(fed.feeds[meal.key],'feeding receipt must persist');
-  assert.equal(fed.cubes[0].remainingCount,0,'prepared cube stock should be consumed first');
-  assert.equal(fed.raw.pumpkin.qty,0,'remaining 단호박 shortage must fall back to matching general inventory');
-  const undone=E.undoFeed(fed,meal.key).state;
-  assert.equal(undone.cubes[0].remainingCount,1,'undo must restore cube stock');
-  assert.equal(undone.raw.pumpkin.qty,10,'undo must restore general inventory used by feeding');
   assert.equal(E.norm('단호박 조각'),'단호박','ready-to-feed suffix variants must normalize to the ingredient name');
   assert.equal(E.norm('단호박 큐브'),'단호박','cube suffix must normalize too');
 }
 
-// 8) 제공량은 화면을 열자마자 식단 기준합계가 실제 value로 들어가고, 추가 음식은 자유입력으로 저장된다.
+// 8) 제공량이 비어 있으면 검증된 식단 기준량을 기록용 기본값으로 넣는다.
 {
   const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
-  const shell=fs.readFileSync('legacy-v70.html','utf8');
-  assert(flow.includes("el.value=String(Math.round(g*10)/10)"),'day sheet must prefill the standard serving grams, not only show a placeholder');
-  assert(shell.includes('data-extra="${slot}"'),'extra-food free text input must exist per meal');
-  assert(shell.includes('cur.extra_foods=extra.value.trim()'),'extra-food text must persist with the meal log');
+  assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'feed action must apply the meal standard grams when offered amount is blank');
+  assert(flow.includes("el.placeholder='기준 '"),'day sheet should show the standard serving grams as guidance');
+  assert(!flow.includes('E.feed(s,m,offered)'),'feeding must never deduct stock');
+  assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must never restore stock');
+  assert(!flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'a blank offered amount must not block the record');
+}
+
+// 9) 준비식 목록은 오래된 것부터 보여 폐기 판단을 돕고, 재고번호가 그대로 보여야 한다.
+{
+  const v61=fs.readFileSync('legacy-inventory-v61-photo.js','utf8');
+  assert(v61.includes("String(a.madeDate||'').localeCompare(String(b.madeDate||''))"),'prepared list must be sorted oldest first');
+  assert(v61.includes('esc(showCode(x.mealCode))'),'prepared rows must show the stock code used on the container');
+  assert(v61.includes('data-v61-prep-del'),'prepared rows must offer a discard action');
+  assert(!v61.includes('완료 취소</b>는 더 이상'),'editing prepared quantity is the normal weekly routine, not a warned-against action');
 }
 
 console.log('PASS: cross-checked core flow fixes and non-regression paths');
