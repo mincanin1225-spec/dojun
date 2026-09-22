@@ -149,7 +149,8 @@ function harness(opts={}){
 {
   const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
   assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'feed action must apply the meal standard grams when offered amount is blank');
-  assert(flow.includes("el.value=String(Math.round(g*10)/10)"),'day sheet must prefill the standard serving grams as the actual input value');
+  assert(flow.includes("el.placeholder='기준 '"),'day sheet must show the standard grams as guidance only');
+  assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'opening a day must not stamp offered grams onto meals that were never given');
   assert(!flow.includes('E.feed(s,m,offered)'),'feeding must never deduct stock');
   assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must never restore stock');
   assert(!flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'a blank offered amount must not block the record');
@@ -165,6 +166,37 @@ function harness(opts={}){
   assert(v61.includes('esc(showCode(x.mealCode))'),'prepared rows must show the stock code used on the container');
   assert(v61.includes('data-v61-prep-del'),'prepared rows must offer a discard action');
   assert(!v61.includes('완료 취소</b>는 더 이상'),'editing prepared quantity is the normal weekly routine, not a warned-against action');
+}
+
+// 10) 재고 엔진의 먹이기 경로는 원재료를 절대 건드리지 않는다.
+// UI 는 더 이상 이 함수를 부르지 않지만, 여기가 원재료를 쓰도록 바뀌면
+// 원재료 -> 만들기 -> 준비식/큐브 -> 먹이기 순서가 조용히 무너진다.
+{
+  const src=fs.readFileSync('meal-stock-v66.js','utf8');
+  assert(src.includes("rows=pool(state,false),r=mealNeed(served,rows)"),'feeding must not pool raw ingredients');
+  assert(src.includes("take(rows,x.name,x.g,['prepared','cubes'])"),'feeding must draw only on prepared and cube stock');
+  assert(!src.includes("['prepared','cubes','raw']"),'feeding must never consume raw ingredients directly');
+  // undoCook 은 원재료를 되돌리는 게 맞다. undoFeed 본문만 따로 본다.
+  const undoFeedBody=src.slice(src.indexOf('function undoFeed('),src.indexOf('const api={norm'));
+  assert(!undoFeedBody.includes("u.kind==='raw'"),'un-feeding must not try to restore raw ingredients');
+
+  const E=require('../meal-stock-v66.js');
+  const state={prepared:[],cubes:[],ops:{},feeds:{},
+    raw:{beef:{displayName:'소고기',unit:'g',qty:500,location:'냉장'}}};
+  const meal={key:'2026-09-21|0',name:'소고기',g:20,ingredients:[{name:'소고기',g:20}]};
+  assert.throws(()=>E.feed(state,meal,20),/재고/,'raw-only stock must not satisfy a feeding');
+  assert.equal(state.raw.beef.qty,500,'a rejected feeding must leave raw stock untouched');
+}
+
+// 11) 날짜 시트를 열어보기만 해서는 어떤 끼니도 기록으로 남지 않아야 한다.
+// 제공량 칸에 값을 미리 박아두면 '기록 저장' 한 번에 세 끼니 전부 offered_g 가 저장되어
+// 주지도 않은 끼니가 섭취기록에 생긴다. 기준량은 안내로만 보여주고,
+// 실제 값은 '먹임 기록'을 누른 그 끼니에만 채워야 한다.
+{
+  const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
+  assert(flow.includes("el.placeholder='기준 '"),'standard grams must be guidance on sheet open');
+  assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'sheet open must not write offered grams into the field');
+  assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'pressing 먹임 기록 must fill that one meal with the standard total');
 }
 
 console.log('PASS: cross-checked core flow fixes and non-regression paths');
