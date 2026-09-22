@@ -497,6 +497,8 @@
      if(el.hasAttribute('data-v63-edit'))return editor(get(el.getAttribute('data-v63-edit')));
      if(!el.hasAttribute('data-v63-feed'))return toast('새 식단만들기 화면에서 완료해 주세요');
      const m=get(el.getAttribute('data-v63-feed'));if(!m)throw Error('식단이 변경됐어요');
+     // 먹이기는 기록만 남긴다. 재고는 만들기에서만 자동으로 줄고, 준비식 수량은 1단계에서 사람이 직접 맞춘다.
+     // 꺼내서 먹인 음식은 되돌아오지 않고 실제 남은 양은 통을 열어봐야 알 수 있으므로, 급여 체크가 재고의 정답이 될 수 없다.
      const s=snapshot(),undo=!!s.feeds[m.key],slot=['b','l','d'][m.slot],holder=typeof sheet!=='undefined'?sheet:document,
        offeredEl=holder.querySelector('[data-offered="'+slot+'"]');
      if(!undo&&offeredEl&&!String(offeredEl.value||'').trim()&&Number.isFinite(Number(m.g))&&Number(m.g)>0)offeredEl.value=String(Math.round(Number(m.g)*10)/10);
