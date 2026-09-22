@@ -1,6 +1,7 @@
 const fs=require('fs'),assert=require('node:assert/strict');
 const shell=fs.readFileSync('legacy-v70.html','utf8');
 const outing=fs.readFileSync('legacy-outing-v36.js','utf8');
+const outingCleanup=fs.readFileSync('legacy-outing-v41-no-embedded-map.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 
@@ -19,9 +20,11 @@ assert(!shell.includes('반응을 기록하면 목록이 옮겨집니다.'),'gen
 
 assert(outing.includes('<h2>추천 장소</h2>'),'outing recommendation heading must be user-facing');
 assert(!outing.includes('<h2>지이사 추천</h2>'),'old outing typo must be removed');
+assert(outingCleanup.includes("#outingModal #outLat,#outingModal #outLng"),'obsolete coordinate inputs must be hidden');
 
 assert(index.includes('legacy-v70.html?r=20260922-v70-manualaudit2'));
 assert(index.includes('legacy-outing-v36.js?v=20260916-v40&r=20260922-v70-manualaudit2'));
+assert(index.includes('legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v70-manualaudit2'));
 assert(index.includes("const RELEASE='20260922-v70-manualaudit2'"));
 assert(sw.includes("const CACHE='dojun-pwa-v70-manualaudit2'"));
 assert(sw.includes("'/legacy-outing-v36.js'"),'outing heading fix must be network-first');
