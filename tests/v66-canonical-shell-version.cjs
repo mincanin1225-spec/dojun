@@ -7,9 +7,9 @@ const sw=fs.readFileSync('sw.js','utf8');
 
 assert(core.includes("name:'도준이키우기',version:'v69'"),'legacy core canonical release must be v66');
 assert(shell.includes("name:'도준이키우기',version:'v71'"),'active shell canonical release must be v70');
-assert(index.includes('<iframe id="app" src="./legacy-v70.html?r=20260922-v71-recordonly2"'),'index must load the new physical v69 shell');
+assert(index.includes('<iframe id="app" src="./legacy-v70.html?r=20260922-v71-recordonly3"'),'index must load the new physical v69 shell');
 assert(!index.includes('<iframe id="app" src="./legacy-v24.html'),'index must not launch the old physical shell');
 assert(ui.includes("const DISPLAY_VER=window.__DOJUN_RELEASE?.version||'v69'"),'settings UI must read canonical v66');
 assert(sw.includes("'./legacy-v70.html'"),'service worker must cache the physical v69 shell');
-assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly2'"),'v69 shell cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly3'"),'v69 shell cache marker missing');
 console.log('PASS: active app shell is v70 while legacy fallback compatibility remains intact');
