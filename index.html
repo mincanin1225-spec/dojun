@@ -129,8 +129,8 @@
                                               al.onload=function(){
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
-                                                am.src='./meal-stock-v66.js?r=20260922-v66-coreflowfix2';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v70-coreflowfix2';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.src='./meal-stock-v66.js?r=20260922-v66-feedfix1';
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v70-feedfix1';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
                                                 am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
@@ -218,7 +218,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260922-v70-coreflowfix2',KEY='dojun-sw-release';
+  const RELEASE='20260922-v70-feedfix1',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;

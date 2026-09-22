@@ -504,7 +504,9 @@
      if(!el.hasAttribute('data-v63-feed'))return toast('새 식단만들기 화면에서 완료해 주세요');
      const m=get(el.getAttribute('data-v63-feed'));if(!m)throw Error('식단이 변경됐어요');
      const s=snapshot(),undo=!!s.feeds[m.key],slot=['b','l','d'][m.slot],holder=typeof sheet!=='undefined'?sheet:document,
-       offeredEl=holder.querySelector('[data-offered="'+slot+'"]'),offered=Number(offeredEl?.value);
+       offeredEl=holder.querySelector('[data-offered="'+slot+'"]');
+     if(!undo&&offeredEl&&!String(offeredEl.value||'').trim()&&Number.isFinite(Number(m.g))&&Number(m.g)>0)offeredEl.value=String(Math.round(Number(m.g)*10)/10);
+     const offered=Number(offeredEl?.value);
      if(!undo){
        if(typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on))return;
        if(!Number.isFinite(offered)||offered<=0)throw Error('먼저 제공한 전체 양(g)을 입력해 주세요');
@@ -556,6 +558,7 @@
      }
    }catch(e){}
    const saveBtn=holder.querySelector('[data-a="savday:'+on+'"]');if(saveBtn)saveBtn.textContent='기록 저장';
+   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0)el.placeholder='기준 '+(Math.round(g*10)/10)+'g';})}catch(e){}
    const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';
    box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>에는 꺼내서 먹인 전체 양을, <b>실제 섭취량</b>에는 도준이가 실제로 먹은 양을 입력하세요. 조리식 재고는 제공량 기준으로 차감되고, 섭취기록은 마지막 <b>기록 저장</b>으로 저장됩니다.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'제공량으로 재고 차감')+'</button>':''}).join('')+'</div>';
    holder.querySelector('#v63-feed')?.remove();

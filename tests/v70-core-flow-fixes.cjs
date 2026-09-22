@@ -120,4 +120,31 @@ function harness(opts={}){
   assert(flow.includes('data-v63-edit="component:'),'make rows must retain the recipe confirmation route');
 }
 
+
+// 7) 단호박 조각/큐브처럼 소분 표시가 붙은 준비식도 기본 재료명으로 인식한다.
+{
+  const E=require('../meal-stock-v66.js');
+  const state={
+    prepared:[{id:'rice',name:'잡곡무른밥',unitG:100,remainingCount:1,mealCode:'M-r'}],
+    cubes:[{id:'pumpkin-piece',ingredient:'단호박 조각',unitG:10,remainingCount:2,stockCode:'A-p'}],
+    raw:{pumpkin:{displayName:'단호박',unit:'g',qty:100,location:'냉장'}},ops:{},feeds:{}
+  };
+  const meal={key:'2026-09-21|1',name:'잡곡무른밥 · 단호박',g:120,ingredients:[{name:'잡곡무른밥',g:100},{name:'단호박',g:20}]};
+  const fed=E.feed(state,meal,120).state;
+  assert(fed.feeds[meal.key],'feeding receipt must persist');
+  assert.equal(fed.cubes[0].remainingCount,0,'단호박 조각 cube stock should satisfy 단호박 feeding');
+  assert.equal(fed.raw.pumpkin.qty,100,'raw stock must not be fed without cooking');
+  const undone=E.undoFeed(fed,meal.key).state;
+  assert.equal(undone.cubes[0].remainingCount,2,'undo must restore cube stock');
+  assert.equal(E.norm('단호박 조각'),'단호박','ready-to-feed suffix variants must normalize to the ingredient name');
+  assert.equal(E.norm('단호박 큐브'),'단호박','cube suffix must normalize too');
+}
+
+// 8) 제공량이 비어 있으면 먹이기 처리 직전에 검증된 식단 기준량을 자동으로 넣는다.
+{
+  const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
+  assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'feed action must apply the meal standard grams when offered amount is blank');
+  assert(flow.includes("el.placeholder='기준 '"),'day sheet should show the standard serving grams as guidance');
+}
+
 console.log('PASS: cross-checked core flow fixes and non-regression paths');
