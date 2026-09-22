@@ -109,10 +109,12 @@
   const g1=v=>{const n=Math.round((Number(v)||0)*10)/10;return Math.abs(n-Math.round(n))<1e-9?String(Math.round(n)):String(n)};
 
   function preparedCard(){
-    const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0&&!isWholeMeal(x));
+    // 오래된 것부터 보여야 "이건 언제 만든 거지? 오래됐네" 하고 버릴 것을 고르기 쉽다.
+    const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0&&!isWholeMeal(x))
+      .slice().sort((a,b)=>String(a.madeDate||'').localeCompare(String(b.madeDate||''))||String(a.name||'').localeCompare(String(b.name||''),'ko'));
     if(!rows.length)return '';
     return `<div class="sec"><h2>미리 만들어둔 식사</h2><span class="more">원재료와 분리</span></div>
-      <div class="card"><p class="hint">만들어둔 식사는 원재료 재고와 따로 관리해요. 장보기 원재료를 임의로 차감하지 않고, 실제 준비식 보유량만 보여줍니다. 여기서 수량을 고치거나 삭제하면 3단계의 <b>완료 취소</b>는 더 이상 쓸 수 없어요.</p>
+      <div class="card"><p class="hint">만들어둔 식사는 원재료 재고와 따로 관리해요. 먹인 기록으로는 줄지 않으니, 장보기 전에 실제 남은 양을 보고 <b>수량을 고치거나</b> 오래된 것은 <b>삭제</b>해 주세요. 고친 값이 그대로 장보기·만들기 필요량에 반영돼요.</p>
       ${rows.map(x=>`<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(showCode(x.mealCode))}</span><b>${esc(x.name)}</b></div><div style="margin-top:6px;display:flex;align-items:center;gap:6px"><input data-v61-prep-q="${esc(x.id)}" type="number" min="0" step="1" value="${Math.max(0,Number(x.remainingCount)||0)}" style="width:68px;border:1px solid var(--line);border-radius:9px;padding:6px">개 <span class="hint">× ${g1(x.unitG)}g = ${g1((Number(x.unitG)||0)*(Number(x.remainingCount)||0))}g</span></div><div class="hint">만든 식사 · ${esc(x.madeDate||'날짜 미정')}</div></div><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-v61-prep-del="${esc(x.id)}">삭제</button></div>`).join('')}
       <div class="btnrow"><button class="btn pri" data-v61-prep-save="1">준비식 수량 갱신</button></div></div>`;
   }
