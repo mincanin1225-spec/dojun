@@ -9,7 +9,7 @@ assert(seed.includes("status:'가고싶음'"),'seed status must be 가고싶음'
 assert(seed.includes('네이버 지도 공유목록 · 도준아 꼭 가보자'),'seed source memo missing');
 assert(seed.includes("if(localStorage.getItem(STORAGE_KEY)!==null){window.__outingPlaces=readRaw();return 0}"),'seed places must only be inserted on first initialization');
 assert(!seed.includes('nominatim.openstreetmap.org'),'removed embedded maps must not keep background geocoding');
-assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v70-manualaudit2'),'v40 seed module not refreshed');
+assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v70-coreflowfix2'),'v40 seed module not refreshed');
 
 const rows=[...seed.matchAll(/^\s*\['([^']+)','([^']+)'\],?$/gm)];
 assert.strictEqual(rows.length,28,'must seed exactly 28 places');
