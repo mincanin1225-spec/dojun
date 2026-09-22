@@ -8,5 +8,6 @@ assert(patch.includes("getElementById('outingMap')?.remove()"),'main embedded ma
 assert(patch.includes("getElementById('outingMapFallbackTools')?.remove()"),'map retry/fallback tools must be removed');
 assert(patch.includes("#outingModal [data-outing=\"picker\"]"),'modal map picker button must be removed');
 assert(patch.includes("#outingModal .outing-pick"),'modal embedded picker map must be removed');
+assert(patch.includes("#outingModal #outLat,#outingModal #outLng"),'raw coordinate fields must be hidden with the removed map UI');
 assert(!patch.includes("getElementById('outingNaverConnect')?.remove()"),'Naver bridge must remain');
 console.log('PASS: v41 removes embedded Leaflet maps while preserving Naver navigation');
