@@ -118,5 +118,8 @@ jobs:
       - name: Manual-driven whole app audit
         run: node tests/v70-manual-audit1.cjs
 
+      - name: Core inventory shopping make feed integration
+        run: node tests/v70-core-flow-integration.cjs
+
       - name: Manual audit nutrition ingredients outing
         run: node tests/v70-manual-audit2.cjs
