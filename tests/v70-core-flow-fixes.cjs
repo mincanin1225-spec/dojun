@@ -145,18 +145,20 @@ function harness(opts={}){
   assert.equal(E.norm('단호박 큐브'),'단호박','cube suffix must normalize too');
 }
 
-// 8) 제공량이 비어 있으면 검증된 식단 기준량을 기록용 기본값으로 넣는다.
+// 8) 기준 제공량은 화면에 실제 값으로 자동 입력되지만, 상호작용하지 않은 끼니는 저장하지 않는다.
 {
   const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
-  assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'feed action must apply the meal standard grams when offered amount is blank');
-  assert(flow.includes("el.placeholder='기준 '"),'day sheet must show the standard grams as guidance only');
-  assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'opening a day must not stamp offered grams onto meals that were never given');
+  const shell=fs.readFileSync('legacy-v70.html','utf8');
+  assert(flow.includes("el.value=v;el.dataset.autoOffered='1'"),'day sheet must prefill the standard serving grams as the actual input value');
+  assert(flow.includes("el.addEventListener('input',()=>{delete el.dataset.autoOffered})"),'editing offered grams must turn the automatic default into an intentional value');
+  assert(flow.includes("saveFeedbackFields(m.on,slot)"),'먹임 기록 must explicitly commit the selected meal default');
+  assert(shell.includes("function saveFeedbackFields(on,forceSlot='')"),'feedback saver must distinguish the selected meal from untouched defaults');
+  assert(shell.includes("auto=el.dataset.autoOffered==='1'"),'feedback saver must recognize automatic offered values');
+  assert(shell.includes("if(o&&(!auto||forceSlot===slot||changed))cur.offered_g=+o"),'automatic defaults must persist only for the selected or edited meal');
   assert(!flow.includes('E.feed(s,m,offered)'),'feeding must never deduct stock');
   assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must never restore stock');
-  assert(!flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'a blank offered amount must not block the record');
-  const shell=fs.readFileSync('legacy-v70.html','utf8');
   assert(shell.includes('data-extra="${slot}"'),'extra-food free text input must exist for each meal');
-  assert(shell.includes('cur.extra_foods=extra.value.trim()'),'extra-food text must persist');
+  assert(shell.includes('cur.extra_foods=extraVal'),'extra-food text must persist');
 }
 
 // 9) 준비식 목록은 오래된 것부터 보여 폐기 판단을 돕고, 재고번호가 그대로 보여야 한다.
@@ -188,15 +190,13 @@ function harness(opts={}){
   assert.equal(state.raw.beef.qty,500,'a rejected feeding must leave raw stock untouched');
 }
 
-// 11) 날짜 시트를 열어보기만 해서는 어떤 끼니도 기록으로 남지 않아야 한다.
-// 제공량 칸에 값을 미리 박아두면 '기록 저장' 한 번에 세 끼니 전부 offered_g 가 저장되어
-// 주지도 않은 끼니가 섭취기록에 생긴다. 기준량은 안내로만 보여주고,
-// 실제 값은 '먹임 기록'을 누른 그 끼니에만 채워야 한다.
+// 11) 날짜 시트를 열면 기준량이 보이되, 열어본 것만으로 미섭취 끼니 로그가 생기면 안 된다.
 {
   const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
-  assert(flow.includes("el.placeholder='기준 '"),'standard grams must be guidance on sheet open');
-  assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'sheet open must not write offered grams into the field');
-  assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'pressing 먹임 기록 must fill that one meal with the standard total');
+  const shell=fs.readFileSync('legacy-v70.html','utf8');
+  assert(flow.includes("el.value=v;el.dataset.autoOffered='1'"),'standard grams must be visible as the real input value on sheet open');
+  assert(shell.includes("else if(auto&&forceSlot!==slot&&!changed)delete cur.offered_g"),'untouched automatic defaults must be discarded before saving');
+  assert(shell.includes("saveFeedbackFields(on,s)"),'reaction logging must commit only its own meal default');
 }
 
 // 12) 먹임 기록은 plan/makeTasks의 필요량을 절대 줄이지 않는다.

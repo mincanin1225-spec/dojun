@@ -10,7 +10,7 @@ assert(core.includes("version:'v69'"),'canonical release must be v61');
 assert(index.includes("v61-photo-inventory-script"),'v61 photo inventory loader missing');
 assert(index.indexOf('v35-management-script')<index.indexOf('v61-photo-inventory-script'),'photo inventory must load after management v35');
 assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61'),'v61 photo inventory cache key missing');
-assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v72-recordonly4'),'v61 photo inventory release marker missing');
+assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v73-recordonly5'),'v61 photo inventory release marker missing');
 assert(sw.includes("const CACHE='dojun-pwa-v"),'v61 service worker cache missing');
 
 for(const literal of [

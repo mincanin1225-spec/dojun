@@ -17,7 +17,7 @@
 <style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:visible}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v70.html?r=20260922-v72-recordonly4" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v70.html?r=20260922-v73-recordonly5" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app');
@@ -49,7 +49,7 @@
             t.onload=function(){
               const u=d.createElement('script');
               u.id='v33-management-script';
-              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260922-v72-recordonly4';
+              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260922-v73-recordonly5';
               u.onload=function(){
                 const v=d.createElement('script');
                 v.id='v34-management-script';
@@ -61,11 +61,11 @@
                   w.onload=function(){
                     const vi=d.createElement('script');
                     vi.id='v61-photo-inventory-script';
-                    vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v72-recordonly4';
+                    vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v73-recordonly5';
                     d.head.appendChild(vi);
                     const x=d.createElement('script');
                     x.id='v36-outing-script';
-                    x.src='./legacy-outing-v36.js?v=20260916-v40&r=20260922-v72-recordonly4';
+                    x.src='./legacy-outing-v36.js?v=20260916-v40&r=20260922-v73-recordonly5';
                     x.onload=function(){
                       const y=d.createElement('script');
                       y.id='v37-outing-polish-script';
@@ -81,11 +81,11 @@
                           aa.onload=function(){
                             const ab=d.createElement('script');
                             ab.id='v40-naver-places-script';
-                            ab.src='./legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v72-recordonly4&r=20260921-v63';
+                            ab.src='./legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v73-recordonly5&r=20260921-v63';
                             ab.onload=function(){
                               const ac=d.createElement('script');
                               ac.id='v41-no-embedded-map-script';
-                              ac.src='./legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v72-recordonly4';
+                              ac.src='./legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v73-recordonly5';
                               ac.onload=function(){
                                 const ad=d.createElement('script');
                                 ad.id='v42-outing-priority-script';
@@ -93,11 +93,11 @@
                                 ad.onload=function(){
                                   const ae=d.createElement('script');
                                   ae.id='v43-health-data-script';
-                                  ae.src='./health-schedule-v43.js?v=20260916-v43&r=20260922-v72-recordonly4';
+                                  ae.src='./health-schedule-v43.js?v=20260916-v43&r=20260922-v73-recordonly5';
                                   ae.onload=function(){
                                     const af=d.createElement('script');
                                     af.id='v43-health-manager-script';
-                                    af.src='./legacy-health-v43.js?v=20260916-v43&r=20260922-v72-recordonly4';
+                                    af.src='./legacy-health-v43.js?v=20260916-v43&r=20260922-v73-recordonly5';
                                     af.onload=function(){
                                       const ag=d.createElement('script');
                                       ag.id='v45-care-hub-script';
@@ -121,16 +121,16 @@
                                             };
                                             const ak=d.createElement('script');
                                             ak.id='v58-ppeuni-data-script';
-                                            ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260922-v72-recordonly4';
+                                            ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260922-v73-recordonly5';
                                             ak.onload=function(){
                                               const al=d.createElement('script');
                                               al.id='v58-ppeuni-safe-script';
-                                              al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v72-recordonly4';
+                                              al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v73-recordonly5';
                                               al.onload=function(){
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
-                                                am.src='./meal-stock-v66.js?r=20260922-v66-recordonly4';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v72-recordonly4';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.src='./meal-stock-v66.js?r=20260922-v66-recordonly5';
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v73-recordonly5';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
                                                 am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
@@ -218,7 +218,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260922-v72-recordonly4',KEY='dojun-sw-release';
+  const RELEASE='20260922-v73-recordonly5',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;
