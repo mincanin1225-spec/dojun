@@ -315,7 +315,7 @@
  function batchMake(label,start,end,rows){
    const tasks=makeTasks(rows,start),ready=tasks.filter(t=>t.missingG===0&&!t.unknown).length;
    return '<div class="sec"><h2>'+label+' 만들기</h2><span class="more">'+start+' ~ '+addD(end,-1)+'</span></div>'+
-     '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">이번 준비량</h3><span class="chip sm '+(tasks.length&&ready===tasks.length?'ok':'')+'">'+(tasks.length?(ready===tasks.length?'만들기 완료':ready+'/'+tasks.length+' 준비'):'추가 만들기 없음')+'</span></div>'+
+     '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">이번 준비량</h3><span class="chip sm '+(tasks.length&&ready===tasks.length?'ok':'')+'">'+(tasks.length?(ready===tasks.length?'만들기 완료':ready+'개 완료 · 총 '+tasks.length+'개'):'추가 만들기 없음')+'</span></div>'+
      '<p class="hint" style="margin:8px 0 4px">앱이 이번 기간에 필요한 양에서 현재 조리식 재고를 뺀 만큼을 기본값으로 넣어둬요. 더 만들었다면 숫자만 바꾼 뒤 체크하세요.</p>'+
      (tasks.length?tasks.map(makeTaskRow).join(''):'<p class="hint">현재 조리식 재고로 필요한 양을 모두 준비할 수 있어요.</p>')+
      '</div>';
