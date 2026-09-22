@@ -130,6 +130,7 @@
                                           aj.src='./legacy-ui-v47.js?v=20260916-v47&r=20260921-v63';
                                           aj.onload=function(){
                                             const loadHealth=function(){
+                                              readyPart('workflow');
                                               if(d.getElementById('v46-health-import-script'))return;
                                               const ai=d.createElement('script');
                                               ai.id='v46-health-import-script';
@@ -147,14 +148,14 @@
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
                                                 am.src='./meal-stock-v66.js?r=20260922-v66-recordonly5';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v73-recordonly5';ui.onload=function(){loadHealth();readyPart('workflow')};ui.onerror=failBoot;d.head.appendChild(ui)};
-                                                am.onerror=failBoot;
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v73-recordonly5';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
-                                              al.onerror=failBoot;
+                                              al.onerror=loadHealth;
                                               d.head.appendChild(al);
                                             };
-                                            ak.onerror=failBoot;
+                                            ak.onerror=loadHealth;
                                             d.head.appendChild(ak);
                                           };
                                           d.head.appendChild(aj);
