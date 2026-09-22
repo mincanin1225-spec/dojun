@@ -1601,7 +1601,7 @@ function shoppingNeeds(b){
   return t;
 }
 const reactionScore=s=>({good:1,normal:0,little:-.5,refused:-1,a:1,s:-.5,l:-.5}[s]);
-function hasLog(v){return !!(v.s||v.memo||v.offered_g!==undefined||v.eaten_g!==undefined||v.formReaction||Object.keys(v.ingredients||{}).length)}
+function hasLog(v){return !!(v.s||v.memo||v.offered_g!==undefined||v.eaten_g!==undefined||v.extra_foods||v.formReaction||Object.keys(v.ingredients||{}).length)}
 function mealFingerprint(m){return m?[m.main.p.k,m.main.f.k,m.main.v.map(v=>v.k).sort().join(','),m.side.f.k,m.side.v.map(v=>v.k).sort().join(','),m.fruit.k].join('|'):null}
 function captureMeal(on,slot,log){const m=mObj(on,['b','l','d'].indexOf(slot));
   if(m&&!log.mealKey){log.mealKey=mealFingerprint(m);log.formKey=m.main.f.k}
@@ -1613,6 +1613,7 @@ function feedbackFields(on,i,l,m){
     <div style="display:flex;gap:10px"><div class="fld"><label for="off-${slot}">제공량(g)</label><input id="off-${slot}" data-offered="${slot}" type="number" min="0" step="0.1" placeholder="예: 150" value="${esc(l.offered_g??'')}"></div>
     <div class="fld"><label for="eat-${slot}">실제 섭취량(g)</label><input id="eat-${slot}" data-eaten="${slot}" type="number" min="0" step="0.1" placeholder="예: 80" value="${esc(l.eaten_g??'')}"></div></div>
     ${l.offered_g>0&&l.eaten_g!==undefined?`<p class="hint">섭취율 ${Math.round(l.eaten_g/l.offered_g*100)}% · 제공량을 다 먹이는 것이 목표는 아니에요.</p>`:''}
+    <div class="fld"><label for="extra-${slot}">추가로 먹인 것 (선택)</label><input id="extra-${slot}" data-extra="${slot}" type="text" placeholder="예: 아기치즈 1장, 바나나 20g" value="${esc(l.extra_foods??'')}"></div>
     ${m?`<details><summary>재료·조리형태 반응 따로 기록</summary><p class="hint">확실히 관찰한 항목만 선택해 주세요. 전체 메뉴를 거부해도 재료를 싫어한다고 판단하지 않아요.</p>
     <div class="fld"><label for="form-${slot}">${esc(m.main.fn)} 형태</label><select id="form-${slot}" data-formreaction="${slot}">${options(l.formReaction)}</select></div>
     ${keys.map(k=>`<div class="fld"><label for="ing-${slot}-${k}">${esc(invName(k))}</label><select id="ing-${slot}-${k}" data-ingredient="${slot}|${k}">${options(l.ingredients?.[k])}</select></div>`).join('')}</details>`:''}`;
@@ -1625,6 +1626,7 @@ function saveFeedbackFields(on){
     const cur={...(lg(on)[slot]||{})};
     if(o)cur.offered_g=+o;else delete cur.offered_g;
     if(e)cur.eaten_g=+e;else delete cur.eaten_g;
+    const extra=sheet.querySelector(`[data-extra="${slot}"]`);if(extra&&extra.value.trim())cur.extra_foods=extra.value.trim();else delete cur.extra_foods;
     const f=sheet.querySelector(`[data-formreaction="${slot}"]`);
     if(f){cur.formReaction=f.value;cur.ingredients={};
       sheet.querySelectorAll('[data-ingredient]').forEach(x=>{const[s,k]=x.dataset.ingredient.split('|');if(s===slot&&x.value)cur.ingredients[k]=x.value})}
