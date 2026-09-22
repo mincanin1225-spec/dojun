@@ -13,6 +13,7 @@
     document.querySelectorAll('#outingModal [data-outing="picker"]').forEach(el=>el.remove());
     document.querySelectorAll('#outingModal .outing-pick').forEach(el=>el.remove());
     document.querySelectorAll('#outingModal .outing-map-note').forEach(el=>el.remove());
+    document.querySelectorAll('#outingModal #outLat,#outingModal #outLng').forEach(el=>{const fld=el.closest('.fld');if(fld)fld.style.display='none'});
   }
 
   function patchVersion(){
