@@ -29,12 +29,13 @@ assert(!flow.includes("batchPrep('1차"),'active prep screen must not render the
 assert(!flow.includes('E.feed(s,m,offered)'),'feeding must not deduct stock — stock only moves at the make step');
 assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must not restore stock');
 assert(flow.includes('next.feeds[m.key]={name:m.name'),'feeding must record the meal without touching stock');
-assert(flow.includes("el.value=String(Math.round(g*10)/10)"),'offered grams must be prefilled with the meal standard total when the sheet opens');
+assert(flow.includes("el.placeholder='기준 '"),'offered grams must be shown as guidance, not written in on open');
+assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'opening a day must not stamp offered grams onto meals that were never given');
 assert(shell.includes('data-extra="${slot}"'),'each meal must have a free-text extra-food field');
 assert(shell.includes('cur.extra_foods=extra.value.trim()'),'extra-food text must persist with the meal log');
-assert(index.includes('./legacy-v70.html?r=20260922-v71-recordonly2'),'index must load v70 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260922-v71-recordonly2'),'index must load v70 workflow');
+assert(index.includes('./legacy-v70.html?r=20260922-v71-recordonly3'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260922-v71-recordonly3'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v71'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly2'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly3'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
