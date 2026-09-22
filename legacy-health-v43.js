@@ -26,19 +26,28 @@
     if(age?.days)d.setDate(d.getDate()+age.days);
     return d;
   }
-  function windowFor(item,dob){
-    if(item.absoluteStart){let start=toDate(item.absoluteStart),end=toDate(item.absoluteEnd);if(item.id.startsWith('flu-')){const six=addAge(dob,{months:6});if(six>start)start=six}return{start,end}}
-    return{start:addAge(dob,item.start||{}),end:addAge(dob,item.end||item.start||{})};
+  function windowFor(item,dob,rs={}){
+    let start=item.absoluteStart?toDate(item.absoluteStart):addAge(dob,item.start||{}),
+      end=item.absoluteEnd?toDate(item.absoluteEnd):addAge(dob,item.end||item.start||{});
+    if(item.id.startsWith('flu-')){const six=addAge(dob,{months:6});if(six>start)start=six}
+    if(item.afterId){
+      const prior=stateOf(item.afterId,rs),actual=toDate(prior.date);
+      if(actual){
+        const due=addAge(actual,item.minMonthsAfter?{months:item.minMonthsAfter}:{days:item.minDaysAfter||0});
+        if(due>start)start=due;
+      }
+    }
+    return{start,end};
   }
   function visibleVaccine(v,p){
     if(v.id.startsWith('je-ij-'))return p.jeType!=='live';
     if(v.id.startsWith('je-live-'))return p.jeType!=='inactivated';
     return true;
   }
-  function allItems(p){
+  function allItems(p,rs=records()){
     const dob=toDate(p.dob);if(!dob)return[];
-    const c=DATA.checkups.map(x=>Object.assign({},x,windowFor(x,dob)));
-    const v=DATA.vaccines.filter(x=>visibleVaccine(x,p)).map(x=>Object.assign({kind:'예방접종'},x,windowFor(x,dob)));
+    const c=DATA.checkups.map(x=>Object.assign({},x,windowFor(x,dob,rs)));
+    const v=DATA.vaccines.filter(x=>visibleVaccine(x,p)).map(x=>Object.assign({kind:'예방접종'},x,windowFor(x,dob,rs)));
     return c.concat(v);
   }
   function stateOf(id,rs){return rs[id]||{status:'planned',date:'',clinic:'',memo:''}}
@@ -66,7 +75,7 @@
   }
 
   function entryHtml(){
-    const p=profile(),rs=records();let line='생년월일을 입력하면 검진·접종 시기를 자동 계산해요.';
+    const p=profile(),rs=records();let line='아이 정보의 생일을 기준으로 검진·접종 시기를 계산해요.';
     if(toDate(p.dob)){const n=nextItems(allItems(p),rs,1)[0];line=n?`다음 일정 · ${n.name} · ${timing(n,stateOf(n.id,rs))}`:'현재 등록된 다음 일정이 없어요.'}
     return`<button class="card health-entry" data-health-open="1"><div class="health-entry-top"><div><div class="health-entry-title"><span class="health-entry-icon">🩺</span><span>건강관리</span></div><div class="hint" style="margin-top:7px">${esc(line)}</div></div><span class="more">검진·접종 ›</span></div></button>`;
   }
@@ -78,17 +87,17 @@
     return`<article class="health-card"><div class="health-card-top"><div><div class="health-kind">${esc(item.kind)}</div><h3>${esc(item.name)}</h3><div class="health-range">${esc(rangeText(item))}${item.note?` · ${esc(item.note)}`:''}</div>${r.date?`<div class="health-range"><b>기록일 ${esc(r.date)}</b>${r.clinic?` · ${esc(r.clinic)}`:''}</div>`:''}</div><span class="health-badge ${badgeClass(item,r)}">${esc(timing(item,r))}</span></div><details><summary>예약·완료 기록</summary><div class="health-form"><div class="row"><select data-health-status="${esc(item.id)}"><option value="planned" ${st==='planned'?'selected':''}>예정</option><option value="booked" ${st==='booked'?'selected':''}>예약</option><option value="done" ${st==='done'?'selected':''}>완료</option><option value="skip" ${st==='skip'?'selected':''}>해당없음</option></select><input type="date" data-health-date="${esc(item.id)}" value="${esc(r.date||'')}"></div><input data-health-clinic="${esc(item.id)}" placeholder="병원/기관 (선택)" value="${esc(r.clinic||'')}"><textarea data-health-memo="${esc(item.id)}" placeholder="메모 (선택)">${esc(r.memo||'')}</textarea><button class="health-save" data-health-save="${esc(item.id)}">기록 저장</button></div></details></article>`;
   }
   function summaryHtml(items,rs){
-    if(!items.length)return'<div class="card"><b>생년월일을 먼저 저장해 주세요.</b><p class="hint">저장하면 검진·접종 날짜를 자동으로 계산해요.</p></div>';
+    if(!items.length)return'<div class="card"><b>설정에서 아이 생일을 확인해 주세요.</b><p class="hint">아이 정보의 생일을 기준으로 검진·접종 날짜를 계산해요.</p></div>';
     const up=nextItems(items,rs,5),n=up[0];
     return`${n?`<div class="card health-next"><div class="hint">다음 건강 일정</div><div class="big">${esc(n.name)}</div><div class="date">${esc(rangeText(n))} · <b>${esc(timing(n,stateOf(n.id,rs)))}</b></div></div>`:''}<div class="sec"><h2>다가오는 일정</h2><span class="more">최대 5개</span></div>${up.length?up.map(x=>itemHtml(x,rs)).join(''):'<div class="card"><p class="hint">예정된 일정이 없어요.</p></div>'}`;
   }
   function listHtml(type,items,rs){
-    if(!items.length)return'<div class="card"><b>생년월일을 먼저 저장해 주세요.</b></div>';
+    if(!items.length)return'<div class="card"><b>설정에서 아이 생일을 확인해 주세요.</b></div>';
     const list=type==='checkup'?items.filter(x=>x.kind!=='예방접종'):items.filter(x=>x.kind==='예방접종');
     return sortItems(list,rs).map(x=>itemHtml(x,rs)).join('');
   }
   function healthView(){
-    injectCss();const p=profile(),rs=records(),items=allItems(p);
+    injectCss();const p=profile(),rs=records(),items=allItems(p,rs);
     return`<div class="card" style="padding:10px;margin-bottom:12px"><button class="more" data-health-back="1">‹ 관리로 돌아가기</button></div><div class="sec"><h2>건강검진 · 예방접종</h2><span class="more">공식 일정 기준</span></div><div class="health-tabs"><button class="${healthTab==='summary'?'on':''}" data-health-tab="summary">요약</button><button class="${healthTab==='checkup'?'on':''}" data-health-tab="checkup">건강검진</button><button class="${healthTab==='vaccine'?'on':''}" data-health-tab="vaccine">예방접종</button></div>${healthTab==='summary'?summaryHtml(items,rs):listHtml(healthTab,items,rs)}${profileHtml(p)}<div class="card"><b>공식 일정 확인</b><p class="health-source">국민건강보험공단 영유아 검진과 질병관리청 국가예방접종 일정 기준이에요. 백신 종류·접종력·혼합백신·의학적 상황에 따라 실제 일정은 달라질 수 있으니 의료기관과 공식 기록을 최종 기준으로 확인해 주세요. 인플루엔자는 2026.9.16 질병관리청 일정 조정을 반영했어요.</p><div class="btnrow"><button class="btn" data-health-url="${DATA.sources.nhis}">건강보험</button><button class="btn pri" data-health-url="${DATA.sources.nip}">예방접종도우미</button></div></div>`;
   }
 
