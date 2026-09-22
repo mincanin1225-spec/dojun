@@ -149,10 +149,13 @@ function harness(opts={}){
 {
   const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
   assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'feed action must apply the meal standard grams when offered amount is blank');
-  assert(flow.includes("el.placeholder='기준 '"),'day sheet should show the standard serving grams as guidance');
+  assert(flow.includes("el.value=String(Math.round(g*10)/10)"),'day sheet must prefill the standard serving grams as the actual input value');
   assert(!flow.includes('E.feed(s,m,offered)'),'feeding must never deduct stock');
   assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must never restore stock');
   assert(!flow.includes('먼저 제공한 전체 양(g)을 입력해 주세요'),'a blank offered amount must not block the record');
+  const shell=fs.readFileSync('legacy-v70.html','utf8');
+  assert(shell.includes('data-extra="${slot}"'),'extra-food free text input must exist for each meal');
+  assert(shell.includes('cur.extra_foods=extra.value.trim()'),'extra-food text must persist');
 }
 
 // 9) 준비식 목록은 오래된 것부터 보여 폐기 판단을 돕고, 재고번호가 그대로 보여야 한다.
