@@ -20,7 +20,7 @@ self.addEventListener('activate',event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
-const CRITICAL=['/legacy-v70.html','/meal-stock-v66.js','/meal-workflow-v70.js','/legacy-management-v33.js','/legacy-health-v43.js','/legacy-outing-v36.js'];
+const CRITICAL=['/legacy-v70.html','/meal-stock-v66.js','/meal-workflow-v70.js','/legacy-management-v33.js','/legacy-health-v43.js','/legacy-outing-v36.js','/legacy-outing-v41-no-embedded-map.js'];
 self.addEventListener('fetch',event=>{
   const req=event.request;
   if(req.method!=='GET')return;
