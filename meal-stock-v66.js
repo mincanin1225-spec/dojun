@@ -129,8 +129,8 @@
     if(!positive(serveG))throw Error('제공량 확인이 필요해요');
     const baseG=positive(meal.g)?Number(meal.g):serveG,ratio=serveG/baseG,
       served={...meal,g:serveG,ingredients:(meal.ingredients||[]).map(x=>({...x,g:positive(x.g)?round(Number(x.g)*ratio):x.g}))},
-      rows=pool(state,true),r=mealNeed(served,rows);
-    for(const x of r.needs){if(!positive(x.g))throw Error('급여량 확인이 필요해요');const t=take(rows,x.name,x.g,['prepared','cubes','raw']);if(t.left>1e-6)throw Error(x.name+' 재고 부족 '+round(t.left)+'g');r.used.push(...t.used);}
+      rows=pool(state,false),r=mealNeed(served,rows);
+    for(const x of r.needs){if(!positive(x.g))throw Error('급여량 확인이 필요해요');const t=take(rows,x.name,x.g,['prepared','cubes']);if(t.left>1e-6)throw Error(x.name+' 조리식 재고 부족');r.used.push(...t.used);}
     if(!r.used.length)throw Error('차감할 조리식 재고가 없어요');
     const next=mutate(state,r.used);next.feeds=next.feeds||{};next.feeds[meal.key]={name:meal.name,servedG:serveG,used:r.used,at:Date.now()};
     return {state:splitResiduals(next)};
@@ -138,14 +138,7 @@
   function undoFeed(state,key){
     const receipt=state.feeds&&state.feeds[key];if(!receipt)return {state,already:true};
     const next=copy(state);
-    for(const u of receipt.used){
-      if(u.kind==='raw'){
-        const v=next.raw&&next.raw[u.i];if(!v)throw Error('사용한 원재료 재고가 없어 자동 복구할 수 없어요');
-        const factor=v.unit==='g'?1:Number(v.gramsPerUnit);if(!positive(factor)||Math.abs(factor-Number(u.unitG||factor))>1e-6)throw Error('사용한 원재료 단위가 변경되어 자동 복구할 수 없어요');
-        v.qty=round(Number(v.qty)+Number(u.g)/factor);continue;
-      }
-      const lot=next[u.kind][u.i];if(!lot||id(lot,u.i)!==u.id)throw Error('사용한 재고가 수정·삭제되어 자동 복구할 수 없어요');lot.remainingCount=round(amount(lot)+u.g)/Number(lot.unitG);
-    }
+    for(const u of receipt.used){const lot=next[u.kind][u.i];if(!lot||id(lot,u.i)!==u.id)throw Error('사용한 재고가 수정·삭제되어 자동 복구할 수 없어요');lot.remainingCount=round(amount(lot)+u.g)/Number(lot.unitG);}
     delete next.feeds[key];return {state:splitResiduals(next)};
   }
   const api={norm,amount,pool,plan,cook,undoCook,feed,undoFeed,isWholeMealLot};
