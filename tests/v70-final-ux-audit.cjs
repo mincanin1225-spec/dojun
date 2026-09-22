@@ -36,9 +36,9 @@ assert(flow.includes("el.placeholder='기준 '"),'offered grams must be shown as
 assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'opening a day must not stamp offered grams onto meals that were never given');
 assert(shell.includes('data-extra="${slot}"'),'each meal must have a free-text extra-food field');
 assert(shell.includes('cur.extra_foods=extra.value.trim()'),'extra-food text must persist with the meal log');
-assert(index.includes('./legacy-v70.html?r=20260922-v72-recordonly4'),'index must load v70 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260922-v72-recordonly4'),'index must load v70 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v72'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v72-recordonly4'"),'v70 cache missing');
+assert(index.includes('./legacy-v70.html?r=20260922-v73-recordonly5'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260922-v73-recordonly5'),'index must load v70 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v73'"),'canonical version must be v70');
+assert(sw.includes("const CACHE='dojun-pwa-v73-recordonly5'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
