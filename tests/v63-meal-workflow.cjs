@@ -52,8 +52,10 @@ test('shortage and unknown quantities never modify inventory',()=>{
  const s=initial(),before=JSON.stringify(s);assert.throws(()=>E.cook(s,prep(),form),/부족/);assert.equal(JSON.stringify(s),before);
  const m={...prep(),ingredients:[{name:'김',g:null}]};assert.throws(()=>E.cook(stocked(),m,form),/확인되지/);
 });
-test('raw stock cannot be fed without cooking',()=>{
- const s=initial();s.raw.a={displayName:'잡곡무른밥',unit:'g',qty:1000};s.raw.b={displayName:'양배추',unit:'g',qty:1000};assert.throws(()=>E.feed(s,menu()),/부족/);
+test('feeding falls back to matching raw stock and undo restores it',()=>{
+ let s=initial();s.raw.a={displayName:'잡곡무른밥',unit:'g',qty:1000};s.raw.b={displayName:'양배추',unit:'g',qty:1000};
+ s=E.feed(s,menu()).state;assert.equal(s.raw.a.qty,900);assert.equal(s.raw.b.qty,980);assert(s.feeds[menu().key]);
+ s=E.undoFeed(s,menu().key).state;assert.equal(s.raw.a.qty,1000);assert.equal(s.raw.b.qty,1000);assert(!s.feeds[menu().key]);
 });
 test('deleted lot cannot silently undo into a different lot',()=>{
  let s=E.feed(stocked(),menu()).state;s.prepared.shift();assert.throws(()=>E.undoFeed(s,menu().key),/복구/);
