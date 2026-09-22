@@ -88,7 +88,13 @@
     const required=meal.ingredients||[];
     if(!required.length||required.some(x=>!positive(x.g)))throw Error('확인되지 않은 재료량이 있어요. 먼저 실제 사용량을 저장해 주세요');
     const rows=pool(state),used=[],factor=form.count*form.unitG/meal.g;
-    for(const x of required){const t=take(rows,x.name,x.g*factor);if(t.left>1e-6)throw Error(x.name+' 재고 부족 '+round(t.left)+'g');used.push(...t.used);}
+    // 만들려는 음식과 같은 이름의 재료는 원재료에서만 가져온다.
+    // (그러지 않으면 이미 만들어둔 준비식을 소비해서 같은 양을 다시 만드는 꼴이 되어 재고가 제자리에 머문다)
+    for(const x of required){
+      const self=norm(x.name)===norm(meal.name),t=take(rows,x.name,x.g*factor,self?['raw']:null);
+      if(t.left>1e-6)throw Error(x.name+(self?' 원재료':'')+' 재고 부족 '+round(t.left)+'g');
+      used.push(...t.used);
+    }
     let next=mutate(state,used);next.ops=next.ops||{};
     const codes=new Set(next.prepared.map(x=>x.mealCode));let n=1;while(codes.has('M-'+n))n++;
     const lot={id:form.token,name:meal.name,mealKey:meal.key||'',plannedG:positive(meal.plannedG)?Number(meal.plannedG):Number(meal.g),unitG:form.unitG,remainingCount:form.count,originalCount:form.count,madeDate:form.date,mealCode:'M-'+n,source:'meal-prep-v63'};
