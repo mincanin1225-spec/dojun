@@ -126,16 +126,17 @@ function harness(opts={}){
   const E=require('../meal-stock-v66.js');
   const state={
     prepared:[{id:'rice',name:'잡곡무른밥',unitG:100,remainingCount:1,mealCode:'M-r'}],
-    cubes:[{id:'pumpkin-piece',ingredient:'단호박 조각',unitG:10,remainingCount:2,stockCode:'A-p'}],
+    cubes:[{id:'pumpkin-piece',ingredient:'단호박 조각',unitG:10,remainingCount:1,stockCode:'A-p'}],
     raw:{pumpkin:{displayName:'단호박',unit:'g',qty:10,location:'냉장'}},ops:{},feeds:{}
   };
   const meal={key:'2026-09-21|1',name:'잡곡무른밥 · 단호박',g:120,ingredients:[{name:'잡곡무른밥',g:100},{name:'단호박',g:20}]};
   const fed=E.feed(state,meal,120).state;
   assert(fed.feeds[meal.key],'feeding receipt must persist');
   assert.equal(fed.cubes[0].remainingCount,0,'prepared cube stock should be consumed first');
-  assert.equal(fed.raw.pumpkin.qty,10,'cube stock fully satisfies this meal so raw fallback must stay untouched');
+  assert.equal(fed.raw.pumpkin.qty,0,'remaining 단호박 shortage must fall back to matching general inventory');
   const undone=E.undoFeed(fed,meal.key).state;
-  assert.equal(undone.cubes[0].remainingCount,2,'undo must restore cube stock');
+  assert.equal(undone.cubes[0].remainingCount,1,'undo must restore cube stock');
+  assert.equal(undone.raw.pumpkin.qty,10,'undo must restore general inventory used by feeding');
   assert.equal(E.norm('단호박 조각'),'단호박','ready-to-feed suffix variants must normalize to the ingredient name');
   assert.equal(E.norm('단호박 큐브'),'단호박','cube suffix must normalize too');
 }
