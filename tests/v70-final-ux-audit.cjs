@@ -39,9 +39,9 @@ assert(shell.includes("function saveFeedbackFields(on,forceSlot='')"),'feedback 
 assert(shell.includes("else if(auto&&forceSlot!==slot&&!changed)delete cur.offered_g"),'untouched auto-filled meals must not create phantom logs');
 assert(shell.includes('data-extra="${slot}"'),'each meal must have a free-text extra-food field');
 assert(shell.includes('cur.extra_foods=extraVal'),'extra-food text must persist with the meal log');
-assert(index.includes('./legacy-v70.html?r=20260922-v73-recordonly5'),'index must load v70 shell');
+assert(index.includes('./legacy-v70.html?r=20260922-v74-bootgate1'),'index must load v70 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260922-v73-recordonly5'),'index must load v70 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v73'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v73-recordonly5'"),'v70 cache missing');
+assert(shell.includes("name:'도준이키우기',version:'v74'"),'canonical version must be v70');
+assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
