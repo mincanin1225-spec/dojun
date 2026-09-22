@@ -21,8 +21,8 @@ assert(!flow.includes("<p class=\"hint\">'+esc(m.source)"),'repeated recipe-sour
 assert(flow.includes('data-v71-makecheck'),'step 3 must use a shopping-like make checklist');
 assert(flow.includes('data-v71-makeg'),'step 3 must allow changing only the actual made amount');
 assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 완료·소분</button>'),'prep cards must not expose the old split actions');
-assert(index.includes('./legacy-v70.html?r=20260922-v71-recordonly3'),'index must load v69 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260922-v71-recordonly3'),'index must load v69 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v71'"),'canonical version must be v69');
-assert(sw.includes("const CACHE='dojun-pwa-v71-recordonly3'"),'v69 cache missing');
+assert(index.includes('./legacy-v70.html?r=20260922-v72-recordonly4'),'index must load v69 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260922-v72-recordonly4'),'index must load v69 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v72'"),'canonical version must be v69');
+assert(sw.includes("const CACHE='dojun-pwa-v72-recordonly4'"),'v69 cache missing');
 console.log('PASS: final UX is a four-step flow with compact prep cards and separated feeding');
