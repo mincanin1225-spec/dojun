@@ -273,7 +273,7 @@
  function makeTasks(rows,start){
    const map={},ops=makeOps();
    for(const r of rows){
-     if(r.fed||!r.meal)continue;
+     if(!r.meal)continue;
      const m=r.meal,fullUsed=(r.used||[]).filter(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name)).reduce((s,u)=>s+(Number(u.g)||0),0),
        ratio=Number(m.g)>0?Math.max(0,Number(m.g)-fullUsed)/Number(m.g):1;
      for(const ing of m.ingredients||[]){
@@ -507,6 +507,8 @@
      locked=true;
      // 섭취기록과 완료 체크는 같이 저장되어야 한다. 한쪽만 남으면 "저장했는데 체크가 풀렸다"가 된다.
      if(!undo&&typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on)){locked=false;return}
+     // 먹임 버튼만 눌러도 제공량·섭취량·추가음식이 실제 월 기록과 가족공유에 저장되어야 한다.
+     if(!undo&&typeof saveM==='function'){try{Promise.resolve(saveM(m.on)).catch(()=>toast('섭취기록 저장을 다시 확인해 주세요'))}catch(e){}}
      const next={...s,feeds:{...s.feeds}};
      if(undo)delete next.feeds[m.key];
      else next.feeds[m.key]={name:m.name,servedG:Number.isFinite(offered)&&offered>0?offered:null,used:[],at:Date.now()};
