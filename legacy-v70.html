@@ -452,7 +452,7 @@ function rng(seed){let s=seed>>>0;return()=>{s|=0;s=(s+0x6D2B79F5)|0;let t=Math.
 const pk=(r,a)=>a[Math.floor(r()*a.length)%a.length];
 
 /* ══════════ 상태 ══════════ */
-let settings={name:'도준이',birth:'2025-12-05'};
+let settings={name:'도준이',birth:''};
 let avatar=null, foods={}, shopChk={}, months={}, inventory={};
 let shopPart='weekday';
 const REACTIONS=[['good','잘 먹음'],['normal','보통'],['little','조금 먹음'],['refused','거부']];
@@ -1088,7 +1088,8 @@ function vFood(){
 
 /* --- 설정 --- */
 function vSet(){
-  return `<div class="sec"><h2>아이 정보</h2></div>
+  const needsBirth=!settings.birth||Number.isNaN(P(settings.birth).getTime())||P(settings.birth)>P(today);
+  return `${needsBirth?'<div class="banner b-trial"><h3>아이 정보를 먼저 설정해 주세요</h3><p>생일을 기준으로 월령·식단 단계·건강 일정을 계산합니다.</p></div>':''}<div class="sec"><h2>아이 정보</h2></div>
     <div class="card">
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px">
         <div class="avatar" style="width:62px;height:62px;font-size:28px" data-a="avatar">${avatar?`<img src="${avatar}" alt="">`:'🐣'}</div>
@@ -1799,6 +1800,8 @@ const idle=window.requestIdleCallback||(f=>setTimeout(f,120));
 async function boot(){
   try{history.replaceState({app:'tab',tab:'cal'},'')}catch(e){}
   const s=await store.get('settings2');if(s)settings={...settings,...s};
+  const savedDob=P(settings.birth),needsChildSetup=!settings.birth||Number.isNaN(savedDob.getTime())||savedDob>P(today);
+  if(needsChildSetup){tab='set';try{history.replaceState({app:'tab',tab:'set'},'')}catch(e){}}
   const f=await store.get('foods2');if(f)foods=f;
   const sh=await store.get('shop2');if(sh)shopChk=sh;
   const rawInventory=await store.get('inventory2')||{};
