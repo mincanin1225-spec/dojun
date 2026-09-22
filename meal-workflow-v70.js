@@ -558,9 +558,9 @@
      }
    }catch(e){}
    const saveBtn=holder.querySelector('[data-a="savday:'+on+'"]');if(saveBtn)saveBtn.textContent='기록 저장';
-   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0)el.placeholder='기준 '+(Math.round(g*10)/10)+'g';})}catch(e){}
+   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0){el.value=String(Math.round(g*10)/10);el.dataset.autoBase='1';}})}catch(e){}
    const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';
-   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>에는 꺼내서 먹인 전체 양을, <b>실제 섭취량</b>에는 도준이가 실제로 먹은 양을 입력하세요. 조리식 재고는 제공량 기준으로 차감되고, 섭취기록은 마지막 <b>기록 저장</b>으로 저장됩니다.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'제공량으로 재고 차감')+'</button>':''}).join('')+'</div>';
+   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>은 식단 기준량으로 자동 입력돼요. 실제로 다르게 준 날만 고치고, <b>실제 섭취량</b>만 입력하면 됩니다. 치즈·바나나처럼 곁들인 음식은 각 끼니의 <b>추가로 먹인 것</b>에 적어 주세요. 재고는 제공량 기준으로 차감되고 기록은 마지막 <b>기록 저장</b>으로 저장됩니다.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'재고 차감 취소':'제공량으로 재고 차감')+'</button>':''}).join('')+'</div>';
    holder.querySelector('#v63-feed')?.remove();
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
