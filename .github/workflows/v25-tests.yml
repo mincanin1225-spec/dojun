@@ -117,3 +117,6 @@ jobs:
 
       - name: Manual-driven whole app audit
         run: node tests/v70-manual-audit1.cjs
+
+      - name: Manual audit nutrition ingredients outing
+        run: node tests/v70-manual-audit2.cjs
