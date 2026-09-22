@@ -30,9 +30,10 @@
 
   const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
   const cubes=()=>{try{const v=JSON.parse(localStorage.getItem(CUBE_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}};
-  const saveCubes=v=>localStorage.setItem(CUBE_KEY,JSON.stringify(v));
+  const push=(k,v)=>{try{if(typeof syncPush==='function')syncPush(k,v)}catch(e){}};
+  const saveCubes=v=>{localStorage.setItem(CUBE_KEY,JSON.stringify(v));push('cubeInventory2',v)};
   const prepared=()=>{try{const v=JSON.parse(localStorage.getItem(PREP_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}};
-  const savePrepared=v=>localStorage.setItem(PREP_KEY,JSON.stringify(v));
+  const savePrepared=v=>{localStorage.setItem(PREP_KEY,JSON.stringify(v));push('preparedMealInventory1',v)};
 
   function usedCodes(cb){
     const s=new Set();
@@ -68,6 +69,9 @@
 
   function importPhotoInventory(){
     try{if(localStorage.getItem(IMPORT_KEY)==='1')return false}catch(e){}
+    // Existing stock keys mean this device already has deliberate local/family state, even when the arrays are empty.
+    // Do not replay the old photo seed over consumed/deleted/synced inventory on a second device.
+    try{if(localStorage.getItem(CUBE_KEY)!==null||localStorage.getItem(PREP_KEY)!==null){localStorage.setItem(IMPORT_KEY,'1');return false}}catch(e){}
     const cb=cubes(),used=usedCodes(cb),now=new Date().toISOString();
     retireMatchingCustomRaw();
     for(const lot of LOTS){
@@ -97,12 +101,19 @@
     return true;
   }
 
+  const isWholeMeal=x=>{
+    try{if(window.MealStockV63&&window.MealStockV63.isWholeMealLot)return window.MealStockV63.isWholeMealLot(x)}catch(e){}
+    return x&&(x.legacyWholeMeal===true||String(x.name||'').includes(' · '));
+  };
+  const showCode=v=>String(v||'M').replace(/-잔량-\d+-\d+$/,'');
+  const g1=v=>{const n=Math.round((Number(v)||0)*10)/10;return Math.abs(n-Math.round(n))<1e-9?String(Math.round(n)):String(n)};
+
   function preparedCard(){
-    const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0);
+    const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0&&!isWholeMeal(x));
     if(!rows.length)return '';
     return `<div class="sec"><h2>미리 만들어둔 식사</h2><span class="more">원재료와 분리</span></div>
-      <div class="card"><p class="hint">만들어둔 식사는 원재료 재고와 따로 관리해요. 장보기 원재료를 임의로 차감하지 않고, 실제 준비식 보유량만 보여줍니다.</p>
-      ${rows.map(x=>`<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(x.mealCode||'M')}</span><b>${esc(x.name)}</b></div><div style="margin-top:6px;display:flex;align-items:center;gap:6px"><input data-v61-prep-q="${esc(x.id)}" type="number" min="0" step="1" value="${Math.max(0,Number(x.remainingCount)||0)}" style="width:68px;border:1px solid var(--line);border-radius:9px;padding:6px">개 <span class="hint">× ${Number(x.unitG)||0}g = ${Math.ceil((Number(x.unitG)||0)*(Number(x.remainingCount)||0))}g</span></div><div class="hint">만든 식사 · ${esc(x.madeDate||'날짜 미정')}</div></div><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-v61-prep-del="${esc(x.id)}">삭제</button></div>`).join('')}
+      <div class="card"><p class="hint">만들어둔 식사는 원재료 재고와 따로 관리해요. 장보기 원재료를 임의로 차감하지 않고, 실제 준비식 보유량만 보여줍니다. 여기서 수량을 고치거나 삭제하면 3단계의 <b>완료 취소</b>는 더 이상 쓸 수 없어요.</p>
+      ${rows.map(x=>`<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(showCode(x.mealCode))}</span><b>${esc(x.name)}</b></div><div style="margin-top:6px;display:flex;align-items:center;gap:6px"><input data-v61-prep-q="${esc(x.id)}" type="number" min="0" step="1" value="${Math.max(0,Number(x.remainingCount)||0)}" style="width:68px;border:1px solid var(--line);border-radius:9px;padding:6px">개 <span class="hint">× ${g1(x.unitG)}g = ${g1((Number(x.unitG)||0)*(Number(x.remainingCount)||0))}g</span></div><div class="hint">만든 식사 · ${esc(x.madeDate||'날짜 미정')}</div></div><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-v61-prep-del="${esc(x.id)}">삭제</button></div>`).join('')}
       <div class="btnrow"><button class="btn pri" data-v61-prep-save="1">준비식 수량 갱신</button></div></div>`;
   }
 
@@ -116,9 +127,9 @@
       return html.includes(marker)?html.replace(marker,card+marker):html+card;
     }
     if(window.__mgStage==='prep'){
-      const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0);
+      const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0&&!isWholeMeal(x));
       if(rows.length){
-        const summary=`<div class="card" style="margin:10px 0"><b>이미 만들어둔 식사</b><div class="hint" style="margin-top:5px">${rows.map(x=>`${esc(x.name)} ${Number(x.unitG)||0}g × ${Number(x.remainingCount)||0}개`).join(' · ')}</div></div>`;
+        const summary=`<div class="card" style="margin:10px 0"><b>이미 만들어둔 준비식</b><div class="hint" style="margin-top:5px">${rows.map(x=>`${esc(x.name)} ${g1(x.unitG)}g × ${g1(x.remainingCount)}개`).join(' · ')}</div></div>`;
         return html.replace(/(<div class="sec"><h2>3단계 · 식단만들기<\/h2>)/,summary+'$1');
       }
     }

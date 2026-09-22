@@ -3,7 +3,7 @@ const index=fs.readFileSync('index.html','utf8');
 const dataSrc=fs.readFileSync('health-schedule-v43.js','utf8');
 const uiSrc=fs.readFileSync('legacy-health-v43.js','utf8');
 new Function(dataSrc);new Function(uiSrc);
-assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v70-manualaudit2'),'v43 audited schedule data must load fresh');
+assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v70-coreflowfix2'),'v43 audited schedule data must load fresh');
 assert(index.includes('legacy-health-v43.js?v=20260916-v43'),'v43 health manager must load');
 assert(index.indexOf('health-schedule-v43.js')<index.indexOf('legacy-health-v43.js'),'schedule data must load before UI');
 const sandbox={window:{}};vm.createContext(sandbox);vm.runInContext(dataSrc,sandbox);

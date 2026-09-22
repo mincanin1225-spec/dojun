@@ -113,19 +113,35 @@ assert.equal(ctx.inventory.beef.qty,60,'make completion must consume exactly 80g
 beefTask=W.makeTasks(W.plan().filter(r=>r.meal.on>='2026-09-21'&&r.meal.on<'2026-09-25'),'2026-09-21').find(x=>x.name==='소고기');
 assert.equal(beefTask.missingG,0,'made amount must immediately satisfy the first-batch prep number');
 
-// 4) 이번 주 사용 -> 다음 주 준비: 먹이기 전/후 다음 주 부족분이 사용량만큼 즉시 변해야 한다.
+// 4) 다음 주 준비는 이번 주의 아직 안 먹은 끼니가 쓸 재고를 먼저 예약한다.
+// 보유 140g(원재료 60 + 준비식 80), 오늘 9/22 기준 이번 주 잔여 6끼=120g.
+// 따라서 다음 주 140g 중 실제로 돌려쓸 수 있는 건 20g뿐이고 부족분은 120g이다.
 ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),0,'before current-week feeding, 140g combined stock should cover next week');
+assert.equal(totalBuy('소고기'),120,'next week must not count stock already reserved for the rest of this week');
+
+// 5) 오늘의 예정 끼니를 먹이면 재고도 20g 줄지만 예약 필요량도 20g 줄기 때문에 다음 주 부족분은 그대로다.
+ctx.__mgWeekTarget='current';
+clickFeed('2026-09-22|0');
+assert.equal(preparedG('소고기'),60,'feeding today must consume its 20g beef component');
+ctx.__mgWeekTarget='next';
+assert.equal(totalBuy('소고기'),120,'a planned remaining meal was already reserved, so feeding it must not double-count the shortage');
+
+// 6) 오늘 먹이기 취소도 재고와 예약량을 함께 되돌려 다음 주 부족분을 유지해야 한다.
+ctx.__mgWeekTarget='current';
+clickFeed('2026-09-22|0');
+assert.equal(preparedG('소고기'),80,'undoing today feed must restore prepared beef');
+ctx.__mgWeekTarget='next';
+assert.equal(totalBuy('소고기'),120,'undoing a reserved meal must keep the same next-week shortage');
+
+// 7) 예약 범위 밖인 지난 끼니를 뒤늦게 기록하면 그만큼 실제 가용재고가 줄어 다음 주 부족분이 증가해야 한다.
 ctx.__mgWeekTarget='current';
 clickFeed('2026-09-21|0');
-assert.equal(preparedG('소고기'),60,'feeding one 120g meal must consume its 20g beef component');
+assert.equal(preparedG('소고기'),60,'late logging a past meal must consume its 20g beef component');
 ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),20,'20g used this week must immediately become 20g next-week shortage');
-
-// 5) 먹이기 취소도 역방향으로 연결되어야 한다.
+assert.equal(totalBuy('소고기'),140,'late consumption outside the reserved window must immediately raise next-week shortage');
 ctx.__mgWeekTarget='current';
 clickFeed('2026-09-21|0');
 ctx.__mgWeekTarget='next';
-assert.equal(totalBuy('소고기'),0,'undoing the feed must restore next-week preparation stock');
+assert.equal(totalBuy('소고기'),120,'undoing the late past feed must restore next-week availability');
 
-console.log('PASS: inventory -> shopping -> make -> feed -> next-week preparation stays numerically linked');
+console.log('PASS: inventory -> shopping -> make -> feed -> reserved next-week preparation stays numerically linked');

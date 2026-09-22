@@ -121,6 +121,9 @@ jobs:
       - name: Core inventory shopping make feed integration
         run: node tests/v70-core-flow-integration.cjs
 
+      - name: Core flow crosscheck regression
+        run: node tests/v70-core-flow-fixes.cjs
+
       - name: Ppeuni-only schedule policy
         run: node tests/v70-ppeuni-only.cjs
 
