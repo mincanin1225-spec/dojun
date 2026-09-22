@@ -10,7 +10,7 @@ assert(core.includes("version:'v69'"),'canonical release must be v61');
 assert(index.includes("v61-photo-inventory-script"),'v61 photo inventory loader missing');
 assert(index.indexOf('v35-management-script')<index.indexOf('v61-photo-inventory-script'),'photo inventory must load after management v35');
 assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61'),'v61 photo inventory cache key missing');
-assert(index.includes('r=20260921-v63'),'v61 shell cache bust missing');
+assert(index.includes('legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v70-coreflowfix2'),'v61 photo inventory release marker missing');
 assert(sw.includes("const CACHE='dojun-pwa-v"),'v61 service worker cache missing');
 
 for(const literal of [
@@ -46,6 +46,7 @@ function run(db,initialInventory){
     pushInventoryDelete(){},
     removeCustomInventoryBackup(){},
     persistInventoryLocal(){db.set('inventory',JSON.stringify(ctx.inventory))},
+    syncPush(k,v){const a=JSON.parse(db.get('syncCalls')||'[]');a.push([k,v]);db.set('syncCalls',JSON.stringify(a))},
     vShop:()=>'<div class="sec"><h2>재료 추가</h2></div>',
     localStorage:{
       getItem:k=>db.has(k)?db.get(k):null,
@@ -91,6 +92,22 @@ assert.equal(prepared[0].unitG,50);
 assert.equal(prepared[0].remainingCount,10);
 assert.equal(prepared[0].mealCode,'M-1');
 assert(!cubes.some(x=>x.ingredient==='잡곡무른죽'),'prepared meal must not be mixed into raw ingredient cubes');
+
+
+const emptyRemote=new Map([
+  ['dj:cubeInventory2','[]'],
+  ['dj:preparedMealInventory1','[]']
+]);
+run(emptyRemote,{});
+assert.deepEqual(JSON.parse(emptyRemote.get('dj:cubeInventory2')),[],'an existing empty synced cube array must not be replaced by the old photo seed');
+assert.deepEqual(JSON.parse(emptyRemote.get('dj:preparedMealInventory1')),[],'an existing empty synced prepared array must not be replaced by the old photo seed');
+assert.equal(emptyRemote.get('dj:photoInventoryImport20260920V61'),'1','existing synced stock keys must retire the old seed on this device');
+
+assert(patch.includes("push('preparedMealInventory1',v)"),'prepared edits must sync to family sharing');
+assert(patch.includes("push('cubeInventory2',v)"),'cube edits must sync to family sharing');
+assert(patch.includes('!isWholeMeal(x)'),'whole-meal lots must be hidden from prepared stock UI');
+assert(patch.includes("replace(/-잔량-\\d+-\\d+$/,'')"),'internal residual code suffix must be hidden');
+assert(!patch.includes('Math.ceil((Number(x.unitG)'),'prepared stock grams must not be rounded up');
 
 run(db,{});
 assert.equal(JSON.parse(db.get('dj:cubeInventory2')).length,16,'one-time import must not duplicate frozen lots');
