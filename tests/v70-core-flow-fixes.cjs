@@ -120,4 +120,31 @@ function harness(opts={}){
   assert(flow.includes('data-v63-edit="component:'),'make rows must retain the recipe confirmation route');
 }
 
+
+// 7) 먹이기는 냉동 준비식/큐브를 우선 쓰고, 부족하면 같은 이름의 원재료 재고까지 이어서 차감한다.
+{
+  const E=require('../meal-stock-v66.js');
+  const state={
+    prepared:[{id:'rice',name:'잡곡무른밥',unitG:100,remainingCount:1,mealCode:'M-r'}],
+    cubes:[{id:'pumpkin-piece',ingredient:'단호박 조각',unitG:10,remainingCount:1,stockCode:'A-p'}],
+    raw:{pumpkin:{displayName:'단호박',unit:'g',qty:10,location:'냉장'}},ops:{},feeds:{}
+  };
+  const meal={key:'2026-09-21|1',name:'잡곡무른밥 · 단호박',g:120,ingredients:[{name:'잡곡무른밥',g:100},{name:'단호박',g:20}]};
+  const fed=E.feed(state,meal,120).state;
+  assert(fed.feeds[meal.key],'feeding receipt must persist');
+  assert.equal(fed.cubes[0].remainingCount,0,'prepared/cube stock should be consumed first');
+  assert.equal(fed.raw.pumpkin.qty,0,'remaining shortage should fall back to raw stock');
+  const undone=E.undoFeed(fed,meal.key).state;
+  assert.equal(undone.cubes[0].remainingCount,1,'undo must restore cube stock');
+  assert.equal(undone.raw.pumpkin.qty,10,'undo must restore raw stock');
+  assert.equal(E.norm('단호박 조각'),'단호박','ready-to-feed suffix variants must normalize to the ingredient name');
+}
+
+// 8) 제공량이 비어 있으면 먹이기 처리 직전에 검증된 식단 기준량을 자동으로 넣는다.
+{
+  const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
+  assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'feed action must apply the meal standard grams when offered amount is blank');
+  assert(flow.includes("el.placeholder='기준 '"),'day sheet should show the standard serving grams as guidance');
+}
+
 console.log('PASS: cross-checked core flow fixes and non-regression paths');
