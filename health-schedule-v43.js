@@ -44,8 +44,8 @@
       {id:'var-1',name:'수두 1회',start:{months:12},end:{months:15},note:'생후 12~15개월'},
       {id:'hib-4',name:'Hib 4차',start:{months:12},end:{months:15},note:'생후 12~15개월'},
       {id:'pcv-4',name:'폐렴구균(PCV) 4차',start:{months:12},end:{months:15},note:'생후 12~15개월'},
-      {id:'hepa-1',name:'A형간염 1차',start:{months:12},end:{months:35},note:'생후 12~35개월 안에 시작'},
-      {id:'hepa-2',name:'A형간염 2차',start:{months:18},end:{months:41},note:'1차 접종 6개월 이후 · 실제 1차 날짜 기준 확인'},
+      {id:'hepa-1',name:'A형간염 1차',start:{months:12},end:{months:23},note:'표준 접종시기 · 생후 12~23개월'},
+      {id:'hepa-2',name:'A형간염 2차',start:{months:18},end:{months:41},afterId:'hepa-1',minMonthsAfter:6,note:'1차 접종 6개월 이상 이후 · 실제 1차 날짜 기준'},
       {id:'je-ij-1',name:'일본뇌염(불활성화) 1차',start:{months:12},end:{months:23},note:'불활성화 백신 선택 시'},
       {id:'je-ij-2',name:'일본뇌염(불활성화) 2차',start:{months:13},end:{months:24},note:'1차 약 1개월 후 · 실제 1차 날짜 기준 확인'},
       {id:'je-ij-3',name:'일본뇌염(불활성화) 3차',start:{months:24},end:{months:35},note:'생후 24~35개월'},
@@ -57,7 +57,7 @@
       {id:'mmr-2',name:'MMR 2차',start:{months:48},end:{months:72},note:'만 4~6세'},
       {id:'je-ij-4',name:'일본뇌염(불활성화) 4차',start:{months:72},end:{months:72},note:'만 6세 · 불활성화 백신 선택 시'},
       {id:'flu-2627-1',name:'2026-2027절기 인플루엔자 1차',absoluteStart:'2026-09-21',absoluteEnd:'2027-04-30',note:'2026.9.16 일정 조정 반영 · 어린이 무료접종'},
-      {id:'flu-2627-2',name:'2026-2027절기 인플루엔자 2차',absoluteStart:'2026-10-19',absoluteEnd:'2027-04-30',note:'2회 접종 대상만 · 1차 후 최소 4주 · 1회 대상이면 해당없음'}
+      {id:'flu-2627-2',name:'2026-2027절기 인플루엔자 2차',absoluteStart:'2026-10-19',absoluteEnd:'2027-04-30',afterId:'flu-2627-1',minDaysAfter:28,note:'2회 접종 대상만 · 실제 1차 후 최소 4주 · 1회 대상이면 해당없음'}
     ]
   };
 })();
