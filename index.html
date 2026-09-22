@@ -17,7 +17,7 @@
 <style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:visible}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v70.html?r=20260922-v70-manualaudit2" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v70.html?r=20260922-v70-ppeunionly1" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app');
@@ -121,16 +121,16 @@
                                             };
                                             const ak=d.createElement('script');
                                             ak.id='v58-ppeuni-data-script';
-                                            ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58';
+                                            ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260922-v70-ppeunionly1';
                                             ak.onload=function(){
                                               const al=d.createElement('script');
                                               al.id='v58-ppeuni-safe-script';
-                                              al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58';
+                                              al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v70-ppeunionly1';
                                               al.onload=function(){
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
-                                                am.src='./meal-stock-v66.js?r=20260922-v66-manualaudit2';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v70-manualaudit2';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
+                                                am.src='./meal-stock-v66.js?r=20260922-v66-ppeunionly1';
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v70-ppeunionly1';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
                                                 am.onerror=loadHealth;
                                                 d.head.appendChild(am);
                                               };
@@ -218,7 +218,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260922-v70-manualaudit2',KEY='dojun-sw-release';
+  const RELEASE='20260922-v70-ppeunionly1',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;

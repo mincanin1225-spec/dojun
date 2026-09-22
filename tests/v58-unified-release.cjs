@@ -10,7 +10,7 @@ assert(index.includes("v58-ppeuni-safe-script"),'safe layer must load');
 assert(index.indexOf('v58-ppeuni-data-script')<index.indexOf('v58-ppeuni-safe-script'),'data must load before safe layer');
 assert(index.includes('ak.onerror=loadHealth')&&index.includes('al.onerror=loadHealth'),'Ppeuni failure must not block the rest of the app');
 assert(!patch.includes('MutationObserver'),'safe layer must not install DOM mutation observers');
-assert(!patch.includes('mObj=function'),'safe layer must not replace the core structured meal object');
+assert(patch.includes('mObj=function(){return null}'),'Ppeuni-only safe layer must suppress generated structured meal objects');
 assert(mg35.includes('__PPEUNI_SCHEDULE_V58'),'management must suppress generated rice only on verified Ppeuni dates');
 assert(mg35.includes('unitMismatch'),'count-only stock must not be treated as precise gram stock');
 
@@ -62,7 +62,9 @@ for(const k of ['소고기','파프리카','비타민채','양배추','닭고기
 }
 assert(!w.OLD,'verified day must not use generated old meal requirements');
 
-console.log('PASS: v57 shows D+291 verified meals and exact late-stage stock without touching mObj');
+assert.equal(ctx.mText('2028-01-01',0),'','unverified future dates must stay blank');
+assert.equal(ctx.mObj?ctx.mObj('2028-01-01',0):null,null,'unverified future dates must not expose generated objects');
+console.log('PASS: D+291 verified meals remain while unverified dates stay blank');
 
 const core=fs.readFileSync('legacy-v24.html','utf8');
 const v36=fs.readFileSync('legacy-outing-v36.js','utf8');

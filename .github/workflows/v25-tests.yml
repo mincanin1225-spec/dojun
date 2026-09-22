@@ -121,5 +121,8 @@ jobs:
       - name: Core inventory shopping make feed integration
         run: node tests/v70-core-flow-integration.cjs
 
+      - name: Ppeuni-only schedule policy
+        run: node tests/v70-ppeuni-only.cjs
+
       - name: Manual audit nutrition ingredients outing
         run: node tests/v70-manual-audit2.cjs
