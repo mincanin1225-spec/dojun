@@ -5,6 +5,19 @@ const outingCleanup=fs.readFileSync('legacy-outing-v41-no-embedded-map.js','utf8
 const outingSeed=fs.readFileSync('legacy-outing-v40-seed.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
+const health=fs.readFileSync('legacy-health-v43.js','utf8');
+const healthData=fs.readFileSync('health-schedule-v43.js','utf8');
+
+assert(shell.includes("if(!birth||Number.isNaN(dob.getTime())||dob>now)"),'Settings must reject missing, invalid, or future child birth dates');
+assert(shell.includes('이 달 섭취기록 지우기'),'destructive log action must name what it actually deletes');
+assert(shell.includes('재고 차감과 식단은 그대로 유지됩니다.'),'clear-log confirmation must state that stock and meal plan remain');
+assert(shell.includes("if(!confirm('백업 내용을 이 기기에 불러올까요?"),'backup import must require confirmation before overwrite');
+
+assert(health.includes("const prior=stateOf(item.afterId,rs)"),'health schedule must use actual recorded prior dose for dependent doses');
+assert(healthData.includes("afterId:'flu-2627-1',minDaysAfter:28"),'flu second dose must be at least 28 days after actual first dose');
+assert(healthData.includes("id:'hepa-1',name:'A형간염 1차',start:{months:12},end:{months:23}"),'HepA first-dose standard window must be 12-23 months');
+assert(healthData.includes("afterId:'hepa-1',minMonthsAfter:6"),'HepA second dose must use actual first-dose date plus at least 6 months');
+assert(health.includes('아이 정보의 생일을 기준으로 검진·접종 시기를 계산해요.'),'health entry must describe the shared child-info DOB source');
 
 assert(shell.includes('let nutWeekCur=monOf(today);'),'nutrition must start on the actual current week');
 assert(shell.includes("if(tab==='nut')nutWeekCur=addD(nutWeekCur,7*(+arg))"),'nutrition week arrows must be independent from management prep week');
@@ -27,6 +40,7 @@ assert(!outingSeed.includes('nominatim.openstreetmap.org'),'outing must not perf
 
 assert(index.includes('legacy-v70.html?r=20260922-v70-manualaudit2'));
 assert(index.includes('legacy-outing-v36.js?v=20260916-v40&r=20260922-v70-manualaudit2'));
+assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v70-manualaudit2'));
 assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v70-manualaudit2'));
 assert(index.includes('legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v70-manualaudit2'));
 assert(index.includes("const RELEASE='20260922-v70-manualaudit2'"));
