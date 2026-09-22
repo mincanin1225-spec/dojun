@@ -506,7 +506,7 @@
      if(undo&&!confirm('먹임 기록을 취소할까요?'))return;
      locked=true;
      // 섭취기록과 완료 체크는 같이 저장되어야 한다. 한쪽만 남으면 "저장했는데 체크가 풀렸다"가 된다.
-     if(!undo&&typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on)){locked=false;return}
+     if(!undo&&typeof saveFeedbackFields==='function'&&!saveFeedbackFields(m.on,slot)){locked=false;return}
      // 먹임 버튼만 눌러도 제공량·섭취량·추가음식이 실제 월 기록과 가족공유에 저장되어야 한다.
      if(!undo&&typeof saveM==='function'){try{Promise.resolve(saveM(m.on)).catch(()=>toast('섭취기록 저장을 다시 확인해 주세요'))}catch(e){}}
      const next={...s,feeds:{...s.feeds}};
@@ -558,12 +558,11 @@
      }
    }catch(e){}
    const saveBtn=holder.querySelector('[data-a="savday:'+on+'"]');if(saveBtn)saveBtn.textContent='기록 저장';
-   // 기준량은 안내(placeholder)로만 보여준다. 값으로 미리 박아두면, 시트를 열어보기만 해도
-   // saveFeedbackFields 가 세 끼니 전부에 offered_g 를 저장해 주지도 않은 끼니가 기록으로 남는다.
-   // 실제 값은 '먹임 기록'을 누를 때 그 끼니에만 채워진다.
-   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0)el.placeholder='기준 '+(Math.round(g*10)/10)+'g';})}catch(e){}
+   // 화면에는 기준 제공량을 실제 값으로 넣어 타이핑을 없앤다.
+   // 다만 자동으로 넣은 값은 data-auto-offered 로 표시해, 먹임/입력 없이 시트를 열어본 것만으로 로그가 생기지 않게 한다.
+   try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0){const v=String(Math.round(g*10)/10);el.value=v;el.dataset.autoOffered='1';el.dataset.standardOffered=v;if(!el.dataset.autoOfferedBound){el.dataset.autoOfferedBound='1';el.addEventListener('input',()=>{delete el.dataset.autoOffered})}}})}catch(e){}
    const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';
-   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>은 비워두면 <b>먹임 기록</b>을 누를 때 식단 기준합계가 들어가요. 다르게 준 날만 고치고 <b>실제 섭취량</b>을 입력하면 됩니다. 치즈·바나나처럼 곁들인 음식은 각 끼니의 <b>추가로 먹인 것</b>에 자유롭게 적어주세요. 이 기록은 재고를 줄이지 않아요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'먹임 기록 취소':'먹임 기록')+'</button>':''}).join('')+'</div>';
+   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>은 식단 기준합계가 처음부터 입력돼 있어요. 실제로 다르게 준 날만 고치고 <b>실제 섭취량</b>만 입력하면 됩니다. 치즈·바나나처럼 곁들인 음식은 각 끼니의 <b>추가로 먹인 것</b>에 자유롭게 적어주세요. 화면을 열어보기만 한 끼니는 기록으로 저장되지 않아요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'먹임 기록 취소':'먹임 기록')+'</button>':''}).join('')+'</div>';
    holder.querySelector('#v63-feed')?.remove();
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
