@@ -8,6 +8,9 @@ const sw=fs.readFileSync('sw.js','utf8');
 const health=fs.readFileSync('legacy-health-v43.js','utf8');
 const healthData=fs.readFileSync('health-schedule-v43.js','utf8');
 
+assert(shell.includes("let settings={name:'도준이',birth:''};"),'source defaults must not contain a private child birth date');
+assert(shell.includes("if(needsChildSetup){tab='set'"),'fresh installs without a valid birth date must open Settings first');
+assert(shell.includes('아이 정보를 먼저 설정해 주세요'),'first-use settings must explain why child info is required');
 assert(shell.includes("if(!birth||Number.isNaN(dob.getTime())||dob>now)"),'Settings must reject missing, invalid, or future child birth dates');
 assert(shell.includes('이 달 섭취기록 지우기'),'destructive log action must name what it actually deletes');
 assert(shell.includes('재고 차감과 식단은 그대로 유지됩니다.'),'clear-log confirmation must state that stock and meal plan remain');
