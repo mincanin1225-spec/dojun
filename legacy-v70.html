@@ -218,7 +218,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v72'});
+window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v73'});
 const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
@@ -1309,7 +1309,7 @@ document.addEventListener('click',async e=>{
     for(let i=0;i<7;i++){const on=addD(base,i);await ensureM(+on.slice(0,4),+on.slice(5,7))}
     return render()}
   if(cmd==='day'){await ensureM(+arg.slice(0,4),+arg.slice(5,7));return sheetDay(arg)}
-  if(cmd==='rec'){e.stopPropagation();const[on,s,c]=arg.split('|');if(sheetOpen&&sheet.querySelector('[data-offered]')&&!saveFeedbackFields(on))return;return setRec(on,s,c)}
+  if(cmd==='rec'){e.stopPropagation();const[on,s,c]=arg.split('|');if(sheetOpen&&sheet.querySelector('[data-offered]')&&!saveFeedbackFields(on,s))return;return setRec(on,s,c)}
   if(cmd==='fd'){const[k,s]=arg.split('|');return setFood(k,s)}
   if(cmd==='fdopen')return sheetFood(arg);
   if(cmd==='chk'){const l=shopChk[shopBatch().key]||(shopChk[shopBatch().key]=[]);
@@ -1618,19 +1618,20 @@ function feedbackFields(on,i,l,m){
     <div class="fld"><label for="form-${slot}">${esc(m.main.fn)} 형태</label><select id="form-${slot}" data-formreaction="${slot}">${options(l.formReaction)}</select></div>
     ${keys.map(k=>`<div class="fld"><label for="ing-${slot}-${k}">${esc(invName(k))}</label><select id="ing-${slot}-${k}" data-ingredient="${slot}|${k}">${options(l.ingredients?.[k])}</select></div>`).join('')}</details>`:''}`;
 }
-function saveFeedbackFields(on){
+function saveFeedbackFields(on,forceSlot=''){
   const pending={};
   for(const el of sheet.querySelectorAll('[data-offered]')){
     const slot=el.dataset.offered,o=el.value.trim(),e=sheet.querySelector(`[data-eaten="${slot}"]`).value.trim();
     if((o&&(!Number.isFinite(+o)||+o<0))||(e&&(!o||!Number.isFinite(+e)||+e<0||+e>+o))){toast('섭취량은 제공량 이하로 입력해 주세요');return false}
-    const cur={...(lg(on)[slot]||{})};
-    if(o)cur.offered_g=+o;else delete cur.offered_g;
+    const cur={...(lg(on)[slot]||{})},auto=el.dataset.autoOffered==='1';
     if(e)cur.eaten_g=+e;else delete cur.eaten_g;
     const extra=sheet.querySelector(`[data-extra="${slot}"]`);if(extra&&extra.value.trim())cur.extra_foods=extra.value.trim();else delete cur.extra_foods;
     const f=sheet.querySelector(`[data-formreaction="${slot}"]`);
     if(f){cur.formReaction=f.value;cur.ingredients={};
       sheet.querySelectorAll('[data-ingredient]').forEach(x=>{const[s,k]=x.dataset.ingredient.split('|');if(s===slot&&x.value)cur.ingredients[k]=x.value})}
     const memo=sheet.querySelector(`[data-memo="${slot}"]`);if(memo)cur.memo=memo.value.trim();
+    const hasEntered=!!(e||(extra&&extra.value.trim())||(f&&f.value)||(memo&&memo.value.trim())||Object.keys(cur.ingredients||{}).length);
+    if(o&&(!auto||forceSlot===slot||hasEntered))cur.offered_g=+o;else if(auto&&forceSlot!==slot&&!hasEntered)delete cur.offered_g;else if(!o)delete cur.offered_g;
     captureMeal(on,slot,cur);pending[slot]=cur;
   }
   if(Object.keys(pending).length){const M=fixM(months[mk(on)]),L=M.d.logs[on]||(M.d.logs[on]={});
