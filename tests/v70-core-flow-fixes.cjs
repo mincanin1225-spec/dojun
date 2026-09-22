@@ -199,4 +199,20 @@ function harness(opts={}){
   assert(flow.includes("offeredEl.value=String(Math.round(Number(m.g)*10)/10)"),'pressing 먹임 기록 must fill that one meal with the standard total');
 }
 
+// 12) 먹임 기록은 plan/makeTasks의 필요량을 절대 줄이지 않는다.
+{
+  const E=require('../meal-stock-v66.js');
+  const meal={key:'2026-09-22|0',name:'소고기',g:20,ingredients:[{name:'소고기',g:20}]};
+  const base={prepared:[],cubes:[],raw:{},ops:{},recipes:{},feeds:{}};
+  const before=E.plan([meal],base)[0];
+  const after=E.plan([meal],{...base,feeds:{[meal.key]:{name:'소고기',used:[],at:1}}})[0];
+  assert.deepEqual(after.needs,before.needs,'feeding history must not suppress planning needs');
+  assert.deepEqual(after.used,before.used,'feeding history must not change stock allocation');
+}
+{
+  const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
+  assert(!flow.includes('if(r.fed||!r.meal)continue'),'makeTasks must not skip a meal because it was fed');
+  assert(flow.includes("Promise.resolve(saveM(m.on))"),'먹임 기록 button must persist offered/eaten/extra fields with saveM');
+}
+
 console.log('PASS: cross-checked core flow fixes and non-regression paths');

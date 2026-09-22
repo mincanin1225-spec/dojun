@@ -1,4 +1,4 @@
-const CACHE='dojun-pwa-v71-recordonly3';
+const CACHE='dojun-pwa-v72-recordonly4';
 const CORE=[
   './meal-stock-v66.js','./meal-workflow-v70.js','./legacy-inventory-v61-photo.js',
   './','./index.html','./manifest.webmanifest','./legacy-v70.html',

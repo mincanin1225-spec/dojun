@@ -51,7 +51,7 @@
       return [{...x,buyG:t.left}];
     }
     for(const m of meals){
-      if(state.feeds&&state.feeds[m.key]){out.push({meal:m,fed:true,needs:[],used:[]});continue;}
+      // 먹임 기록은 선호/섭취 기록일 뿐 장보기·만들기 필요량 계산에는 영향을 주지 않는다.
       const r=mealNeed(m,rows),needs=[];
       for(const x of r.needs)needs.push(...allocate(x,r.used));
       out.push({meal:m,needs,used:r.used});

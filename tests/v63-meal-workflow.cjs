@@ -33,9 +33,11 @@ test('cook undo refuses after the prepared output was used',()=>{
  const m={key:'served|0',name:'테스트 메뉴',g:20,ingredients:[{name:'양배추퓨레',g:20}]};
  s=E.feed(s,m).state;assert.throws(()=>E.undoCook(s,'op1'),/사용·수정/);
 });
-test('feed is idempotent, consumes individual prepared components, undo restores grams',()=>{
+test('feed engine is idempotent and undo restores grams, while planning ignores feed history',()=>{
  let s=stocked();s=E.feed(s,menu()).state;assert.equal(total(s,'잡곡무른밥'),400);assert.equal(total(s,'양배추'),40);
- assert.deepEqual(E.feed(s,menu()).state,s);assert(E.plan([menu()],s)[0].fed);s=E.undoFeed(s,menu().key).state;assert.equal(total(s,'잡곡무른밥'),500);assert.equal(total(s,'양배추'),60);assert(!s.feeds[menu().key]);
+ assert.deepEqual(E.feed(s,menu()).state,s);
+ const planned=E.plan([menu()],s)[0];assert(!planned.fed);assert(planned.needs.length||planned.used.length,'planning must still calculate the meal even when a feed receipt exists');
+ s=E.undoFeed(s,menu().key).state;assert.equal(total(s,'잡곡무른밥'),500);assert.equal(total(s,'양배추'),60);assert(!s.feeds[menu().key]);
 });
 test('feeding uses the offered total grams and undo restores them',()=>{
  let s=stocked();s=E.feed(s,menu(),80).state;

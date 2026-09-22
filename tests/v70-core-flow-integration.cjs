@@ -120,11 +120,12 @@ assert.equal(totalBuy('소고기'),0,'next week planning must use the stock that
 
 // 5) 먹이기는 기록일 뿐이다. 체크해도 재고는 1g도 움직이지 않아야 한다.
 ctx.__mgWeekTarget='current';
-const rawBefore=ctx.inventory.beef.qty,prepBefore=preparedG('소고기');
+const rawBefore=ctx.inventory.beef.qty,prepBefore=preparedG('소고기'),buyBeforeFeed=totalBuy('소고기');
 clickFeed('2026-09-22|0');
 assert.equal(preparedG('소고기'),prepBefore,'feeding must not touch prepared stock');
 assert.equal(ctx.inventory.beef.qty,rawBefore,'feeding must not touch raw stock');
 assert(W.snapshot().feeds['2026-09-22|0'],'feeding must be recorded');
+assert.equal(totalBuy('소고기'),buyBeforeFeed,'feeding must not change current-week shopping or make demand');
 ctx.__mgWeekTarget='next';
 assert.equal(totalBuy('소고기'),0,'a feeding record must not change any shopping number');
 
