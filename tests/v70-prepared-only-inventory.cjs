@@ -21,6 +21,6 @@ assert(flow.includes('!E.isWholeMealLot(x)'),'prepared summaries must exclude wh
 
 assert(index.includes('meal-stock-v66.js?r=20260922-v66-recordonly5'));
 assert(index.includes('meal-workflow-v70.js?r=20260922-v73-recordonly5'));
-assert(index.includes("const RELEASE='20260922-v73-recordonly5'"));
-assert(sw.includes("const CACHE='dojun-pwa-v73-recordonly5'"));
+assert(index.includes("const RELEASE='20260922-v74-bootgate1'"));
+assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"));
 console.log('PASS: only individually prepared foods can be active inventory');
