@@ -29,6 +29,9 @@ assert(!flow.includes("batchPrep('1차"),'active prep screen must not render the
 assert(!flow.includes('E.feed(s,m,offered)'),'feeding must not deduct stock — stock only moves at the make step');
 assert(!flow.includes('E.undoFeed(s,m.key)'),'un-feeding must not restore stock');
 assert(flow.includes('next.feeds[m.key]={name:m.name'),'feeding must record the meal without touching stock');
+assert(flow.includes("Promise.resolve(saveM(m.on))"),'feeding must persist feedback fields immediately');
+assert(!flow.includes('if(r.fed||!r.meal)continue'),'make checklist must ignore feed history');
+assert(!fs.readFileSync('meal-stock-v66.js','utf8').includes('if(state.feeds&&state.feeds[m.key])'),'stock planning must ignore feed history');
 assert(flow.includes("el.placeholder='기준 '"),'offered grams must be shown as guidance, not written in on open');
 assert(!flow.includes("el.value=String(Math.round(g*10)/10)"),'opening a day must not stamp offered grams onto meals that were never given');
 assert(shell.includes('data-extra="${slot}"'),'each meal must have a free-text extra-food field');
