@@ -3,7 +3,7 @@
   var V=root.PpeuniVerifiedV49;
   if(!V||typeof mText!=='function'||typeof sheetDay!=='function'||typeof weekList!=='function')return;
 
-  var oldText=mText, oldSheetDay=sheetDay, oldWeek=weekList;
+  var oldText=mText, oldObj=typeof mObj==='function'?mObj:null, oldSheetDay=sheetDay, oldWeek=weekList;
   var oldCapture=typeof captureMeal==='function'?captureMeal:null;
   var oldNut=typeof vNut==='function'?vNut:null;
   var oldSheetBatch=typeof sheetBatch==='function'?sheetBatch:null;
@@ -61,9 +61,13 @@
   mText=function(on,i){
     var x=manual(on,i); if(x!==null)return x;
     var e=entry(on); if(e&&e.meals&&e.meals[i])return mealText(e.meals[i]);
-    return oldText(on,i);
+    return '';
   };
   root.mText=mText;
+  if(oldObj){
+    mObj=function(){return null};
+    root.mObj=mObj;
+  }
 
   if(oldCapture){
     captureMeal=function(on,slot,log){
@@ -74,7 +78,7 @@
         delete log.formKey;
         return;
       }
-      return oldCapture(on,slot,log);
+      return;
     };
     root.captureMeal=captureMeal;
   }
@@ -109,19 +113,15 @@
 
   weekList=function(start,count){
     count=count||7;
-    if(!hasVerified(start,count))return oldWeek(start,count);
     var t={};
     function add(name,c,g,n){
       name=String(name||'').trim(); if(!name)return;
       if(!t[name])t[name]={c:c,g:0,n:0};
       t[name].g+=Number(g)||0; t[name].n+=Number(n)||0;
     }
-    function merge(obj){
-      Object.keys(obj||{}).forEach(function(k){var v=obj[k]||{};add(k,v.c,Number(v.g)||0,Number(v.n)||0)});
-    }
     for(var q=0;q<count;q++){
       var on=addD(start,q),e=entry(on);
-      if(!e){merge(oldWeek(on,1));continue}
+      if(!e)continue
       e.meals.forEach(function(m){
         if(e.stage==='complete'){add(mealText(m)+' · 원본 레시피','e',0,1);return}
         if(PLAIN_BASE.has(m.base))add('밥 (조리 후)','e',100,0);
@@ -139,16 +139,16 @@
 
   if(oldNut){
     vNut=function(){
-      if(!hasVerified(weekCur,7))return oldNut();
-      var end=P(addD(weekCur,6)),rows='';
+      var end=P(addD(weekCur,6)),rows='',verifiedDays=0;
       for(var i=0;i<7;i++){
-        var on=addD(weekCur,i),e=entry(on); if(!e)continue;
+        var on=addD(weekCur,i),e=entry(on); if(!e)continue; verifiedDays++;
         rows+='<div class="meal" style="display:block"><b>'+ (P(on).getMonth()+1)+'/'+P(on).getDate()+' ('+WD[P(on).getDay()]+')</b>'
           +'<div style="margin-top:6px">'+e.meals.map(function(m,j){return '<div style="display:grid;grid-template-columns:38px 1fr;gap:7px;padding:3px 0"><span class="hint" style="color:var(--mint);font-weight:800">'+['아침','점심','저녁'][j]+'</span><span>'+esc(mealText(m))+'</span></div>'}).join('')+'</div></div>';
       }
       return '<div class="sec"><div class="nav"><button class="rd" data-a="wk:-1">‹</button><b>'+(P(weekCur).getMonth()+1)+'/'+P(weekCur).getDate()+' – '+(end.getMonth()+1)+'/'+end.getDate()+'</b><button class="rd" data-a="wk:1">›</button></div></div>'
-        +'<div class="sec"><h2>뿐이 원본 식단</h2><span class="more">영양 자동계산 보류</span></div><div class="card">'+rows+'</div>'
-        +'<p class="hint" style="margin:10px 2px 0">원본 14장에 없는 영양 수치는 생성하지 않습니다.</p>';
+        +(verifiedDays
+          ?'<div class="sec"><h2>뿐이 원본 식단</h2><span class="more">영양 자동계산 보류</span></div><div class="card">'+rows+'</div><p class="hint" style="margin:10px 2px 0">원본 14장에 없는 영양 수치는 생성하지 않습니다.</p>'
+          :'<div class="card"><b>뿐이 원본 식단이 없는 기간이에요.</b><p class="hint" style="margin:6px 0 0">앱에서 임의 식단을 자동 생성하지 않습니다.</p></div>');
     };
     root.vNut=vNut;
   }
@@ -156,7 +156,7 @@
   if(oldSheetBatch){
     sheetBatch=function(start,count){
       count=count||7;
-      if(!hasVerified(start,count))return oldSheetBatch(start,count);
+      if(!hasVerified(start,count)){open('<h2>뿐이 식단 만들기</h2><div class="card"><b>원본 식단이 없는 기간이에요.</b><p class="hint" style="margin:6px 0 0">자동 생성 식단은 사용하지 않습니다.</p></div><div class="btnrow"><button class="btn" data-a="close">닫기</button></div>');return}
       var html='<h2>뿐이 식단 만들기</h2><p class="hint">원본에서 확인된 분량만 표시합니다. 후기3의 20~25g 범위와 복합메뉴는 실제 사용량 확인 전 자동 재고차감하지 않습니다.</p>';
       for(var q=0;q<count;q++){
         var on=addD(start,q),e=entry(on); if(!e)continue;
@@ -183,6 +183,6 @@
     })().catch(function(){toast('저장 중 오류가 났어요')});
   },true);
 
-  root.__PPEUNI_SCHEDULE_V58={entry:entry,dplus:dplus,source:V.source,minD:V.minD,maxD:V.maxD};
+  root.__PPEUNI_SCHEDULE_V58={entry:entry,dplus:dplus,source:V.source,minD:V.minD,maxD:V.maxD,policy:'ppeuni_only'};
   try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);
