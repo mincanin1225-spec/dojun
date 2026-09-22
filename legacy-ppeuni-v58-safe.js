@@ -85,7 +85,14 @@
 
   sheetDay=function(on){
     var e=entry(on);
-    if(!e||isDel(on))return oldSheetDay(on);
+    if(!e){
+      var d0=P(on);
+      open('<h2>'+ (d0.getMonth()+1)+'월 '+d0.getDate()+'일 '+WD[d0.getDay()]+'요일</h2>'
+        +'<div class="card"><b>뿐이 원본 식단이 없는 날짜예요.</b><p class="hint" style="margin:6px 0 0">앱에서 임의 식단을 자동 생성하지 않습니다.</p></div>'
+        +'<div class="btnrow"><button class="btn" data-a="close">닫기</button></div>');
+      return;
+    }
+    if(isDel(on))return oldSheetDay(on);
     var d=P(on),L=lg(on),A=stage(on),slots=['b','l','d'],labels=['아침','점심','저녁'];
     var meals=e.meals.map(function(m,i){
       var l=L[slots[i]]||{},custom=manual(on,i),title=custom!==null?custom:mealText(m);
