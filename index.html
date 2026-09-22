@@ -14,19 +14,35 @@
 <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icons/icon-192.svg">
 <title>도준이키우기</title>
-<style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:visible}</style>
+<style>html,body{margin:0;height:100%;background:#FFF8F1}#app{border:0;width:100%;height:100dvh;display:block;visibility:hidden;opacity:0;pointer-events:none}#boot{position:fixed;inset:0;display:grid;place-items:center;background:#FFF8F1;color:#7C7065;font:700 14px -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;z-index:2}</style>
 </head>
 <body>
-<iframe id="app" src="./legacy-v70.html?r=20260922-v73-recordonly5" title="도준이키우기"></iframe>
+<div id="boot">도준이키우기 불러오는 중…</div>
+<iframe id="app" src="./legacy-v70.html?r=20260922-v74-bootgate1" title="도준이키우기"></iframe>
 <script>
 (function(){
-  const frame=document.getElementById('app');
-  function reveal(){frame.style.visibility='visible'}
+  const frame=document.getElementById('app'),boot=document.getElementById('boot');
+  let inventoryReady=false,workflowReady=false,failed=false;
+  function reveal(){
+    if(failed||!inventoryReady||!workflowReady)return;
+    frame.style.visibility='visible';frame.style.opacity='1';frame.style.pointerEvents='auto';
+    if(boot)boot.style.display='none';
+  }
+  function failBoot(){
+    failed=true;
+    if(boot)boot.textContent='앱을 불러오지 못했어요 · 앱을 완전히 종료한 뒤 다시 열어 주세요';
+  }
+  const bootTimer=setTimeout(failBoot,8000);
+  function readyPart(which){
+    if(which==='inventory')inventoryReady=true;
+    if(which==='workflow')workflowReady=true;
+    if(inventoryReady&&workflowReady){clearTimeout(bootTimer);const d=frame.contentDocument;if(d?.documentElement)d.documentElement.dataset.dojunReady='1';reveal()}
+  }
   function inject(){
     const d=frame.contentDocument;
     if(!d||!d.head)return;
-    setTimeout(reveal,2500);
-    if(d.getElementById('v29-management-script'))return reveal();
+    if(d.documentElement?.dataset?.dojunReady==='1'){inventoryReady=true;workflowReady=true;clearTimeout(bootTimer);return reveal()}
+    if(d.getElementById('v29-management-script'))return;
     const s=d.createElement('script');
     s.id='v29-management-script';
     s.src='./legacy-management-v29.js?v=20260916-v40&r=20260921-v63';
@@ -62,6 +78,8 @@
                     const vi=d.createElement('script');
                     vi.id='v61-photo-inventory-script';
                     vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v73-recordonly5';
+                    vi.onload=function(){readyPart('inventory')};
+                    vi.onerror=failBoot;
                     d.head.appendChild(vi);
                     const x=d.createElement('script');
                     x.id='v36-outing-script';
@@ -111,7 +129,6 @@
                                           aj.id='v47-ui-script';
                                           aj.src='./legacy-ui-v47.js?v=20260916-v47&r=20260921-v63';
                                           aj.onload=function(){
-                                            reveal();
                                             const loadHealth=function(){
                                               if(d.getElementById('v46-health-import-script'))return;
                                               const ai=d.createElement('script');
@@ -130,14 +147,14 @@
                                                 const am=d.createElement('script');
                                                 am.id='v63-meal-stock-script';
                                                 am.src='./meal-stock-v66.js?r=20260922-v66-recordonly5';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v73-recordonly5';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
-                                                am.onerror=loadHealth;
+                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v73-recordonly5';ui.onload=function(){loadHealth();readyPart('workflow')};ui.onerror=failBoot;d.head.appendChild(ui)};
+                                                am.onerror=failBoot;
                                                 d.head.appendChild(am);
                                               };
-                                              al.onerror=loadHealth;
+                                              al.onerror=failBoot;
                                               d.head.appendChild(al);
                                             };
-                                            ak.onerror=loadHealth;
+                                            ak.onerror=failBoot;
                                             d.head.appendChild(ak);
                                           };
                                           d.head.appendChild(aj);
@@ -181,7 +198,7 @@
     d.head.appendChild(s);
   }
   frame.addEventListener('load',inject);
-  try{inject()}catch(e){reveal()}
+  try{inject()}catch(e){failBoot()}
 })();
 </script>
 <script>
@@ -218,7 +235,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260922-v73-recordonly5',KEY='dojun-sw-release';
+  const RELEASE='20260922-v74-bootgate1',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;
