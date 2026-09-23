@@ -14,6 +14,10 @@ assert(safe.includes('if(!e)continue'),'shopping/prep week list must skip non-Pp
 assert(!safe.includes('return oldWeek(start,count)'),'week planning must never fall back to synthetic meals');
 assert(safe.includes('앱에서 임의 식단을 자동 생성하지 않습니다.'),'out-of-range dates must explain the blank state');
 assert(safe.includes("policy:'ppeuni_only'"),'runtime schedule policy must be explicit');
+assert(shell.includes("m0=mObj(on,0),hasPlan=hasAny(on)"),'calendar must determine meal-plan presence independently of mObj because Ppeuni intentionally nulls mObj');
+assert(shell.includes("hasPlan?' hasplan':''"),'verified meal-plan dates must receive a visible calendar state');
+assert(shell.includes('class="planmark" title="식단 있음"'),'planned dates must show a dedicated meal-plan marker');
+assert(shell.includes("hasPlan||hasRecord?"),'empty dates must not show three meaningless reaction dots');
 
 const docEvents={};
 const ctx={
@@ -39,8 +43,8 @@ assert.equal(ctx.mObj('2028-01-01',0),null,'2028 must not expose cached syntheti
 assert.deepEqual(JSON.parse(JSON.stringify(ctx.weekList('2028-01-03',7))),{},'future shopping/prep must be empty outside Ppeuni source range');
 
 assert(index.includes('legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v73-recordonly5'),'Ppeuni-only patch must load with a fresh cache key');
-assert(index.includes("const RELEASE='20260923-v75-prepflow1'"),'release marker must refresh');
-assert(sw.includes("const CACHE='dojun-pwa-v75-prepflow1'"),'PWA cache must refresh');
+assert(index.includes("const RELEASE='20260923-v76-calmark1'"),'release marker must refresh');
+assert(sw.includes("const CACHE='dojun-pwa-v76-calmark1'"),'PWA cache must refresh');
 assert(sw.includes("'/legacy-ppeuni-v58-safe.js'"),'Ppeuni policy script must be network-first');
 
 console.log('PASS: only verified Ppeuni schedules survive; 2028 auto menus are suppressed');
