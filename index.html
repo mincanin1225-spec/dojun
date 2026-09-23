@@ -32,7 +32,9 @@
     failed=true;
     if(boot)boot.textContent='앱을 불러오지 못했어요 · 앱을 완전히 종료한 뒤 다시 열어 주세요';
   }
-  const bootTimer=20260923-v78-fastboot1'inventory')inventoryReady=true;
+  const bootTimer=setTimeout(failBoot,8000);
+  function readyPart(which){
+    if(which==='inventory')inventoryReady=true;
     if(which==='workflow')workflowReady=true;
     if(inventoryReady&&workflowReady){clearTimeout(bootTimer);const d=frame.contentDocument;if(d?.documentElement)d.documentElement.dataset.dojunReady='1';reveal()}
   }
@@ -54,26 +56,42 @@
                         ui.id='v63-meal-workflow-script';
                         ui.src='./meal-workflow-v70.js?r=20260923-v78-fastboot1';
                         ui.onload=function(){readyPart('workflow')};
-                        ui.onerror=20260923-v78-fastboot1'v63-meal-stock-script'))return loadWorkflow();
+                        ui.onerror=failBoot;
+                        d.head.appendChild(ui);
+                      };
+                      const loadStock=function(){
+                        if(d.getElementById('v63-meal-stock-script'))return loadWorkflow();
                         const am=d.createElement('script');
                         am.id='v63-meal-stock-script';
                         am.src='./meal-stock-v66.js?r=20260923-v78-fastboot1';
                         am.onload=loadWorkflow;
-                        am.onerror=20260923-v78-fastboot1'v58-ppeuni-safe-script'))return loadStock();
+                        am.onerror=failBoot;
+                        d.head.appendChild(am);
+                      };
+                      const loadSafe=function(){
+                        if(d.getElementById('v58-ppeuni-safe-script'))return loadStock();
                         const al=d.createElement('script');
                         al.id='v58-ppeuni-safe-script';
                         al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260923-v78-fastboot1';
                         al.onload=loadStock;
-                        al.onerror=20260923-v78-fastboot1'v58-ppeuni-data-script'))return loadSafe();
+                        al.onerror=loadStock;
+                        d.head.appendChild(al);
+                      };
+                      if(d.getElementById('v58-ppeuni-data-script'))return loadSafe();
                       const ak=d.createElement('script');
                       ak.id='v58-ppeuni-data-script';
                       ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260923-v78-fastboot1';
                       ak.onload=loadSafe;
-                      ak.onerror=20260923-v78-fastboot1'script');
+                      ak.onerror=loadSafe;
+                      d.head.appendChild(ak);
+                    };
+                    const vi=d.createElement('script');
                     vi.id='v61-photo-inventory-script';
                     vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260923-v78-fastboot1';
                     vi.onload=function(){readyPart('inventory');loadMealCore()};
-                    vi.onerror=20260923-v78-fastboot1'script');
+                    vi.onerror=failBoot;
+                    d.head.appendChild(vi);
+                    const x=d.createElement('script');
                     x.id='v36-outing-script';
                     x.src='./legacy-outing-v36.js?v=20260916-v40&r=20260923-v78-fastboot1';
                     x.onload=function(){
@@ -152,7 +170,10 @@
                     d.head.appendChild(x);
 
     };
-    mg.onerror=20260923-v78-fastboot1'load',inject);
+    mg.onerror=failBoot;
+    d.head.appendChild(mg);
+  }
+  frame.addEventListener('load',inject);
   try{inject()}catch(e){failBoot()}
 })();
 </script>
