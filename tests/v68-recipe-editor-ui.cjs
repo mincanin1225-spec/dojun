@@ -15,9 +15,9 @@ assert(flow.includes("fd.getAll('ingredientName')")&&flow.includes("fd.getAll('i
 assert(flow.includes('data-v70-save-recipe'),'recipe-only save must remain available for pre-shopping quantity setup');
 assert(flow.includes('data-v68-recipe-cancel'),'unified cooking screen must provide cancel action');
 assert(flow.includes('2 · 만드는 법'),'steps section missing');
-assert(index.includes('./legacy-v70.html?r=20260923-v77-mealvisual1'),'active shell must remain v70');
-assert(index.includes('./meal-workflow-v70.js?r=20260923-v76-calmark1'),'active workflow must remain v70');
+assert(index.includes('./legacy-v70.html?r=20260923-v78-fastboot1'),'active shell must remain v70');
+assert(index.includes('./meal-workflow-v70.js?r=20260923-v78-fastboot1'),'active workflow must remain v70');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'PWA must cache active files');
-assert(sw.includes("const CACHE='dojun-pwa-v77-mealvisual1'"),'unified cooking cache marker missing');
-assert(shell.includes("name:'도준이키우기',version:'v77'"),'settings version must remain v70');
+assert(sw.includes("const CACHE='dojun-pwa-v78-fastboot1'"),'unified cooking cache marker missing');
+assert(shell.includes("name:'도준이키우기',version:'v78'"),'settings version must remain v70');
 console.log('PASS: structured recipe editing is preserved inside the unified cooking screen');
