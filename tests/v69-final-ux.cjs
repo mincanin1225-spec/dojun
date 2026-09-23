@@ -6,7 +6,7 @@ const shell=fs.readFileSync('legacy-v70.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 new Function(flow);new Function(mg35);
 
-for(const t of ['1 · 재고','2 · 장보기','3 · 만들기','4 · 먹이기·기록']){
+for(const t of ['1 · 재고','2 · 장보기','3 · 만들기','4 · 남은 재고']){
   assert(flow.includes(t),t+' missing from active workflow navigation');
   assert(mg35.includes(t),t+' missing from stock navigation');
 }
@@ -21,8 +21,8 @@ assert(!flow.includes("<p class=\"hint\">'+esc(m.source)"),'repeated recipe-sour
 assert(flow.includes('data-v71-makecheck'),'step 3 must use a shopping-like make checklist');
 assert(flow.includes('data-v71-makeg'),'step 3 must allow changing only the actual made amount');
 assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 완료·소분</button>'),'prep cards must not expose the old split actions');
-assert(index.includes('./legacy-v70.html?r=20260922-v74-bootgate1'),'index must load v69 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260922-v73-recordonly5'),'index must load v69 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v74'"),'canonical version must be v69');
+assert(index.includes('./legacy-v70.html?r=20260923-v75-prepflow1'),'index must load v69 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260923-v75-prepflow1'),'index must load v69 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v75'"),'canonical version must be v69');
 assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"),'v69 cache missing');
 console.log('PASS: final UX is a four-step flow with compact prep cards and separated feeding');
