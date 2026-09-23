@@ -199,7 +199,7 @@
    let p=plan();if(syncCheckedShoppingStock(p))p=plan();let html=nav()+'<div class="sec"><h2>2단계 · 장보기</h2><span class="more">부족한 원재료만</span></div><p class="hint">이미 있는 재고는 빼고 실제로 사야 할 재료만 보여줘요. <b>구매완료 체크 시 표시된 구매량이 원재료 재고에 자동 반영</b>되어 3단계에서 바로 사용할 수 있어요. 실제 산 양이 다르면 1단계에서 수량만 수정하세요.</p>';
    for(const [label,a,b]of [['1차 · 월~목',0,4],['2차 · 금~일',4,7]]){
      const start=addD(target(),a),totals=batchShoppingTotals(start,addD(target(),b),p);
-     const rows=Object.entries(totals).filter(([,v])=>v.g>1e-6||v.unknown);
+     const rows=Object.entries(totals).filter(([,v])=>v.purchaseOnly||v.g>1e-6||v.unknown);
      const done=rows.filter(([n])=>shopChecked(start,n)).length,allDone=!rows.length||done===rows.length;
      html+='<div class="card" style="margin-top:12px">'
        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">'+label+' 부족분</h3><span class="chip sm '+(allDone?'ok':'')+'">'+(rows.length?(allDone?'장보기 완료':'장보기 미완료 '+done+'/'+rows.length):'장보기 완료 · 추가 구매 없음')+'</span></div>'
@@ -479,7 +479,7 @@
          return toast(back.rolledBack?'구매완료를 취소하고 자동 반영 재고도 되돌렸어요':'구매 체크만 취소했어요 · 이미 사용·수정된 재고는 유지했어요');
        }
        const start=shop.getAttribute('data-v63-shopall'),key=shopKey(start),p=plan(),end=addD(start,start===target()?4:3),totals=batchShoppingTotals(start,end,p),
-         entries=Object.entries(totals).filter(([,v])=>v.g>1e-6||v.unknown),names=entries.map(([n])=>n),cur=shopChk[key]||(shopChk[key]=[]),all=names.length>0&&names.every(n=>cur.includes(n));
+         entries=Object.entries(totals).filter(([,v])=>v.purchaseOnly||v.g>1e-6||v.unknown),names=entries.map(([n])=>n),cur=shopChk[key]||(shopChk[key]=[]),all=names.length>0&&names.every(n=>cur.includes(n));
        if(all){
          for(const n of names){const i=cur.indexOf(n);if(i>=0)cur.splice(i,1);rollbackPurchasedStock(start,n)}
          saveShopChecks();render(true);return toast('구매완료를 취소했어요');
