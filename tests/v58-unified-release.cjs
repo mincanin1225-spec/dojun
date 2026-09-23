@@ -3,7 +3,16 @@ const data=fs.readFileSync('src/ppeuni-verified-v49.js','utf8');
 const patch=fs.readFileSync('legacy-ppeuni-v58-safe.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const mg35=fs.readFileSync('legacy-management-v35.js','utf8');
+const mgBundle=fs.readFileSync('legacy-management-v78-bundle.js','utf8');
+const mgSources=['legacy-management-v29.js','legacy-management-v30.js','legacy-management-v31.js','legacy-management-v32.js','legacy-management-v32-1.js','legacy-management-v33.js','legacy-management-v34.js','legacy-management-v35.js'];
 new Function(data); new Function(patch);
+new Function(mgBundle);
+let mgPos=-1;
+for(const p of mgSources){
+  const src=fs.readFileSync(p,'utf8').trim(),next=mgBundle.indexOf(src);
+  assert(next>mgPos,p+' must appear in the consolidated management bundle in source order');
+  mgPos=next;
+}
 
 assert(index.includes("v58-ppeuni-data-script"),'verified data script must load');
 assert(index.includes("v58-ppeuni-safe-script"),'safe layer must load');
