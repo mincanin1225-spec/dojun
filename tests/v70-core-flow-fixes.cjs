@@ -215,4 +215,23 @@ function harness(opts={}){
   assert(flow.includes("Promise.resolve(saveM(m.on))"),'먹임 기록 button must persist offered/eaten/extra fields with saveM');
 }
 
+
+// 13) 김은 구매여부형이다. g 재고를 만들거나 만들기 작업으로 보내지 않는다.
+{
+  const h=harness();
+  assert.equal(h.W.isPurchaseOnlyShoppingName('김'),true,'김은 구매여부형으로 분류되어야 한다');
+  const rows=[{meal:{on:'2026-09-21',name:'잡곡무른밥 · 소고기 · 김',g:null,ingredients:[{name:'소고기',g:20},{name:'김',g:null}]},used:[]}];
+  const tasks=h.W.makeTasks(rows,'2026-09-21');
+  assert(!tasks.some(x=>x.name==='김'),'김은 만들기 작업에 나오면 안 된다');
+
+  const before=JSON.stringify(h.ctx.inventory);
+  h.dispatch({'data-v63-shopcheck':'2026-09-21|'+encodeURIComponent('김'),'data-v63-shopg':'','data-v63-purchaseonly':'1'});
+  assert(h.ctx.shopChk['mg29|2026-09-21'].includes('김'),'김 구매완료 체크는 저장되어야 한다');
+  assert.equal(JSON.stringify(h.ctx.inventory),before,'김 구매완료는 임의의 g 재고를 만들면 안 된다');
+  assert.match(h.toasts.at(-1),/구매완료/);
+
+  h.dispatch({'data-v63-shopcheck':'2026-09-21|'+encodeURIComponent('김'),'data-v63-shopg':'','data-v63-purchaseonly':'1'});
+  assert(!h.ctx.shopChk['mg29|2026-09-21'].includes('김'),'김 구매완료 취소도 정상 저장되어야 한다');
+}
+
 console.log('PASS: cross-checked core flow fixes and non-regression paths');
