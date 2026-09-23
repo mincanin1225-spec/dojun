@@ -20,17 +20,18 @@
   const isPrepWeekend=()=>{try{const d=P(today).getDay();return d===6||d===0}catch(e){return false}};
 
   function nav(){
-    const s=window.__mgStage,b=targetBase(),weekend=isPrepWeekend();
+    const s=window.__mgStage,b=targetBase(),weekend=isPrepWeekend(),next=window.__mgWeekTarget==='next';
     return `<div class="card" style="padding:10px;margin-bottom:12px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-        <button class="chip ${window.__mgWeekTarget==='current'?'ok':''}" data-v33week="current">이번 주</button>
-        <button class="chip ${window.__mgWeekTarget==='next'?'ok':''}" data-v33week="next">다음 주 준비${weekend?' · 시작':''}</button>
+        <button class="chip ${!next?'ok':''}" data-v33week="current">이번 주</button>
+        <button class="chip ${next?'ok':''}" data-v33week="next">다음 주 준비${weekend?' · 시작':''}</button>
       </div>
-      <div class="hint" style="margin:0 2px 9px">${window.__mgWeekTarget==='next'?`다음 주 ${weekTitle(b)}를 미리 준비 중이에요.`:`${weekend?'토요일·일요일에는 다음 주 준비를 같이 확인할 수 있어요.':'이번 주 식단과 재고를 관리해요.'}`}</div>
-      <div class="chips" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-        <button class="chip ${s==='stock'?'ok':''}" data-mg="stock">1 재고관리</button>
+      <div class="hint" style="margin:0 2px 9px">${next?`다음 주 ${weekTitle(b)}를 미리 준비해요. 1 재고 → 2 장보기 → 3 만들기 순서예요.`:'이번 주 준비가 끝나면 4 남은 재고를 실제 수량으로 맞춰요. 그 값이 다음 주 1 재고가 됩니다.'}</div>
+      <div class="chips" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+        <button class="chip ${s==='stock'?'ok':''}" data-mg="stock">1 재고</button>
         <button class="chip ${s==='shop'?'ok':''}" data-mg="shop">2 장보기</button>
-        <button class="chip ${s==='prep'?'ok':''}" data-mg="prep">3 식단만들기</button>
+        <button class="chip ${s==='prep'?'ok':''}" data-mg="prep">3 만들기</button>
+        <button class="chip ${s==='remain'?'ok':''}" data-mg="remain" ${next?'disabled':''}>4 남은 재고</button>
       </div>
       ${s!=='home'?'<div style="margin-top:9px"><button class="more" data-mg="home">‹ 선택한 주 식단표로</button></div>':''}
     </div>`;
@@ -83,7 +84,7 @@
   function groupRows(loc){const cb=ensureCodes();let html=Object.entries(inventory||{}).filter(([,v])=>(v.location||'냉동')===loc).map(([k,v])=>rawRow(k,v)).join('');if(loc==='냉동')html+=cb.map(cubeRow).join('');return html||`<p class="hint">${loc} 재고가 없어요.</p>`}
   function stockView(){
     ensureCodes();const opts=inventoryKeys().map(k=>`<option value="${esc(k)}">${esc(invName(k))}</option>`).join('');
-    return `${nav()}<div class="sec"><h2>1단계 · 재고관리</h2><span class="more">총량 + 소분내역</span></div>
+    return `${nav()}<div class="sec"><h2>1단계 · 재고 확인</h2><span class="more">실제 보유량 기준</span></div>
       <p class="hint">냉장·냉동·실온 재고를 한 곳에서 관리하고, 소분했다면 <b>25g × 6개</b>처럼 총 보유량과 함께 보여줘요.</p>
       <div class="card"><b>재료별 총 보유량</b>${totalSummary()}</div>
       <div class="sec"><h2>냉장</h2></div><div class="card">${groupRows('냉장')}</div>
@@ -97,6 +98,16 @@
         <div id="mg32Portion" style="display:none"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="fld"><label>1개 기준량(g)</label><input id="mg32UnitG" type="number" min="1" step="1" value="${unitFor('rice')}"></div><div class="fld"><label>현재 개수</label><input id="mg32Count" type="number" min="0" step="1" placeholder="예: 6"></div></div><div class="fld"><label>제조일</label><input id="mg32Date" type="date" value="${today}"></div></div>
         <div class="btnrow"><button class="btn pri" data-mg32="add">재고에 추가</button></div></div>`;
   }
+  function remainView(){
+    let html=stockView()
+      .replace('1단계 · 재고 확인','4단계 · 이번 주 남은 재고')
+      .replace('실제 보유량 기준','다음 주로 이월')
+      .replace('냉장·냉동·실온 재고를 한 곳에서 관리하고, 소분했다면 <b>25g × 6개</b>처럼 총 보유량과 함께 보여줘요.','이번 주 준비와 사용이 끝난 뒤 <b>실제로 남아 있는 양</b>으로 맞춰 주세요. 먹임 기록으로 자동 차감하지 않기 때문에 이 확인값이 재고의 기준입니다.')
+      .replace('재고 수량 갱신','남은 재고 확정');
+    html+=`<div class="card" style="margin-top:12px"><b>다음 준비로 이어져요</b><p class="hint" style="margin:6px 0 10px">여기서 확정한 수량이 별도 복사 없이 그대로 다음 주 1단계 재고가 됩니다.</p><button class="btn pri" style="width:100%" data-v33-nextstock="1">다음 주 1단계 재고 확인 ›</button></div>`;
+    return html;
+  }
+
 
   function dayMeals(on){return `<div class="meal" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><b>${P(on).getMonth()+1}/${P(on).getDate()} (${WD[P(on).getDay()]})</b></div>${mealLabels.map((lb,i)=>`<div style="display:grid;grid-template-columns:38px 1fr;gap:7px;padding:3px 0"><span class="hint" style="color:var(--mint);font-weight:800">${lb}</span><span style="font-size:13px">${esc(mText(on,i)||'메뉴 없음')}</span></div>`).join('')}</div>`}
   function planBlock(w){let days='';for(let i=0;i<w.count;i++)days+=dayMeals(addD(w.start,i));return `<div class="sec"><h2>${w.title}</h2><span class="more">${w.prep} · ${w.range}</span></div><div class="card">${days}</div>`}
@@ -146,13 +157,15 @@
     if(window.__mgStage==='stock')return stockView();
     if(window.__mgStage==='shop')return shopView();
     if(window.__mgStage==='prep')return prepView();
+    if(window.__mgStage==='remain')return remainView();
     if(window.__mgStage==='home')return homeView();
     return prevShop();
   };
 
   document.addEventListener('click',async function(e){
     const tab=e.target.closest&&e.target.closest('[data-a="tab:shop"]');if(tab)window.__mgWeekTarget='current';
-    const wk=e.target.closest&&e.target.closest('[data-v33week]');if(wk){e.preventDefault();e.stopImmediatePropagation();window.__mgWeekTarget=wk.dataset.v33week;render(true);return}
+    const wk=e.target.closest&&e.target.closest('[data-v33week]');if(wk){e.preventDefault();e.stopImmediatePropagation();window.__mgWeekTarget=wk.dataset.v33week;if(window.__mgWeekTarget==='next'&&window.__mgStage==='remain')window.__mgStage='stock';render(true);return}
+    const nextStock=e.target.closest&&e.target.closest('[data-v33-nextstock]');if(nextStock){e.preventDefault();e.stopImmediatePropagation();window.__mgWeekTarget='next';window.__mgStage='stock';render(true);return}
     const ck=e.target.closest&&e.target.closest('[data-v33check]');if(ck){e.preventDefault();e.stopImmediatePropagation();const[id,enc]=ck.dataset.v33check.split('|'),w=windows().find(x=>x.id===id),name=decodeURIComponent(enc);if(!w)return;const key=checkKey(w),list=shopChk[key]||(shopChk[key]=[]),i=list.indexOf(name);i<0?list.push(name):list.splice(i,1);try{await store.set('shop2',shopChk)}catch(_){}render(true);return}
     const prep=e.target.closest&&e.target.closest('[data-v33prep]');if(prep){e.preventDefault();e.stopImmediatePropagation();const w=windows().find(x=>x.id===prep.dataset.v33prep);if(w)sheetBatch(w.start,w.count);return}
     const cubeDel=e.target.closest&&e.target.closest('[data-v59-cubedel]');if(cubeDel){e.preventDefault();e.stopImmediatePropagation();const i=Number(cubeDel.dataset.v59Cubedel),list=cubes(),item=list[i];if(!item)return;if(!confirm(`${item.ingredient||'소분 재고'}를 삭제할까요?`))return;list.splice(i,1);saveCubes(list);render(true);toast('소분 재고를 삭제했어요');return}
