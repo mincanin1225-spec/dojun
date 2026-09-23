@@ -25,6 +25,6 @@ assert(flow.includes("typeof root.syncPush==='function'"),'meal workflow writes 
 
 assert(index.includes('legacy-management-v33.js?v=20260916-v40&r=20260923-v75-prepflow1'),'inventory renderer must use a fresh release URL');
 assert(index.includes("const RELEASE='20260923-v75-prepflow1'"),'PWA release marker must refresh');
-assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"),'PWA cache marker must refresh');
+assert(sw.includes("const CACHE='dojun-pwa-v75-prepflow1'"),'PWA cache marker must refresh');
 assert(sw.includes("'/legacy-management-v33.js'"),'active inventory renderer must be network-first');
 console.log('PASS: inventory floating display and family sync schema guard are covered');
