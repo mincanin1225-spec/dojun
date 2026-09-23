@@ -10,6 +10,6 @@ assert(sw.includes("const CRITICAL=['/legacy-v70.html','/legacy-inventory-v61-ph
 assert(sw.includes("fetch(req,{cache:'no-store'})"),'critical assets must bypass stale HTTP/cache reads');
 assert(index.includes("const RELEASE='20260923-v75-prepflow1'"),'index must carry the current PWA release marker');
 assert(index.includes("navigator.serviceWorker.addEventListener('controllerchange',reloadOnce)"),'new service worker must auto-refresh the open PWA once');
-assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"),'new cache generation missing');
+assert(sw.includes("const CACHE='dojun-pwa-v75-prepflow1'"),'new cache generation missing');
 assert(flow.includes('data-v63-shopcheck')&&flow.includes('data-v63-shopall'),'new workflow file must contain visible shopping checks');
 console.log('PASS: physical filename hard-bypasses stale shopping workflow cache under v65');
