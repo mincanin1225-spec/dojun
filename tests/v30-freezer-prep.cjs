@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v30.js'),'utf8');
 new Function(patch);
-assert(/legacy-management-v30\.js\?v=\d{8}-v[\w-]+/.test(index),'v30 patch must load after v29');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260923-v78-fastboot1'),'v30 patch must be present through the consolidated bundle');
 assert(patch.includes('총량형 냉동재고'),'frozen total stock must be visible separately');
 assert(patch.includes('큐브형'),'cube stock must be visibly distinguished');
 assert(patch.includes('냉동 큐브 추가'),'users need a direct cube registration flow');
