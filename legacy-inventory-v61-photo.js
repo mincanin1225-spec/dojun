@@ -113,17 +113,18 @@
     const rows=prepared().filter(x=>(Number(x.remainingCount)||0)>0&&!isWholeMeal(x))
       .slice().sort((a,b)=>String(a.madeDate||'').localeCompare(String(b.madeDate||''))||String(a.name||'').localeCompare(String(b.name||''),'ko'));
     if(!rows.length)return '';
-    return `<div class="sec"><h2>미리 만들어둔 식사</h2><span class="more">원재료와 분리</span></div>
-      <div class="card"><p class="hint">만들어둔 식사는 원재료 재고와 따로 관리해요. 먹인 기록으로는 줄지 않으니, 장보기 전에 실제 남은 양을 보고 <b>수량을 고치거나</b> 오래된 것은 <b>삭제</b>해 주세요. 고친 값이 그대로 장보기·만들기 필요량에 반영돼요.</p>
+    const closing=window.__mgStage==='remain';
+    return `<div class="sec"><h2>${closing?'남은 준비식':'미리 만들어둔 식사'}</h2><span class="more">${closing?'다음 주로 이월':'원재료와 분리'}</span></div>
+      <div class="card"><p class="hint">${closing?'실제로 남아 있는 준비식 개수로 맞춰 주세요. 이 값이 다음 주 재고 계산에 그대로 이어집니다.':'만들어둔 식사는 원재료 재고와 따로 관리해요. 먹인 기록으로는 줄지 않으니, 장보기 전에 실제 남은 양을 보고 <b>수량을 고치거나</b> 오래된 것은 <b>삭제</b>해 주세요. 고친 값이 그대로 장보기·만들기 필요량에 반영돼요.'}</p>
       ${rows.map(x=>`<div class="inventory-row"><div style="flex:1"><div style="display:flex;gap:7px;align-items:center"><span class="chip sm">${esc(showCode(x.mealCode))}</span><b>${esc(x.name)}</b></div><div style="margin-top:6px;display:flex;align-items:center;gap:6px"><input data-v61-prep-q="${esc(x.id)}" type="number" min="0" step="1" value="${Math.max(0,Number(x.remainingCount)||0)}" style="width:68px;border:1px solid var(--line);border-radius:9px;padding:6px">개 <span class="hint">× ${g1(x.unitG)}g = ${g1((Number(x.unitG)||0)*(Number(x.remainingCount)||0))}g</span></div><div class="hint">만든 식사 · ${esc(x.madeDate||'날짜 미정')}</div></div><button class="btn" style="color:#B84A4A;border-color:#E7B6B6" data-v61-prep-del="${esc(x.id)}">삭제</button></div>`).join('')}
-      <div class="btnrow"><button class="btn pri" data-v61-prep-save="1">준비식 수량 갱신</button></div></div>`;
+      <div class="btnrow"><button class="btn pri" data-v61-prep-save="1">${closing?'남은 준비식 확정':'준비식 수량 갱신'}</button></div></div>`;
   }
 
   const baseView=vShop;
   vShop=function(){
     const html=baseView();
     if(typeof html!=='string')return html;
-    if(window.__mgStage==='stock'){
+    if(window.__mgStage==='stock'||window.__mgStage==='remain'){
       const card=preparedCard();if(!card)return html;
       const marker='<div class="sec"><h2>재료 추가</h2></div>';
       return html.includes(marker)?html.replace(marker,card+marker):html+card;
