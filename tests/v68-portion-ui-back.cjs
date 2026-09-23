@@ -17,10 +17,10 @@ assert(shell.includes("parent.postMessage({type:'dojun-sheet-open'}"),'child she
 assert(shell.includes("parent.postMessage({type:'dojun-sheet-close'}"),'child shell must release top-level guard when a sheet closes');
 assert(shell.includes("e.data.type==='dojun-sheet-back'"),'child shell must close sheet on guarded back message');
 
-assert(index.includes("./legacy-v70.html?r=20260923-v78-fastboot1"),'index must load navigation-safe shell');
-assert(index.includes("./meal-workflow-v70.js?r=20260923-v78-fastboot1"),'index must load unified cooking workflow');
+assert(index.includes("./legacy-v70.html?r=20260924-v79-buyonly1"),'index must load navigation-safe shell');
+assert(index.includes("./meal-workflow-v70.js?r=20260924-v79-buyonly1"),'index must load unified cooking workflow');
 assert(index.includes("history.pushState({dojunSheetGuard:true}"),'top-level app must create a back guard for open sheets');
 assert(index.includes("frame.contentWindow.postMessage({type:'dojun-sheet-back'}"),'top-level back must be routed to the open sheet');
-assert(sw.includes("const CACHE='dojun-pwa-v78-fastboot1'"),'unified cooking cache marker missing');
+assert(sw.includes("const CACHE='dojun-pwa-v79-buyonly1'"),'unified cooking cache marker missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'active files must be precached');
 console.log('PASS: portion registration and recipe editing share one cooking screen with safe back navigation');
