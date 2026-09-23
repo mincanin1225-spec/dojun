@@ -18,6 +18,8 @@ assert(shell.includes("m0=mObj(on,0),hasPlan=hasAny(on)"),'calendar must determi
 assert(shell.includes("hasPlan?' hasplan':''"),'verified meal-plan dates must receive a visible calendar state');
 assert(shell.includes('class="planmark" title="식단 있음"'),'planned dates must show a dedicated meal-plan marker');
 assert(shell.includes("hasPlan||hasRecord?"),'empty dates must not show three meaningless reaction dots');
+assert(shell.includes("dishSVG(m,null,mText(today,i))"),'Ppeuni today cards must keep a meal illustration even though mObj is null');
+assert(shell.includes("miniSVG(m0,mText(on,0))"),'Ppeuni planned calendar dates must keep a mini meal illustration');
 
 const docEvents={};
 const ctx={
@@ -43,8 +45,8 @@ assert.equal(ctx.mObj('2028-01-01',0),null,'2028 must not expose cached syntheti
 assert.deepEqual(JSON.parse(JSON.stringify(ctx.weekList('2028-01-03',7))),{},'future shopping/prep must be empty outside Ppeuni source range');
 
 assert(index.includes('legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v73-recordonly5'),'Ppeuni-only patch must load with a fresh cache key');
-assert(index.includes("const RELEASE='20260923-v76-calmark1'"),'release marker must refresh');
-assert(sw.includes("const CACHE='dojun-pwa-v76-calmark1'"),'PWA cache must refresh');
+assert(index.includes("const RELEASE='20260923-v77-mealvisual1'"),'release marker must refresh');
+assert(sw.includes("const CACHE='dojun-pwa-v77-mealvisual1'"),'PWA cache must refresh');
 assert(sw.includes("'/legacy-ppeuni-v58-safe.js'"),'Ppeuni policy script must be network-first');
 
 console.log('PASS: only verified Ppeuni schedules survive; 2028 auto menus are suppressed');
