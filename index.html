@@ -10,7 +10,7 @@
 <meta name="application-name" content="도준이키우기">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="도준이키우기">
-<link rel="manifest" href="./manifest.webmanifest?v=20260917-v48&r=20260921-v63">
+<link rel="manifest" href="./manifest.webmanifest?v=20260917-v48&r=20260923-v78-fastboot1">
 <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icons/icon-192.svg">
 <title>도준이키우기</title>
@@ -18,7 +18,7 @@
 </head>
 <body>
 <div id="boot">도준이키우기 불러오는 중…</div>
-<iframe id="app" src="./legacy-v70.html?r=20260923-v77-mealvisual1" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v70.html?r=20260923-v78-fastboot1" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app'),boot=document.getElementById('boot');
@@ -42,39 +42,11 @@
     const d=frame.contentDocument;
     if(!d||!d.head)return;
     if(d.documentElement?.dataset?.dojunReady==='1'){inventoryReady=true;workflowReady=true;clearTimeout(bootTimer);return reveal()}
-    if(d.getElementById('v29-management-script'))return;
-    const s=d.createElement('script');
-    s.id='v29-management-script';
-    s.src='./legacy-management-v29.js?v=20260916-v40&r=20260923-v76-calmark1';
-    s.onload=function(){
-      const p=d.createElement('script');
-      p.id='v30-management-script';
-      p.src='./legacy-management-v30.js?v=20260916-v40&r=20260921-v63';
-      p.onload=function(){
-        const q=d.createElement('script');
-        q.id='v31-management-script';
-        q.src='./legacy-management-v31.js?v=20260916-v40&r=20260921-v63';
-        q.onload=function(){
-          const r=d.createElement('script');
-          r.id='v32-management-script';
-          r.src='./legacy-management-v32.js?v=20260916-v40&r=20260921-v63';
-          r.onload=function(){
-            const t=d.createElement('script');
-            t.id='v32-1-management-script';
-            t.src='./legacy-management-v32-1.js?v=20260916-v40&r=20260921-v63';
-            t.onload=function(){
-              const u=d.createElement('script');
-              u.id='v33-management-script';
-              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260923-v76-calmark1';
-              u.onload=function(){
-                const v=d.createElement('script');
-                v.id='v34-management-script';
-                v.src='./legacy-management-v34.js?v=20260916-v40&r=20260921-v63';
-                v.onload=function(){
-                  const w=d.createElement('script');
-                  w.id='v35-management-script';
-                  w.src='./legacy-management-v35.js?v=20260916-v40&r=20260921-v63-shopstatus1';
-                  w.onload=function(){
+    if(d.getElementById('v78-management-bundle-script'))return;
+    const mg=d.createElement('script');
+    mg.id='v78-management-bundle-script';
+    mg.src='./legacy-management-v78-bundle.js?r=20260923-v78-fastboot1';
+    mg.onload=function(){
                     // 준비 탭에 필요한 핵심 경로는 외출·건강 모듈을 기다리지 않고 먼저 올린다.
                     // 구화면은 숨긴 채 유지하고, 재고 UI + meal workflow가 준비되면 바로 최신 화면을 보여준다.
                     const loadMealCore=function(){
@@ -82,7 +54,7 @@
                         if(d.getElementById('v63-meal-workflow-script'))return;
                         const ui=d.createElement('script');
                         ui.id='v63-meal-workflow-script';
-                        ui.src='./meal-workflow-v70.js?r=20260923-v76-calmark1';
+                        ui.src='./meal-workflow-v70.js?r=20260923-v78-fastboot1';
                         ui.onload=function(){readyPart('workflow')};
                         ui.onerror=failBoot;
                         d.head.appendChild(ui);
@@ -91,7 +63,7 @@
                         if(d.getElementById('v63-meal-stock-script'))return loadWorkflow();
                         const am=d.createElement('script');
                         am.id='v63-meal-stock-script';
-                        am.src='./meal-stock-v66.js?r=20260923-v76-calmark1';
+                        am.src='./meal-stock-v66.js?r=20260923-v78-fastboot1';
                         am.onload=loadWorkflow;
                         am.onerror=failBoot;
                         d.head.appendChild(am);
@@ -100,7 +72,7 @@
                         if(d.getElementById('v58-ppeuni-safe-script'))return loadStock();
                         const al=d.createElement('script');
                         al.id='v58-ppeuni-safe-script';
-                        al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v73-recordonly5';
+                        al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260923-v78-fastboot1';
                         al.onload=loadStock;
                         al.onerror=loadStock;
                         d.head.appendChild(al);
@@ -108,69 +80,69 @@
                       if(d.getElementById('v58-ppeuni-data-script'))return loadSafe();
                       const ak=d.createElement('script');
                       ak.id='v58-ppeuni-data-script';
-                      ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260922-v73-recordonly5';
+                      ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260923-v78-fastboot1';
                       ak.onload=loadSafe;
                       ak.onerror=loadSafe;
                       d.head.appendChild(ak);
                     };
                     const vi=d.createElement('script');
                     vi.id='v61-photo-inventory-script';
-                    vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260923-v76-calmark1';
+                    vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260923-v78-fastboot1';
                     vi.onload=function(){readyPart('inventory');loadMealCore()};
                     vi.onerror=failBoot;
                     d.head.appendChild(vi);
                     const x=d.createElement('script');
                     x.id='v36-outing-script';
-                    x.src='./legacy-outing-v36.js?v=20260916-v40&r=20260922-v73-recordonly5';
+                    x.src='./legacy-outing-v36.js?v=20260916-v40&r=20260923-v78-fastboot1';
                     x.onload=function(){
                       const y=d.createElement('script');
                       y.id='v37-outing-polish-script';
-                      y.src='./legacy-outing-v37.js?v=20260916-v40&r=20260921-v63';
+                      y.src='./legacy-outing-v37.js?v=20260916-v40&r=20260923-v78-fastboot1';
                       y.onload=function(){
                         const z=d.createElement('script');
                         z.id='v38-naver-sync-script';
-                        z.src='./legacy-outing-v38.js?v=20260916-v40&r=20260921-v63';
+                        z.src='./legacy-outing-v38.js?v=20260916-v40&r=20260923-v78-fastboot1';
                         z.onload=function(){
                           const aa=d.createElement('script');
                           aa.id='v39-version-map-fix-script';
-                          aa.src='./legacy-fixes-v39.js?v=20260916-v40&r=20260921-v63';
+                          aa.src='./legacy-fixes-v39.js?v=20260916-v40&r=20260923-v78-fastboot1';
                           aa.onload=function(){
                             const ab=d.createElement('script');
                             ab.id='v40-naver-places-script';
-                            ab.src='./legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v73-recordonly5&r=20260921-v63';
+                            ab.src='./legacy-outing-v40-seed.js?v=20260916-v40&r=20260923-v78-fastboot1';
                             ab.onload=function(){
                               const ac=d.createElement('script');
                               ac.id='v41-no-embedded-map-script';
-                              ac.src='./legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v73-recordonly5';
+                              ac.src='./legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260923-v78-fastboot1';
                               ac.onload=function(){
                                 const ad=d.createElement('script');
                                 ad.id='v42-outing-priority-script';
-                                ad.src='./legacy-outing-v42-priority.js?v=20260916-v42&r=20260921-v63';
+                                ad.src='./legacy-outing-v42-priority.js?v=20260916-v42&r=20260923-v78-fastboot1';
                                 ad.onload=function(){
                                   const ae=d.createElement('script');
                                   ae.id='v43-health-data-script';
-                                  ae.src='./health-schedule-v43.js?v=20260916-v43&r=20260922-v73-recordonly5';
+                                  ae.src='./health-schedule-v43.js?v=20260916-v43&r=20260923-v78-fastboot1';
                                   ae.onload=function(){
                                     const af=d.createElement('script');
                                     af.id='v43-health-manager-script';
-                                    af.src='./legacy-health-v43.js?v=20260916-v43&r=20260922-v73-recordonly5';
+                                    af.src='./legacy-health-v43.js?v=20260916-v43&r=20260923-v78-fastboot1';
                                     af.onload=function(){
                                       const ag=d.createElement('script');
                                       ag.id='v45-care-hub-script';
-                                      ag.src='./legacy-care-v45.js?v=20260916-v45&r=20260921-v63';
+                                      ag.src='./legacy-care-v45.js?v=20260916-v45&r=20260923-v78-fastboot1';
                                       ag.onload=function(){
                                         const ah=d.createElement('script');
                                         ah.id='v44-health-entry-fix-script';
-                                        ah.src='./legacy-health-v44-entry-fix.js?v=20260916-v44&r=20260921-v63';
+                                        ah.src='./legacy-health-v44-entry-fix.js?v=20260916-v44&r=20260923-v78-fastboot1';
                                         ah.onload=function(){
                                           const aj=d.createElement('script');
                                           aj.id='v47-ui-script';
-                                          aj.src='./legacy-ui-v47.js?v=20260916-v47&r=20260921-v63';
+                                          aj.src='./legacy-ui-v47.js?v=20260916-v47&r=20260923-v78-fastboot1';
                                           aj.onload=function(){
                                             if(d.getElementById('v46-health-import-script'))return;
                                             const ai=d.createElement('script');
                                             ai.id='v46-health-import-script';
-                                            ai.src='./legacy-health-v46-import.js?v=20260916-v46&r=20260921-v63';
+                                            ai.src='./legacy-health-v46-import.js?v=20260916-v46&r=20260923-v78-fastboot1';
                                             d.head.appendChild(ai);
                                           };
                                           d.head.appendChild(aj);
@@ -196,22 +168,10 @@
                       d.head.appendChild(y);
                     };
                     d.head.appendChild(x);
-                  };
-                  d.head.appendChild(w);
-                };
-                d.head.appendChild(v);
-              };
-              d.head.appendChild(u);
-            };
-            d.head.appendChild(t);
-          };
-          d.head.appendChild(r);
-        };
-        d.head.appendChild(q);
-      };
-      d.head.appendChild(p);
+
     };
-    d.head.appendChild(s);
+    mg.onerror=failBoot;
+    d.head.appendChild(mg);
   }
   frame.addEventListener('load',inject);
   try{inject()}catch(e){failBoot()}
@@ -251,7 +211,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260923-v77-mealvisual1',KEY='dojun-sw-release';
+  const RELEASE='20260923-v78-fastboot1',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;

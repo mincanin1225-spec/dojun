@@ -21,10 +21,10 @@ assert(!flow.includes("<p class=\"hint\">'+esc(m.source)"),'repeated recipe-sour
 assert(flow.includes('data-v71-makecheck'),'step 3 must use a shopping-like make checklist');
 assert(flow.includes('data-v71-makeg'),'step 3 must allow changing only the actual made amount');
 assert(!flow.includes('>분량·레시피</button>')&&!flow.includes('>조리 완료·소분</button>'),'prep cards must not expose the old split actions');
-assert(index.includes('./legacy-v70.html?r=20260923-v77-mealvisual1'),'index must load v69 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260923-v76-calmark1'),'index must load v69 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v77'"),'canonical version must be v69');
-assert(sw.includes("const CACHE='dojun-pwa-v77-mealvisual1'"),'v69 cache missing');
+assert(index.includes('./legacy-v70.html?r=20260923-v78-fastboot1'),'index must load v69 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260923-v78-fastboot1'),'index must load v69 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v78'"),'canonical version must be v69');
+assert(sw.includes("const CACHE='dojun-pwa-v78-fastboot1'"),'v69 cache missing');
 assert(mg33.includes("if(window.__mgStage==='remain')return remainView()"),'remaining stock must be a real preparation stage');
 assert(mg33.includes('data-v33-nextstock="1"'),'remaining stock must lead directly into next-week stock');
 console.log('PASS: preparation is stock -> shopping -> make -> remaining stock; feeding stays optional');
