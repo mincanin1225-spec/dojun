@@ -6,6 +6,8 @@ assert(index.includes('<iframe id="app"'),'stable shell must use legacy app ifra
 assert(index.includes('legacy-ui-v47.js?v=20260916-v47&r=20260921-v63'),'v47 UI patch must stay in the original order with the v58 cache-bust');
 assert(!index.includes('setTimeout(reveal,2500)'),'timeout must not reveal a partially patched legacy screen');
 assert(!index.includes("if(d.getElementById('v29-management-script'))return reveal()"),'a duplicate injector call must not reveal before boot completes');
+assert(index.includes("v78-management-bundle-script"),'fast boot must use a single consolidated management loader');
+assert(!index.includes("v29-management-script")&&!index.includes("v30-management-script")&&!index.includes("v31-management-script")&&!index.includes("v32-management-script")&&!index.includes("v32-1-management-script")&&!index.includes("v33-management-script")&&!index.includes("v34-management-script")&&!index.includes("v35-management-script"),'legacy management scripts must not be chained one-by-one at boot');
 assert(index.includes('visibility:hidden')&&index.includes("readyPart('workflow')")&&index.includes("readyPart('inventory')"),'legacy iframe must stay hidden until current inventory/workflow patches are ready');
 assert(index.includes('v58-ppeuni-data-script')&&index.includes('v58-ppeuni-safe-script'),'verified Ppeuni integration must load after the stable UI shell');
 assert(sw.includes("const CACHE='dojun-pwa-v"),'v58 service worker marker missing');
