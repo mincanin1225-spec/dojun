@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v34.js'),'utf8');
 new Function(patch);
-assert(/legacy-management-v34\.js\?v=\d{8}-v[\w-]+/.test(index),'v34 custom ingredient patch must load with a fresh cache key');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260923-v78-fastboot1'),'v34 patch must be present through the consolidated bundle');
 assert(patch.includes('＋ 목록에 없는 식품 직접 입력'),'ingredient selector must expose direct entry');
 assert(patch.includes('id="mg34Name"'),'direct ingredient name field must exist');
 assert(patch.includes("const BACKUP_KEY='dj:customInventory1'"),'custom inventory must have a durable local backup');
