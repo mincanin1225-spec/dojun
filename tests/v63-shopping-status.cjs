@@ -11,6 +11,6 @@ assert(mg35.includes('data-v60-shopcomplete'),'whole-batch completion toggle mis
 assert(mg35.includes('전체 구매완료')&&mg35.includes('완료 취소'),'whole-batch completion controls missing');
 assert(mg35.includes('data-v33check'),'existing per-item purchase checkbox must remain');
 assert(mg35.includes("store.set('shop2',shopChk)"),'shopping completion must persist in existing shopChk storage');
-assert(index.includes('legacy-management-v78-bundle.js?r=20260923-v78-fastboot1'),'fresh consolidated management bundle cache token missing');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v79-buyonly1'),'fresh consolidated management bundle cache token missing');
 assert(/const CACHE='dojun-pwa-v\d+-[\w-]+'/.test(sw),'current PWA cache generation missing');
 console.log('PASS: shopping completion status and batch toggle restored');
