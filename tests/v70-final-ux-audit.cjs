@@ -3,6 +3,8 @@ const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
 const index=fs.readFileSync('index.html','utf8');
 const shell=fs.readFileSync('legacy-v70.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
+const mg33=fs.readFileSync('legacy-management-v33.js','utf8');
+const v61=fs.readFileSync('legacy-inventory-v61-photo.js','utf8');
 new Function(flow);
 
 for(const t of ['1 · 재고','2 · 장보기','3 · 만들기','4 · 남은 재고'])assert(flow.includes(t),t+' missing');
@@ -10,7 +12,8 @@ assert(flow.includes('function polishLegacy(html)'),'legacy management surfaces 
 assert(flow.includes("t.includes('재고 자동 차감')"),'outdated legacy auto-deduction banner must be filtered');
 assert(flow.includes("summary.textContent='조리법 보기'"),'day recipes should be collapsed on mobile');
 assert(flow.includes("saveBtn.textContent='기록 저장'"),'day save action should be explicit');
-assert(flow.includes("holder.insertBefore(box,actionRow)"),'step 4 must appear before final save actions');
+assert(flow.includes("holder.insertBefore(box,actionRow)"),'optional intake record must appear before final save actions');
+assert(flow.includes('섭취기록 (선택)'),'feeding must be visually separated from the four preparation steps');
 assert(flow.includes("el.textContent=lb+' · '+(undo?'먹임 기록':'먹임 기록 취소')"),'feed action should update in place');
 assert(shell.includes('sheet.querySelectorAll(`[data-a^="rec:${on}|${s}|"]`)'),'reaction update must stay inside the current day sheet');
 assert(shell.includes("btn.setAttribute('aria-pressed'"),'reaction buttons must update in place without rebuilding the sheet');
@@ -44,4 +47,7 @@ assert(index.includes('./meal-workflow-v70.js?r=20260923-v75-prepflow1'),'index 
 assert(shell.includes("name:'도준이키우기',version:'v75'"),'canonical version must be v70');
 assert(sw.includes("const CACHE='dojun-pwa-v75-prepflow1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
-console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
+assert(mg33.includes('4단계 · 이번 주 남은 재고'),'step 4 must be actual remaining inventory');
+assert(mg33.includes('다음 주 1단계 재고 확인'),'step 4 must connect to next-week stock');
+assert(v61.includes("window.__mgStage==='stock'||window.__mgStage==='remain'"),'prepared inventory must be editable in both stock and remaining-stock stages');
+console.log('PASS: v75 prep cycle keeps stock -> shopping -> make -> remaining stock, with optional feeding records');
