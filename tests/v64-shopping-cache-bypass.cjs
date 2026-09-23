@@ -9,6 +9,8 @@ assert(sw.includes("'./meal-workflow-v70.js'"),'service worker must precache the
 assert(sw.includes("const CRITICAL=['/legacy-v70.html','/legacy-inventory-v61-photo.js','/meal-stock-v66.js','/meal-workflow-v70.js','/legacy-management-v78-bundle.js','/health-schedule-v43.js','/legacy-health-v43.js','/legacy-outing-v36.js','/legacy-outing-v40-seed.js','/legacy-outing-v41-no-embedded-map.js','/src/ppeuni-verified-v49.js','/legacy-ppeuni-v58-safe.js']"),'critical active assets must use the network-first path');
 assert(sw.includes("fetch(req,{cache:'no-store'})"),'critical assets must bypass stale HTTP/cache reads');
 assert(index.includes("const RELEASE='20260923-v78-fastboot1'"),'index must carry the current PWA release marker');
+const loaderReleases=[...index.matchAll(/[?&]r=([0-9A-Za-z-]+)/g)].map(m=>m[1]);
+assert.deepEqual([...new Set(loaderReleases)],['20260923-v78-fastboot1'],'all loader cache-busters must match the current release');
 assert(index.includes("./legacy-management-v78-bundle.js?r=20260923-v78-fastboot1"),'boot must load the consolidated management bundle');
 assert(!index.includes("./legacy-management-v29.js?")&&!index.includes("./legacy-management-v30.js?")&&!index.includes("./legacy-management-v31.js?")&&!index.includes("./legacy-management-v32.js?")&&!index.includes("./legacy-management-v32-1.js?")&&!index.includes("./legacy-management-v33.js?")&&!index.includes("./legacy-management-v34.js?")&&!index.includes("./legacy-management-v35.js?"),'boot must not keep the eight-step sequential management loader');
 assert(sw.includes("'./legacy-management-v78-bundle.js'"),'service worker must precache the consolidated management bundle');
