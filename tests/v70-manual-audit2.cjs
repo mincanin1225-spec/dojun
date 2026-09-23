@@ -41,7 +41,7 @@ assert(outingCleanup.includes("#outingModal #outLat,#outingModal #outLng"),'obso
 assert(outingSeed.includes("if(localStorage.getItem(STORAGE_KEY)!==null){window.__outingPlaces=readRaw();return 0}"),'deleted seed places must stay deleted');
 assert(!outingSeed.includes('nominatim.openstreetmap.org'),'outing must not perform unused background geocoding');
 
-assert(index.includes('legacy-v70.html?r=20260923-v76-calmark1'));
+assert(index.includes('legacy-v70.html?r=20260923-v77-mealvisual1'));
 assert(index.includes('legacy-outing-v36.js?v=20260916-v40&r=20260922-v73-recordonly5'));
 assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v73-recordonly5'));
 assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v73-recordonly5'));
