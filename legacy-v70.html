@@ -222,7 +222,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v76'});
+window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v77'});
 const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
@@ -653,8 +653,14 @@ function dayNut(on){if(dayHasCustom(on))return null;const t=Array(9).fill(0);let
 
 /* ══════════ 그림 ══════════ */
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
-function dishSVG(m,w){
-  if(!m) return `<svg viewBox="0 0 120 96"></svg>`;
+function dishSVG(m,w,label=''){
+  if(!m){
+    const text=String(label||'').trim();if(!text)return `<svg viewBox="0 0 120 96"></svg>`;
+    const r=rng(hash('visual|'+text)),palette=['#E5B678','#8DBD88','#D98673','#E5CC75','#9EB8D9','#C79BC6'];
+    const bits=[];for(let i=0;i<8;i++){const a=r()*Math.PI*2,rad=7+r()*16,x=47+Math.cos(a)*rad,y=47+Math.sin(a)*rad*.58,rr=3+r()*2.4,cc=palette[Math.floor(r()*palette.length)%palette.length];bits.push('<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+rr.toFixed(1)+'" fill="'+cc+'"/>')}
+    const side=palette[hash(text)%palette.length],side2=palette[(hash(text+'x')+2)%palette.length];
+    return '<svg viewBox="0 0 120 96" width="'+(w||'100%')+'" xmlns="http://www.w3.org/2000/svg"><rect width="120" height="96" rx="14" fill="#FFFBF5"/><ellipse cx="47" cy="71" rx="36" ry="6" fill="#F0E6DA" opacity=".55"/><path d="M12 44a35 35 0 0 0 70 0z" fill="#fff" stroke="#EADFD2" stroke-width="1.6"/><ellipse cx="47" cy="44" rx="35" ry="9" fill="#FBF5EA" stroke="#EADFD2" stroke-width="1.6"/><clipPath id="t'+(hash(text)%9999)+'"><ellipse cx="47" cy="44" rx="32" ry="8"/></clipPath><g clip-path="url(#t'+(hash(text)%9999)+')">'+bits.join('')+'</g><rect x="87" y="22" width="25" height="23" rx="8" fill="'+side+'" opacity=".75"/><circle cx="99" cy="70" r="11" fill="'+side2+'" opacity=".82"/></svg>';
+  }
   const r=rng(hash(nMeal(m)));
   const mainC=[...m.main.v.map(v=>COL[v.k]),COL[m.main.p.k]];
   const bits=[];
@@ -679,8 +685,12 @@ function dishSVG(m,w){
     <path d="M96 58c3-4 8-4 8-4s-1 5-5 6z" fill="#8FBF7E"/>
   </svg>`;
 }
-function miniSVG(m){
-  if(!m) return `<svg viewBox="0 0 22 16" width="22" height="16"></svg>`;
+function miniSVG(m,label=''){
+  if(!m){
+    const text=String(label||'').trim();if(!text)return `<svg viewBox="0 0 22 16" width="22" height="16"></svg>`;
+    const palette=['#E5B678','#8DBD88','#D98673','#E5CC75','#9EB8D9','#C79BC6'],h=hash('mini|'+text),cc=palette[h%palette.length],v=palette[(h>>>3)%palette.length];
+    return '<svg viewBox="0 0 22 16" width="22" height="16"><path d="M2 7a9 9 0 0 0 18 0z" fill="#fff" stroke="#E7DCCD" stroke-width="1.2"/><ellipse cx="11" cy="7" rx="9" ry="2.4" fill="#FBF5EA" stroke="#E7DCCD" stroke-width="1.2"/><circle cx="8" cy="7" r="1.7" fill="'+cc+'"/><circle cx="13.5" cy="6.6" r="1.4" fill="'+v+'"/></svg>';
+  }
   const c=COL[m.main.p.k]||'#E4B87C', v=COL[m.main.v[0]?m.main.v[0].k:'carrot'];
   return `<svg viewBox="0 0 22 16" width="22" height="16"><path d="M2 7a9 9 0 0 0 18 0z" fill="#fff" stroke="#E7DCCD" stroke-width="1.2"/>
     <ellipse cx="11" cy="7" rx="9" ry="2.4" fill="#FBF5EA" stroke="#E7DCCD" stroke-width="1.2"/>
@@ -844,7 +854,7 @@ function vCal(){
     const hasRecord=['b','l','d'].some(s=>L[s]&&Object.keys(L[s]).length);
     const dots=['b','l','d'].map(s=>`<i class="${(L[s]&&L[s].s)||''}"></i>`).join('');
     cells+=`<button class="day${wd===0?' sun':''}${on===today?' today':''}${hasPlan?' hasplan':''}" data-a="day:${on}" aria-label="${mo}월 ${d}일${hasPlan?' · 식단 있음':''}">
-      <span class="n">${d}</span>${hasPlan?'<span class="planmark" title="식단 있음"></span>':''}${miniSVG(m0)}${hasPlan||hasRecord?`<span class="dd">${dots}</span>`:'' }
+      <span class="n">${d}</span>${hasPlan?'<span class="planmark" title="식단 있음"></span>':''}${miniSVG(m0,mText(on,0))}${hasPlan||hasRecord?`<span class="dd">${dots}</span>`:'' }
       ${m0&&m0.trial?'<span class="newdot"></span>':''}</button>`;
   }
   const day=P(today);
@@ -874,7 +884,7 @@ function vCal(){
       <button class="btn" data-a="undelday:${today}">자동 식단 되살리기</button></div>`
       :['b','l','d'].map((s,i)=>{
       const L=lg(today)[s]||{},m=mObj(today,i);
-      return `<div class="meal"><div class="pic">${dishSVG(m)}</div><div class="bd">
+      return `<div class="meal"><div class="pic">${dishSVG(m,null,mText(today,i))}</div><div class="bd">
         <div class="lb">${['아침','점심','저녁'][i]}</div>
         <div class="tt">${esc(mText(today,i)||'메뉴 없음')}</div>
         <div class="rec">${REACTIONS.map(([c,t])=>
@@ -1117,7 +1127,7 @@ function sheetDay(on){
   const meals=['아침','점심','저녁'].map((lb,i)=>{
     const m=mObj(on,i),r=recipe(on,i),l=L[['b','l','d'][i]]||{};
     return `<div class="card" style="margin-bottom:12px">
-      <div class="dish"><div class="pic">${dishSVG(m)}</div><div class="bd">
+      <div class="dish"><div class="pic">${dishSVG(m,null,mText(on,i))}</div><div class="bd">
         <div class="lb" style="font-size:11.5px;font-weight:800;color:var(--mint)">${lb}</div>
         <h3>${esc(mText(on,i)||'메뉴 없음')}</h3>
         ${r?`<div class="chips">${r.ings.map(x=>`<span class="chip sm">${esc(x)}</span>`).join('')}</div>`:''}
