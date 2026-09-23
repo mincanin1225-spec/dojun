@@ -7,8 +7,8 @@ new Function(data); new Function(patch);
 
 assert(index.includes("v58-ppeuni-data-script"),'verified data script must load');
 assert(index.includes("v58-ppeuni-safe-script"),'safe layer must load');
-assert(index.indexOf('v58-ppeuni-data-script')<index.indexOf('v58-ppeuni-safe-script'),'data must load before safe layer');
-assert(index.includes('ak.onerror=loadHealth')&&index.includes('al.onerror=loadHealth'),'Ppeuni failure must not block the rest of the app');
+assert(index.includes('ak.onload=loadSafe')&&index.includes('al.onload=loadStock'),'verified data must hand off to the safe layer before stock/workflow load');
+assert(index.includes('ak.onerror=loadSafe')&&index.includes('al.onerror=loadStock'),'Ppeuni failure must fall through to the current stock/workflow UI');
 assert(!patch.includes('MutationObserver'),'safe layer must not install DOM mutation observers');
 assert(patch.includes('mObj=function(){return null}'),'Ppeuni-only safe layer must suppress generated structured meal objects');
 assert(mg35.includes('__PPEUNI_SCHEDULE_V58'),'management must suppress generated rice only on verified Ppeuni dates');

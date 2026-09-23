@@ -2,7 +2,7 @@
   'use strict';
   if(typeof TABS==='undefined'||typeof vShop!=='function'||typeof weekList!=='function'||typeof sheetBatch!=='function')return;
 
-  TABS[1][1]='관리';
+  TABS[1][1]='준비';
   window.__mgStage='home';
 
   const MG_HISTORY_KEY='__dojunManagementStageV60';
@@ -152,7 +152,7 @@
 
   document.addEventListener('click',async function(e){
     const tabBtn=e.target.closest&&e.target.closest('[data-a="tab:shop"]');
-    if(tabBtn){window.__mgStage='home';mgHistory('home','replace')}
+    if(tabBtn){window.__mgStage='stock';mgHistory('stock','replace')}
 
     const prepBtn=e.target.closest&&e.target.closest('[data-mgprep]');
     if(prepBtn){e.preventDefault();e.stopImmediatePropagation();const w=windows().find(x=>x.id===prepBtn.dataset.mgprep);if(w)sheetBatch(w.start,w.count);return}
@@ -162,7 +162,7 @@
 
     const t=e.target.closest&&e.target.closest('[data-mg]');if(!t)return;
     const a=t.dataset.mg;e.preventDefault();e.stopImmediatePropagation();
-    if(['home','stock','shop','prep'].includes(a)){setManagementStage(a);return}
+    if(['home','stock','shop','prep','remain'].includes(a)){setManagementStage(a);return}
     if(a==='rawsave'){
       document.querySelectorAll('[data-rq]').forEach(x=>{const k=x.dataset.rq;if(inventory[k]){inventory[k].qty=Math.max(0,Number(x.value)||0);inventory[k].updatedAt=Date.now();try{pushInventoryItem(k)}catch(_){}}});persistInventoryLocal();toast('실재고를 갱신했어요 · 장보기 목록도 다시 계산됩니다');render(true);return;
     }

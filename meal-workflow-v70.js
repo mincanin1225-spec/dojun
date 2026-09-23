@@ -80,11 +80,11 @@
  function meals(start,count){const result=[];for(let i=0;i<count;i++)for(let j=0;j<3;j++){const m=model(addD(start,i),j);if(m)result.push(m)}return result}
  function target(){return root.__mgWeekTarget==='next'?addD(weekCur,7):weekCur}
  function nav(){
-   const next=root.__mgWeekTarget==='next',feedDay=typeof today==='string'?today:date(),stage=root.__mgStage;
+   const next=root.__mgWeekTarget==='next',stage=root.__mgStage;
    return '<div class="card" style="padding:12px;margin-bottom:14px">'+
      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px"><button class="chip '+(!next?'ok':'')+'" data-v33week="current">이번 주</button><button class="chip '+(next?'ok':'')+'" data-v33week="next">다음 주</button></div>'+
-     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><button class="btn '+(stage==='stock'?'pri':'')+'" data-mg="stock">1 · 재고</button><button class="btn '+(stage==='shop'?'pri':'')+'" data-mg="shop">2 · 장보기</button><button class="btn '+(stage==='prep'?'pri':'')+'" data-mg="prep">3 · 만들기</button><button class="btn" data-a="day:'+feedDay+'" '+(next?'disabled':'')+'>4 · 먹이기·기록</button></div>'+
-     '<p class="hint" style="margin:9px 2px 0">'+(next?'다음 주 준비는 1~3단계까지 진행해요.':'재고 확인부터 먹인 뒤 기록까지 한 흐름으로 관리해요.')+'</p></div>'
+     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><button class="btn '+(stage==='stock'?'pri':'')+'" data-mg="stock">1 · 재고</button><button class="btn '+(stage==='shop'?'pri':'')+'" data-mg="shop">2 · 장보기</button><button class="btn '+(stage==='prep'?'pri':'')+'" data-mg="prep">3 · 만들기</button><button class="btn '+(stage==='remain'?'pri':'')+'" data-mg="remain" '+(next?'disabled':'')+'>4 · 남은 재고</button></div>'+
+     '<p class="hint" style="margin:9px 2px 0">'+(next?'다음 주는 1 재고 → 2 장보기 → 3 만들기까지 미리 준비해요.':'만들기가 끝나면 실제 남은 재고를 확인해 다음 주 재고로 그대로 이어갑니다. 섭취기록은 식단에서 선택적으로 남겨요.')+'</p></div>'
  }
  function polishLegacy(html){
    if(typeof html!=='string')return html;
@@ -562,7 +562,7 @@
    // 다만 자동으로 넣은 값은 data-auto-offered 로 표시해, 먹임/입력 없이 시트를 열어본 것만으로 로그가 생기지 않게 한다.
    try{['b','l','d'].forEach((slot,i)=>{const el=holder.querySelector('[data-offered="'+slot+'"]'),m=model(on,i),g=Number(m?.g);if(el&&!String(el.value||'').trim()&&Number.isFinite(g)&&g>0){const v=String(Math.round(g*10)/10);el.value=v;el.dataset.autoOffered='1';el.dataset.standardOffered=v;if(!el.dataset.autoOfferedBound){el.dataset.autoOfferedBound='1';el.addEventListener('input',()=>{delete el.dataset.autoOffered})}}})}catch(e){}
    const box=document.createElement('div');box.id='v63-feed';box.className='card';box.style.margin='12px 0 4px';
-   box.innerHTML='<h3 style="margin-top:0">4단계 · 먹이기/섭취기록</h3><p class="hint"><b>제공량</b>은 식단 기준합계가 처음부터 입력돼 있어요. 실제로 다르게 준 날만 고치고 <b>실제 섭취량</b>만 입력하면 됩니다. 치즈·바나나처럼 곁들인 음식은 각 끼니의 <b>추가로 먹인 것</b>에 자유롭게 적어주세요. 화면을 열어보기만 한 끼니는 기록으로 저장되지 않아요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'먹임 기록 취소':'먹임 기록')+'</button>':''}).join('')+'</div>';
+   box.innerHTML='<h3 style="margin-top:0">섭취기록 (선택)</h3><p class="hint">준비 흐름과 재고 계산에는 영향을 주지 않는 선택 기록이에요. <b>제공량</b>은 식단 기준합계가 처음부터 입력돼 있고, 실제로 다르게 준 날만 고치면 됩니다. <b>실제 섭취량</b>과 치즈·바나나 같은 <b>추가로 먹인 것</b>도 필요할 때만 남겨주세요. 화면을 열어보기만 한 끼니는 기록으로 저장되지 않아요.</p><div style="display:grid;gap:7px">'+[0,1,2].map(i=>{const m=model(on,i);return m?'<button class="btn" data-v63-feed="'+esc(m.key)+'">'+['아침','점심','저녁'][i]+' · '+(snapshot().feeds[m.key]?'먹임 기록 취소':'먹임 기록')+'</button>':''}).join('')+'</div>';
    holder.querySelector('#v63-feed')?.remove();
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
