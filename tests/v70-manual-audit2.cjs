@@ -47,6 +47,6 @@ assert(index.includes('health-schedule-v43.js?v=20260916-v43&r=20260922-v73-reco
 assert(index.includes('legacy-outing-v40-seed.js?v=20260916-v40&r=20260922-v73-recordonly5'));
 assert(index.includes('legacy-outing-v41-no-embedded-map.js?v=20260916-v41&r=20260922-v73-recordonly5'));
 assert(index.includes("const RELEASE='20260923-v75-prepflow1'"));
-assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"));
+assert(sw.includes("const CACHE='dojun-pwa-v75-prepflow1'"));
 assert(sw.includes("'/legacy-outing-v36.js'"),'outing heading fix must be network-first');
 console.log('PASS: manual audit 2 keeps nutrition, ingredient state, and outing copy honest');
