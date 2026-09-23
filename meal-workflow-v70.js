@@ -103,7 +103,9 @@
  // 그래서 끼니 단위로 재고를 예약할 필요가 없다.
  function plan(){return E.plan(meals(target(),7),snapshot())}
  const PREPARED_ONLY_SHOP_EXCLUDE=new Set(['잡곡무른밥','잡곡진밥','쌀구기자닭죽','당근톳밥','강낭콩밥','밥 (조리 후)']);
+ const PURCHASE_ONLY_SHOP=new Set(['김']);
  function isPreparedOnlyShoppingName(name){return PREPARED_ONLY_SHOP_EXCLUDE.has(E.norm(name))}
+ function isPurchaseOnlyShoppingName(name){return PURCHASE_ONLY_SHOP.has(E.norm(name))}
  function shopKey(start){return 'mg29|'+start}
  function shopList(start){return shopChk?.[shopKey(start)]||[]}
  function shopChecked(start,name){return shopList(start).includes(name)}
@@ -164,7 +166,9 @@
    const totals={};
    for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<end))for(const x of r.needs){
      if(isPreparedOnlyShoppingName(x.name))continue;
-     const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
+     const purchaseOnly=isPurchaseOnlyShoppingName(x.name),t=totals[x.name]||(totals[x.name]={g:0,unknown:false,purchaseOnly});
+     if(purchaseOnly){t.purchaseOnly=true;continue}
+     if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
    }
    const receipts=shoppingReceipts();
    for(const rec of Object.values(receipts)){
@@ -179,7 +183,9 @@
      const start=addD(target(),a),end=addD(target(),b),totals={};
      for(const r of p.filter(r=>r.meal.on>=start&&r.meal.on<end))for(const x of r.needs){
        if(isPreparedOnlyShoppingName(x.name))continue;
-       const t=totals[x.name]||(totals[x.name]={g:0,unknown:false});if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
+       const purchaseOnly=isPurchaseOnlyShoppingName(x.name),t=totals[x.name]||(totals[x.name]={g:0,unknown:false,purchaseOnly});
+       if(purchaseOnly){t.purchaseOnly=true;continue}
+       if(x.buyG===null)t.unknown=true;else t.g+=x.buyG;
      }
      for(const [name,v] of Object.entries(totals)){
        if(!shopChecked(start,name)||v.unknown||!(Number(v.g)>0))continue;
@@ -197,7 +203,7 @@
      const done=rows.filter(([n])=>shopChecked(start,n)).length,allDone=!rows.length||done===rows.length;
      html+='<div class="card" style="margin-top:12px">'
        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h3 style="margin:0">'+label+' 부족분</h3><span class="chip sm '+(allDone?'ok':'')+'">'+(rows.length?(allDone?'장보기 완료':'장보기 미완료 '+done+'/'+rows.length):'장보기 완료 · 추가 구매 없음')+'</span></div>'
-       +(rows.length?rows.map(([n,x])=>{const on=shopChecked(start,n),g=x.g>0?Math.round(x.g*10)/10:0;return '<div class="shop'+(on?' on':'')+'" data-v63-shopcheck="'+start+'|'+encodeURIComponent(n)+'" data-v63-shopg="'+(x.unknown?'':g)+'" style="cursor:pointer"><div class="bx"></div><div class="nm"><b>'+esc(n)+'</b><div class="hint">'+(g>0?g+'g':'')+(x.unknown?(g>0?' · ':'')+'레시피량 확인 필요':on?' · 원재료 재고 반영됨':'')+'</div></div><div class="qt">'+(on?'구매완료':'미구매')+'</div></div>'}).join(''):'<p>등록된 재고로 준비 가능</p>')
+       +(rows.length?rows.map(([n,x])=>{const on=shopChecked(start,n),g=x.g>0?Math.round(x.g*10)/10:0,purchaseOnly=!!x.purchaseOnly,hint=purchaseOnly?(on?'구매완료 · 수량 재고 미반영':'구매 여부만 확인'):(g>0?g+'g':'')+(x.unknown?(g>0?' · ':'')+'레시피량 확인 필요':on?' · 원재료 재고 반영됨':'');return '<div class="shop'+(on?' on':'')+'" data-v63-shopcheck="'+start+'|'+encodeURIComponent(n)+'" data-v63-shopg="'+(x.unknown?'':g)+'"'+(purchaseOnly?' data-v63-purchaseonly="1"':'')+' style="cursor:pointer"><div class="bx"></div><div class="nm"><b>'+esc(n)+'</b><div class="hint">'+hint+'</div></div><div class="qt">'+(on?'구매완료':'미구매')+'</div></div>'}).join(''):'<p>등록된 재고로 준비 가능</p>')
        +(rows.length?'<div class="btnrow" style="margin-top:10px"><button class="btn '+(allDone?'':'pri')+'" data-v63-shopall="'+start+'">'+(allDone?'완료 취소':'전체 구매완료')+'</button></div>':'')
        +'</div>';
    }return html;
@@ -277,7 +283,8 @@
      const m=r.meal,fullUsed=(r.used||[]).filter(u=>u.kind==='prepared'&&E.norm(u.name)===E.norm(m.name)).reduce((s,u)=>s+(Number(u.g)||0),0),
        ratio=Number(m.g)>0?Math.max(0,Number(m.g)-fullUsed)/Number(m.g):1;
      for(const ing of m.ingredients||[]){
-       const name=E.norm(ing.name),key=makeTaskKey(start,name),x=map[key]||(map[key]={key,start,name,requiredG:0,coveredG:0,meals:0,unknown:false});
+       const name=E.norm(ing.name);if(isPurchaseOnlyShoppingName(name))continue;
+       const key=makeTaskKey(start,name),x=map[key]||(map[key]={key,start,name,requiredG:0,coveredG:0,meals:0,unknown:false});
        x.meals++;if(Number(ing.g)>0)x.requiredG+=Number(ing.g)*ratio;else x.unknown=true;
      }
      for(const u of r.used||[]){
@@ -460,13 +467,15 @@
      e.preventDefault();e.stopImmediatePropagation();
      try{
        if(shop.hasAttribute('data-v63-shopcheck')){
-         const [start,enc]=shop.getAttribute('data-v63-shopcheck').split('|'),name=decodeURIComponent(enc),key=shopKey(start),list=shopChk[key]||(shopChk[key]=[]),i=list.indexOf(name),g=Number(shop.getAttribute('data-v63-shopg'));
+         const [start,enc]=shop.getAttribute('data-v63-shopcheck').split('|'),name=decodeURIComponent(enc),key=shopKey(start),list=shopChk[key]||(shopChk[key]=[]),i=list.indexOf(name),g=Number(shop.getAttribute('data-v63-shopg')),purchaseOnly=shop.getAttribute('data-v63-purchaseonly')==='1';
          if(i<0){
+           if(purchaseOnly){list.push(name);saveShopChecks();render(true);return toast(name+' 구매완료로 표시했어요 · 수량 재고는 만들지 않아요')}
            if(!(g>0))throw Error(name+' 구매량을 먼저 확인해 주세요');
            const add=addPurchasedStock(start,name,g);list.push(name);saveShopChecks();render(true);
            return toast(add.added?name+' '+g+'g을 구매재고에 반영했어요':name+'은 이미 반영된 구매예요 · 재고는 그대로 뒀어요 (필요하면 1단계에서 수량을 고쳐주세요)');
          }
-         list.splice(i,1);const back=rollbackPurchasedStock(start,name);saveShopChecks();render(true);
+         list.splice(i,1);if(purchaseOnly){saveShopChecks();render(true);return toast(name+' 구매완료를 취소했어요')}
+         const back=rollbackPurchasedStock(start,name);saveShopChecks();render(true);
          return toast(back.rolledBack?'구매완료를 취소하고 자동 반영 재고도 되돌렸어요':'구매 체크만 취소했어요 · 이미 사용·수정된 재고는 유지했어요');
        }
        const start=shop.getAttribute('data-v63-shopall'),key=shopKey(start),p=plan(),end=addD(start,start===target()?4:3),totals=batchShoppingTotals(start,end,p),
@@ -475,10 +484,10 @@
          for(const n of names){const i=cur.indexOf(n);if(i>=0)cur.splice(i,1);rollbackPurchasedStock(start,n)}
          saveShopChecks();render(true);return toast('구매완료를 취소했어요');
        }
-       if(entries.some(([,v])=>v.unknown||!(Number(v.g)>0)))throw Error('구매량 확인이 필요한 재료가 있어요');
-       for(const [n,v] of entries)if(!cur.includes(n))shoppingStockTarget(n,v.g);
+       if(entries.some(([,v])=>!v.purchaseOnly&&(v.unknown||!(Number(v.g)>0))))throw Error('구매량 확인이 필요한 재료가 있어요');
+       for(const [n,v] of entries)if(!cur.includes(n)&&!v.purchaseOnly)shoppingStockTarget(n,v.g);
        let kept=0;
-       for(const [n,v] of entries)if(!cur.includes(n)){if(!addPurchasedStock(start,n,v.g).added)kept++;cur.push(n)}
+       for(const [n,v] of entries)if(!cur.includes(n)){if(!v.purchaseOnly&&!addPurchasedStock(start,n,v.g).added)kept++;cur.push(n)}
        saveShopChecks();render(true);
        return toast(kept?'구매완료로 표시했어요 · '+kept+'개는 이미 반영된 구매라 재고를 그대로 뒀어요':'구매한 원재료를 재고에 반영했어요');
      }catch(err){return toast(err.message)}
@@ -567,6 +576,6 @@
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
- root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,cleanupLegacyWholeMeals,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock};
+ root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,cleanupLegacyWholeMeals,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock,isPurchaseOnlyShoppingName};
  try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);
