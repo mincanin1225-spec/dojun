@@ -42,6 +42,6 @@ assert(shell.includes('cur.extra_foods=extraVal'),'extra-food text must persist 
 assert(index.includes('./legacy-v70.html?r=20260923-v75-prepflow1'),'index must load v70 shell');
 assert(index.includes('./meal-workflow-v70.js?r=20260923-v75-prepflow1'),'index must load v70 workflow');
 assert(shell.includes("name:'도준이키우기',version:'v75'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v74-bootgate1'"),'v70 cache missing');
+assert(sw.includes("const CACHE='dojun-pwa-v75-prepflow1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 console.log('PASS: v70 final UX audit keeps one four-step flow and preserves in-progress feeding records');
