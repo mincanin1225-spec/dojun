@@ -23,8 +23,8 @@ assert(shell.includes('동기화 데이터 버전이 달라 중지했어요'),'s
 assert(flow.includes('const MEAL_SYNC_KEYS=new Set'),'meal workflow must declare synced state keys');
 assert(flow.includes("typeof root.syncPush==='function'"),'meal workflow writes must forward to family sync when connected');
 
-assert(index.includes('legacy-management-v78-bundle.js?r=20260923-v78-fastboot1'),'management renderer must use the consolidated fast-boot bundle');
-assert(index.includes("const RELEASE='20260923-v78-fastboot1'"),'PWA release marker must refresh');
-assert(sw.includes("const CACHE='dojun-pwa-v78-fastboot1'"),'PWA cache marker must refresh');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v79-buyonly1'),'management renderer must use the consolidated fast-boot bundle');
+assert(index.includes("const RELEASE='20260924-v79-buyonly1'"),'PWA release marker must refresh');
+assert(sw.includes("const CACHE='dojun-pwa-v79-buyonly1'"),'PWA cache marker must refresh');
 assert(sw.includes("'/legacy-management-v78-bundle.js'"),'active management bundle must be network-first');
 console.log('PASS: inventory floating display and family sync schema guard are covered');
