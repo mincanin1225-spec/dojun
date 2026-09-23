@@ -18,7 +18,7 @@
 </head>
 <body>
 <div id="boot">도준이키우기 불러오는 중…</div>
-<iframe id="app" src="./legacy-v70.html?r=20260922-v74-bootgate1" title="도준이키우기"></iframe>
+<iframe id="app" src="./legacy-v70.html?r=20260923-v75-prepflow1" title="도준이키우기"></iframe>
 <script>
 (function(){
   const frame=document.getElementById('app'),boot=document.getElementById('boot');
@@ -45,7 +45,7 @@
     if(d.getElementById('v29-management-script'))return;
     const s=d.createElement('script');
     s.id='v29-management-script';
-    s.src='./legacy-management-v29.js?v=20260916-v40&r=20260921-v63';
+    s.src='./legacy-management-v29.js?v=20260916-v40&r=20260923-v75-prepflow1';
     s.onload=function(){
       const p=d.createElement('script');
       p.id='v30-management-script';
@@ -65,7 +65,7 @@
             t.onload=function(){
               const u=d.createElement('script');
               u.id='v33-management-script';
-              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260922-v73-recordonly5';
+              u.src='./legacy-management-v33.js?v=20260916-v40&r=20260923-v75-prepflow1';
               u.onload=function(){
                 const v=d.createElement('script');
                 v.id='v34-management-script';
@@ -75,10 +75,48 @@
                   w.id='v35-management-script';
                   w.src='./legacy-management-v35.js?v=20260916-v40&r=20260921-v63-shopstatus1';
                   w.onload=function(){
+                    // 준비 탭에 필요한 핵심 경로는 외출·건강 모듈을 기다리지 않고 먼저 올린다.
+                    // 구화면은 숨긴 채 유지하고, 재고 UI + meal workflow가 준비되면 바로 최신 화면을 보여준다.
+                    const loadMealCore=function(){
+                      const loadWorkflow=function(){
+                        if(d.getElementById('v63-meal-workflow-script'))return;
+                        const ui=d.createElement('script');
+                        ui.id='v63-meal-workflow-script';
+                        ui.src='./meal-workflow-v70.js?r=20260923-v75-prepflow1';
+                        ui.onload=function(){readyPart('workflow')};
+                        ui.onerror=failBoot;
+                        d.head.appendChild(ui);
+                      };
+                      const loadStock=function(){
+                        if(d.getElementById('v63-meal-stock-script'))return loadWorkflow();
+                        const am=d.createElement('script');
+                        am.id='v63-meal-stock-script';
+                        am.src='./meal-stock-v66.js?r=20260922-v66-recordonly5';
+                        am.onload=loadWorkflow;
+                        am.onerror=failBoot;
+                        d.head.appendChild(am);
+                      };
+                      const loadSafe=function(){
+                        if(d.getElementById('v58-ppeuni-safe-script'))return loadStock();
+                        const al=d.createElement('script');
+                        al.id='v58-ppeuni-safe-script';
+                        al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v73-recordonly5';
+                        al.onload=loadStock;
+                        al.onerror=loadStock;
+                        d.head.appendChild(al);
+                      };
+                      if(d.getElementById('v58-ppeuni-data-script'))return loadSafe();
+                      const ak=d.createElement('script');
+                      ak.id='v58-ppeuni-data-script';
+                      ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260922-v73-recordonly5';
+                      ak.onload=loadSafe;
+                      ak.onerror=loadSafe;
+                      d.head.appendChild(ak);
+                    };
                     const vi=d.createElement('script');
                     vi.id='v61-photo-inventory-script';
-                    vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260922-v73-recordonly5';
-                    vi.onload=function(){readyPart('inventory')};
+                    vi.src='./legacy-inventory-v61-photo.js?v=20260921-v61&r=20260923-v75-prepflow1';
+                    vi.onload=function(){readyPart('inventory');loadMealCore()};
                     vi.onerror=failBoot;
                     d.head.appendChild(vi);
                     const x=d.createElement('script');
@@ -129,34 +167,11 @@
                                           aj.id='v47-ui-script';
                                           aj.src='./legacy-ui-v47.js?v=20260916-v47&r=20260921-v63';
                                           aj.onload=function(){
-                                            const loadHealth=function(){
-                                              readyPart('workflow');
-                                              if(d.getElementById('v46-health-import-script'))return;
-                                              const ai=d.createElement('script');
-                                              ai.id='v46-health-import-script';
-                                              ai.src='./legacy-health-v46-import.js?v=20260916-v46&r=20260921-v63';
-                                              d.head.appendChild(ai);
-                                            };
-                                            const ak=d.createElement('script');
-                                            ak.id='v58-ppeuni-data-script';
-                                            ak.src='./src/ppeuni-verified-v49.js?v=20260919-v58&r=20260922-v73-recordonly5';
-                                            ak.onload=function(){
-                                              const al=d.createElement('script');
-                                              al.id='v58-ppeuni-safe-script';
-                                              al.src='./legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260922-v73-recordonly5';
-                                              al.onload=function(){
-                                                const am=d.createElement('script');
-                                                am.id='v63-meal-stock-script';
-                                                am.src='./meal-stock-v66.js?r=20260922-v66-recordonly5';
-                                                am.onload=function(){const ui=d.createElement('script');ui.src='./meal-workflow-v70.js?r=20260922-v73-recordonly5';ui.onload=loadHealth;ui.onerror=loadHealth;d.head.appendChild(ui)};
-                                                am.onerror=loadHealth;
-                                                d.head.appendChild(am);
-                                              };
-                                              al.onerror=loadHealth;
-                                              d.head.appendChild(al);
-                                            };
-                                            ak.onerror=loadHealth;
-                                            d.head.appendChild(ak);
+                                            if(d.getElementById('v46-health-import-script'))return;
+                                            const ai=d.createElement('script');
+                                            ai.id='v46-health-import-script';
+                                            ai.src='./legacy-health-v46-import.js?v=20260916-v46&r=20260921-v63';
+                                            d.head.appendChild(ai);
                                           };
                                           d.head.appendChild(aj);
                                         };
@@ -236,7 +251,7 @@
 <script>
 (function(){
   if(!('serviceWorker' in navigator))return;
-  const RELEASE='20260922-v74-bootgate1',KEY='dojun-sw-release';
+  const RELEASE='20260923-v75-prepflow1',KEY='dojun-sw-release';
   let reloading=false;
   function reloadOnce(){
     if(reloading||localStorage.getItem(KEY)===RELEASE)return;
