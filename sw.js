@@ -1,11 +1,9 @@
-const CACHE='dojun-pwa-v77-mealvisual1';
+const CACHE='dojun-pwa-v78-fastboot1';
 const CORE=[
   './meal-stock-v66.js','./meal-workflow-v70.js','./legacy-inventory-v61-photo.js',
   './','./index.html','./manifest.webmanifest','./legacy-v70.html',
   './icons/icon-192.svg','./icons/icon-512.svg',
-  './legacy-management-v29.js','./legacy-management-v30.js','./legacy-management-v31.js',
-  './legacy-management-v32.js','./legacy-management-v32-1.js','./legacy-management-v33.js',
-  './legacy-management-v34.js','./legacy-management-v35.js',
+  './legacy-management-v78-bundle.js',
   './legacy-outing-v36.js','./legacy-outing-v37.js','./legacy-outing-v38.js',
   './legacy-fixes-v39.js','./legacy-outing-v40-seed.js','./legacy-outing-v41-no-embedded-map.js',
   './legacy-outing-v42-priority.js','./health-schedule-v43.js','./legacy-health-v43.js',
@@ -20,7 +18,7 @@ self.addEventListener('activate',event=>{
   event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
-const CRITICAL=['/legacy-v70.html','/legacy-inventory-v61-photo.js','/meal-stock-v66.js','/meal-workflow-v70.js','/legacy-management-v33.js','/health-schedule-v43.js','/legacy-health-v43.js','/legacy-outing-v36.js','/legacy-outing-v40-seed.js','/legacy-outing-v41-no-embedded-map.js','/src/ppeuni-verified-v49.js','/legacy-ppeuni-v58-safe.js'];
+const CRITICAL=['/legacy-v70.html','/legacy-inventory-v61-photo.js','/meal-stock-v66.js','/meal-workflow-v70.js','/legacy-management-v78-bundle.js','/health-schedule-v43.js','/legacy-health-v43.js','/legacy-outing-v36.js','/legacy-outing-v40-seed.js','/legacy-outing-v41-no-embedded-map.js','/src/ppeuni-verified-v49.js','/legacy-ppeuni-v58-safe.js'];
 self.addEventListener('fetch',event=>{
   const req=event.request;
   if(req.method!=='GET')return;
