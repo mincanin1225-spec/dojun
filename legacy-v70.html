@@ -59,7 +59,11 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 .wh span:last-child{color:var(--berry)}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .day{background:#fff;border-radius:14px;aspect-ratio:1/1.18;padding:5px 3px 4px;display:flex;
-  flex-direction:column;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(74,64,56,.05)}
+  flex-direction:column;align-items:center;justify-content:space-between;box-shadow:0 1px 2px rgba(74,64,56,.05);position:relative}
+.day.hasplan{background:#F5FBF8;box-shadow:0 0 0 1px rgba(111,191,160,.24),0 1px 2px rgba(74,64,56,.05)}
+.day .planmark{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 2px #fff}
+.cal-legend{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:7px 3px 0;font-size:11.5px;color:var(--muted);font-weight:700}
+.cal-legend i{width:7px;height:7px;border-radius:50%;background:var(--mint);display:inline-block}
 .day.blank{background:none;box-shadow:none}
 .day .n{font-size:12.5px;font-weight:700;line-height:1}
 .day.sun .n{color:var(--berry)}
@@ -218,7 +222,7 @@ h1,h2,h3,h4{margin:0;letter-spacing:-.02em}
 
 <script>
 /* ══════════ 저장소 ══════════ */
-window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v75'});
+window.__DOJUN_RELEASE=Object.freeze({name:'도준이키우기',version:'v76'});
 const APP_VER=window.__DOJUN_RELEASE.version;
 var lastTap='-';
 const LS={
@@ -836,10 +840,11 @@ function vCal(){
   let cells='';
   for(let i=0;i<first;i++)cells+='<div class="day blank"></div>';
   for(let d=1;d<=dim;d++){
-    const on=`${y}-${pad(mo)}-${pad(d)}`,L=lg(on),wd=new Date(y,mo-1,d).getDay(),m0=mObj(on,0);
+    const on=`${y}-${pad(mo)}-${pad(d)}`,L=lg(on),wd=new Date(y,mo-1,d).getDay(),m0=mObj(on,0),hasPlan=hasAny(on);
+    const hasRecord=['b','l','d'].some(s=>L[s]&&Object.keys(L[s]).length);
     const dots=['b','l','d'].map(s=>`<i class="${(L[s]&&L[s].s)||''}"></i>`).join('');
-    cells+=`<button class="day${wd===0?' sun':''}${on===today?' today':''}" data-a="day:${on}">
-      <span class="n">${d}</span>${miniSVG(m0)}<span class="dd">${dots}</span>
+    cells+=`<button class="day${wd===0?' sun':''}${on===today?' today':''}${hasPlan?' hasplan':''}" data-a="day:${on}" aria-label="${mo}월 ${d}일${hasPlan?' · 식단 있음':''}">
+      <span class="n">${d}</span>${hasPlan?'<span class="planmark" title="식단 있음"></span>':''}${miniSVG(m0)}${hasPlan||hasRecord?`<span class="dd">${dots}</span>`:'' }
       ${m0&&m0.trial?'<span class="newdot"></span>':''}</button>`;
   }
   const day=P(today);
@@ -861,6 +866,7 @@ function vCal(){
     </div><button class="pill" data-a="today">오늘</button></div>
     <div class="wh">${WDH.map(w=>`<span>${w}</span>`).join('')}</div>
     <div class="cal">${cells}</div>
+    <div class="cal-legend"><i></i>식단 있는 날</div>
     <div class="sec"><h2>오늘 ${P(today).getMonth()+1}/${P(today).getDate()}</h2>
       <button class="more" data-a="day:${today}">자세히 ›</button></div>
     <div class="card">${(isDel(today)&&!hasAny(today))?`<p class="hint" style="margin:0 0 10px">이 날은 비워뒀어요. 달력과 영양 계산에서 빠져 있습니다.</p>
