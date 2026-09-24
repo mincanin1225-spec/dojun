@@ -5,7 +5,7 @@ const legacy=fs.readFileSync(path.join(root,'legacy-v24.html'),'utf8');
 const management=fs.readFileSync(path.join(root,'legacy-management-v29.js'),'utf8');
 new Function(management);
 assert(/\.\/legacy-v(?:24|\d+(?:-[\w-]+)?)\.html(?:\?[^\"']+)?/.test(index),'original app shell must remain the default UI');
-assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v79-buyonly1'),'v29 management extension must be present through the consolidated bundle');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v80-simpleprep1'),'v29 management extension must be present through the consolidated bundle');
 assert(legacy.includes("const TABS=[['cal','식단','cal'],['shop','장보기','shop']"),'original app source must remain preserved');
 assert(management.includes("window.__mgStage='home'"),'management must open on weekly overview');
 assert(management.includes("title:'1차 식단표'"),'overview must include first meal-plan block');
