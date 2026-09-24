@@ -44,9 +44,9 @@ assert.equal(ctx.mText('2028-01-01',0),'','2028 must not show synthetic meals');
 assert.equal(ctx.mObj('2028-01-01',0),null,'2028 must not expose cached synthetic meal objects');
 assert.deepEqual(JSON.parse(JSON.stringify(ctx.weekList('2028-01-03',7))),{},'future shopping/prep must be empty outside Ppeuni source range');
 
-assert(index.includes('legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260924-v79-buyonly1'),'Ppeuni-only patch must load with a fresh cache key');
-assert(index.includes("const RELEASE='20260924-v79-buyonly1'"),'release marker must refresh');
-assert(sw.includes("const CACHE='dojun-pwa-v79-buyonly1'"),'PWA cache must refresh');
+assert(index.includes('legacy-ppeuni-v58-safe.js?v=20260919-v58&r=20260924-v80-makelabel1'),'Ppeuni-only patch must load with a fresh cache key');
+assert(index.includes("const RELEASE='20260924-v80-makelabel1'"),'release marker must refresh');
+assert(sw.includes("const CACHE='dojun-pwa-v80-makelabel1'"),'PWA cache must refresh');
 assert(sw.includes("'/legacy-ppeuni-v58-safe.js'"),'Ppeuni policy script must be network-first');
 
 console.log('PASS: only verified Ppeuni schedules survive; 2028 auto menus are suppressed');
