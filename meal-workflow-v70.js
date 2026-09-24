@@ -312,13 +312,20 @@
    if(!isPreparedOnlyShoppingName(t.name))return {key:'make:'+t.key,name:t.name,g:1,ingredients:[{name:t.name,g:1}],steps:'',plannedG:t.missingG};
    return null;
  }
+ function hasExactRaw(name){
+   const n=E.norm(name);if(recipeMap()[n])return false;
+   try{return Object.entries(inventory||{}).some(([k,v])=>E.norm(v?.customName||invName(k))===n)}catch(e){return false}
+ }
  function makeTaskRow(t){
    const ready=t.missingG===0&&!t.unknown,defaultG=t.missingG===null?'':t.missingG,
      qty=t.unknown?'분량 확인 필요':('이번 준비 필요 '+t.requiredG+'g'+(t.coveredG>0?' · 재고 '+t.coveredG+'g 반영':''));
+   const detail=hasExactRaw(t.name)
+     ?'<button type="button" class="btn" data-v80-simpleprep="'+encodeURIComponent(t.key)+'" style="padding:6px 10px;font-size:11.5px;flex:none">완성량·소분</button>'
+     :'<button type="button" class="btn" data-v63-edit="component:'+encodeURIComponent(t.name)+'" style="padding:6px 10px;font-size:11.5px;flex:none">재료·분량</button>';
    return '<div class="shop'+(ready?' on':'')+'" style="align-items:center">'+
      '<button type="button" class="bx" aria-label="'+esc(t.name)+' 만들기 상태" '+(ready&&!t.undo?'disabled':'data-v71-makecheck="'+encodeURIComponent(t.key)+'"')+'></button>'+
      '<div class="nm"><b>'+esc(t.name)+'</b><div class="hint">'+esc(qty)+'</div>'+
-       (ready?'<div class="hint" style="margin-top:3px">필요량 준비됨</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span><button type="button" class="btn" data-v63-edit="component:'+encodeURIComponent(t.name)+'" style="padding:6px 10px;font-size:11.5px;flex:none">재료·분량</button></div>')+
+       (ready?'<div class="hint" style="margin-top:3px">필요량 준비됨</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span>'+detail+'</div>')+
      '</div><div class="qt"'+(ready&&!t.undo?'':' data-v71-makecheck="'+encodeURIComponent(t.key)+'" style="cursor:pointer"')+'>'+(ready?(t.undo?'만들기 취소':'재고로 충분'):'만들었음')+'</div></div>';
  }
  function batchMake(label,start,end,rows){
@@ -336,6 +343,7 @@
      second=p.filter(r=>r.meal.on>=firstEnd&&r.meal.on<secondEnd);
    return nav()+'<div class="sec"><h2>3단계 · 만들기</h2><span class="more">체크만 하면 재고 반영</span></div>'+
      '<p class="hint">장보기한 재료를 이번 식단에 쓸 수 있게 준비했는지만 체크하세요. 기본 수량은 이번 식단에 필요한 정량이고, 더 만든 경우에만 실제 만든 양을 수정하면 됩니다.</p>'+
+     '<div class="card" style="margin:10px 0"><b>식단 외로 만든 것</b><div class="hint" style="margin:5px 0 10px">고구마처럼 뿐이 식단과 따로 곁들일 준비식도 여기에 등록할 수 있어요.</div><button type="button" class="btn" data-v80-extra-prep style="width:100%">＋ 준비식 직접 추가</button></div>'+
      batchMake('1차 · 월~목',base,firstEnd,first)+batchMake('2차 · 금~일',firstEnd,secondEnd,second);
  }
  function get(k){if(k.startsWith('component:'))return component(decodeURIComponent(k.slice(10)));const [on,s]=k.split('|');return model(on,Number(s))}
@@ -389,6 +397,30 @@
      '<input name="token" type="hidden" value="'+token()+'"><div class="cook-actions"><button type="button" class="btn" data-v68-recipe-cancel>취소</button><button class="btn pri" type="submit">조리 완료 · 재고 반영</button></div></form></div>');
    setTimeout(()=>updateUnifiedPreview(document.querySelector('[data-v70-unified]')),0);
  }
+
+ function updateV80Total(form){
+   if(!form)return;
+   const unit=Number(form.querySelector('[name="unitG"]')?.value)||0,count=Number(form.querySelector('[name="count"]')?.value)||0,total=Math.round(unit*count*10)/10,
+     el=form.querySelector('[data-v80-total]');if(el)el.textContent=(total||0)+'g';
+ }
+ function simplePrepEditor(task){
+   const def=Number(task?.missingG)>0?task.missingG:'';
+   open('<h2>'+esc(task.name)+'</h2><p class="hint">이 재료는 따로 레시피를 만들지 않고 <b>실제 완성량·소분만</b> 등록해요. 완료하면 같은 이름의 원재료를 실제 총 완성량만큼 차감합니다.</p>'+
+     '<form data-v80-simpleprep="'+esc(task.key)+'"><div class="card"><div class="fld"><label>1개 중량</label><input name="unitG" type="number" min="0.1" step="0.1" inputmode="decimal" required value="'+def+'"></div><div class="fld"><label>개수</label><input name="count" type="number" min="1" step="1" inputmode="numeric" required value="1"></div><div class="hint">실제 총 완성량 <b data-v80-total>0g</b></div><div class="fld" style="margin-top:12px"><label>제조일</label><input name="date" type="date" required value="'+date()+'"></div></div><div class="btnrow"><button type="button" class="btn" data-v80-prep-cancel>취소</button><button type="submit" class="btn pri">조리 완료 · 재고 반영</button></div></form>');
+   setTimeout(()=>updateV80Total(document.querySelector('[data-v80-simpleprep]')),0);
+ }
+ function extraPrepEditor(){
+   open('<h2>준비식 직접 추가</h2><p class="hint">뿐이 식단과 별도로 곁들일 고구마 같은 음식을 등록해요. <b>원재료 재고는 자동 차감하지 않습니다.</b></p>'+
+     '<form data-v80-extraprep><div class="card"><div class="fld"><label>준비식 이름</label><input name="name" type="text" required placeholder="예: 삶은 고구마"></div><div class="fld"><label>1개 중량</label><input name="unitG" type="number" min="0.1" step="0.1" inputmode="decimal" required placeholder="예: 30"></div><div class="fld"><label>개수</label><input name="count" type="number" min="1" step="1" inputmode="numeric" required value="1"></div><div class="hint">실제 총 완성량 <b data-v80-total>0g</b></div><div class="fld" style="margin-top:12px"><label>제조일</label><input name="date" type="date" required value="'+date()+'"></div></div><div class="btnrow"><button type="button" class="btn" data-v80-prep-cancel>취소</button><button type="submit" class="btn pri">준비식 재고에 추가</button></div></form>');
+   setTimeout(()=>updateV80Total(document.querySelector('[data-v80-extraprep]')),0);
+ }
+ function addExtraPrepared(name,unitG,count,madeDate){
+   const before=snapshot(),next=clone(before),codes=new Set((next.prepared||[]).map(x=>x.mealCode)),id='extra-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+   let n=1;while(codes.has('M-'+n))n++;
+   next.prepared.push({id,name:E.norm(name),mealKey:'extra:'+id,plannedG:unitG*count,unitG,remainingCount:count,originalCount:count,madeDate,mealCode:'M-'+n,source:'manual-extra-prep'});
+   commit(before,next);
+ }
+
  function updatePortionPreview(form){
    if(!form)return;
    const unit=Number(form.querySelector('[name="unitG"]')?.value)||0,count=Number(form.querySelector('[name="count"]')?.value)||0,
@@ -416,6 +448,16 @@
  if(root.addEventListener)root.addEventListener('click',function(e){const old=e.target.closest&&e.target.closest('[data-v62-complete],[data-v35complete],[data-a^="bdone:"]');if(old){e.preventDefault();e.stopImmediatePropagation();toast('새 식단만들기 화면에서 완료해 주세요')}},true);
  // Block legacy automatic deduction entry points. The old v62 loader is removed in index.html.
  document.addEventListener('click',function(e){
+   const v80=e.target.closest&&e.target.closest('[data-v80-simpleprep],[data-v80-extra-prep],[data-v80-prep-cancel]');
+   if(v80){
+     e.preventDefault();e.stopImmediatePropagation();
+     if(v80.hasAttribute('data-v80-prep-cancel'))return close();
+     if(v80.hasAttribute('data-v80-extra-prep'))return extraPrepEditor();
+     const key=decodeURIComponent(v80.getAttribute('data-v80-simpleprep')||''),sep=key.indexOf('|'),start=key.slice(0,sep),
+       end=addD(start,start===target()?4:3),rows=plan().filter(r=>r.meal.on>=start&&r.meal.on<end),task=makeTasks(rows,start).find(t=>t.key===key);
+     if(!task)return toast('현재 만들기 항목을 찾지 못했어요');
+     return simplePrepEditor(task);
+   }
    const portionCtl=e.target.closest&&e.target.closest('[data-v68-portion],[data-v68-portion-cancel]');
    if(portionCtl&&(portionCtl.hasAttribute('data-v68-portion')||portionCtl.hasAttribute('data-v68-portion-cancel'))){
      e.preventDefault();e.stopImmediatePropagation();
@@ -527,9 +569,29 @@
    }catch(err){toast(err.message)}finally{locked=false}
  },true);
  document.addEventListener('submit',function(e){
-   const f=e.target;if(!f.matches('[data-v63-form],[data-v63-recipe]'))return;e.preventDefault();e.stopImmediatePropagation();if(locked)return;
+   const f=e.target;if(!f.matches('[data-v63-form],[data-v63-recipe],[data-v80-simpleprep],[data-v80-extraprep]'))return;e.preventDefault();e.stopImmediatePropagation();if(locked)return;
    try{
-     const fd=new FormData(f),k=f.getAttribute('data-v63-form')||f.getAttribute('data-v63-recipe'),m=get(k);if(!m)throw Error('식단이 변경됐어요');
+     const fd=new FormData(f);
+     if(f.hasAttribute('data-v80-extraprep')){
+       const name=E.norm(String(fd.get('name')||'')),unitG=Number(fd.get('unitG')),count=Number(fd.get('count')),madeDate=String(fd.get('date')||'');
+       if(!name)throw Error('준비식 이름을 입력해 주세요');
+       if(!Number.isFinite(unitG)||unitG<=0||!Number.isInteger(count)||count<1)throw Error('완성량·소분을 확인해 주세요');
+       if(!/^\d{4}-\d{2}-\d{2}$/.test(madeDate)||madeDate>date())throw Error('실제 제조일을 확인해 주세요');
+       if(!confirm(name+' '+unitG+'g × '+count+'개를 준비식 재고에 추가할까요?'))return;
+       locked=true;addExtraPrepared(name,unitG,count,madeDate);close();render(true);return toast(name+' 준비식을 추가했어요');
+     }
+     if(f.hasAttribute('data-v80-simpleprep')){
+       const key=f.getAttribute('data-v80-simpleprep'),sep=key.indexOf('|'),start=key.slice(0,sep),name=key.slice(sep+1),unitG=Number(fd.get('unitG')),count=Number(fd.get('count')),madeDate=String(fd.get('date')||''),
+         end=addD(start,start===target()?4:3),rows=plan().filter(r=>r.meal.on>=start&&r.meal.on<end),task=makeTasks(rows,start).find(t=>t.key===key),total=Math.round(unitG*count*10)/10;
+       if(!task)throw Error('현재 만들기 항목을 찾지 못했어요');
+       if(!Number.isFinite(unitG)||unitG<=0||!Number.isInteger(count)||count<1||!(total>0))throw Error('완성량·소분을 확인해 주세요');
+       if(!/^\d{4}-\d{2}-\d{2}$/.test(madeDate)||madeDate>date())throw Error('실제 제조일을 확인해 주세요');
+       if(!confirm(name+' '+unitG+'g × '+count+'개 조리를 완료했나요?'))return;
+       locked=true;const s=snapshot(),meal={key:'make:'+task.key,name,g:total,ingredients:[{name,g:total}],plannedG:task.missingG||total},
+         result=E.cook(s,meal,{token:token(),count,unitG,date:madeDate});
+       if(!result.already)commit(s,result.state);close();render(true);return toast(name+' 조리식 재고를 등록했어요');
+     }
+     const k=f.getAttribute('data-v63-form')||f.getAttribute('data-v63-recipe'),m=get(k);if(!m)throw Error('식단이 변경됐어요');
      if(f.hasAttribute('data-v63-recipe')){
        const data=readRecipeForm(f);
        if(!f.hasAttribute('data-v70-unified')){saveRecipeData(m,data);close();render(true);return toast('분량을 저장했어요')}
@@ -548,6 +610,8 @@
    }catch(err){toast(err.message)}finally{locked=false}
  },true);
  document.addEventListener('input',function(e){
+   const v80Form=e.target.closest&&e.target.closest('[data-v80-simpleprep],[data-v80-extraprep]');
+   if(v80Form&&(e.target.name==='unitG'||e.target.name==='count'))updateV80Total(v80Form);
    const recipeForm=e.target.closest&&e.target.closest('[data-v63-recipe]');
    if(recipeForm&&(e.target.name==='ingredientG'||e.target.name==='ingredientName'||e.target.name==='yieldG'||e.target.name==='unitG'||e.target.name==='count')){
      if(recipeForm.hasAttribute('data-v70-unified'))updateUnifiedPreview(recipeForm);else updateRecipeTotal(recipeForm);
@@ -576,6 +640,6 @@
    const actionRow=saveBtn&&saveBtn.closest('.btnrow');if(actionRow)holder.insertBefore(box,actionRow);else holder.appendChild(box);
   };root.sheetDay=sheetDay;}
  if(oldBatch){sheetBatch=function(){root.__mgStage='prep';close();render(true)};root.sheetBatch=sheetBatch;}
- root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,cleanupLegacyWholeMeals,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock,isPurchaseOnlyShoppingName};
+ root.__MEAL_WORKFLOW_V63={model,meals,plan,snapshot,makeTasks,makeTemplate,cleanupLegacyWholeMeals,addPurchasedStock,rollbackPurchasedStock,syncCheckedShoppingStock,isPurchaseOnlyShoppingName,hasExactRaw,addExtraPrepared};
  try{render(true)}catch(e){}
 })(typeof globalThis!=='undefined'?globalThis:this);
