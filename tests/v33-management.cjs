@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v33.js'),'utf8');
 new Function(patch);
-assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v79-buyonly1'),'v33 patch must be present through the consolidated bundle');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v80-simpleprep1'),'v33 patch must be present through the consolidated bundle');
 assert(patch.includes('addPart(r,loc,v.gramsPerUnit,q)'),'raw portion detail must feed the grouped total-stock summary');
 assert(patch.includes("addPart(r,'냉동',u,cnt)"),'frozen portion detail must feed the grouped total-stock summary');
 assert(patch.includes('다음 주 준비'),'management must expose next-week preparation');
