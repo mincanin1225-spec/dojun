@@ -3,7 +3,7 @@ const assert=require('assert');
 const index=fs.readFileSync('index.html','utf8');
 const sw=fs.readFileSync('sw.js','utf8');
 assert(index.includes('<iframe id="app"'),'stable shell must use legacy app iframe');
-assert(index.includes('legacy-ui-v47.js?v=20260916-v47&r=20260924-v79-buyonly1'),'v47 UI patch must stay in the original order with the v58 cache-bust');
+assert(index.includes('legacy-ui-v47.js?v=20260916-v47&r=20260924-v80-simpleprep1'),'v47 UI patch must stay in the original order with the v58 cache-bust');
 assert(!index.includes('setTimeout(reveal,2500)'),'timeout must not reveal a partially patched legacy screen');
 assert(!index.includes("if(d.getElementById('v29-management-script'))return reveal()"),'a duplicate injector call must not reveal before boot completes');
 assert(index.includes("v78-management-bundle-script"),'fast boot must use a single consolidated management loader');
