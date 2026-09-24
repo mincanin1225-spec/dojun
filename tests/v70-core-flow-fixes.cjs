@@ -234,4 +234,23 @@ function harness(opts={}){
   assert(!h.ctx.shopChk['mg29|2026-09-21'].includes('김'),'김 구매완료 취소도 정상 저장되어야 한다');
 }
 
+
+// 14) 단일 원재료 준비는 레시피 입력 없이 완성량·소분만 등록할 수 있고,
+//     식단 외 준비식은 원재료를 건드리지 않고 준비식 재고에 직접 추가할 수 있다.
+{
+  const h=harness({
+    inventory:{sweet:{unit:'g',qty:500,location:'냉장',stockCode:'A-2',updatedAt:1}},
+    names:{sweet:'고구마'}
+  });
+  assert.equal(h.W.hasExactRaw('고구마'),true,'exact raw ingredient must use the simple preparation flow');
+  const beforeRaw=h.ctx.inventory.sweet.qty;
+  h.W.addExtraPrepared('삶은 고구마',30,3,'2026-09-22');
+  assert.equal(h.ctx.inventory.sweet.qty,beforeRaw,'manual extra prepared food must not auto-deduct raw stock');
+  assert.equal(h.preparedG('삶은 고구마'),90,'manual extra prepared food must be added to prepared inventory');
+  const flow=fs.readFileSync('meal-workflow-v70.js','utf8');
+  assert(flow.includes('data-v80-simpleprep'),'simple raw preparation must have a completion/portion-only entry');
+  assert(flow.includes('data-v80-extra-prep'),'step 3 must offer a direct add path for food prepared outside the Ppeuni plan');
+  assert(flow.includes('원재료 재고는 자동 차감하지 않습니다'),'manual extra prepared food must clearly state that raw stock is not auto-deducted');
+}
+
 console.log('PASS: cross-checked core flow fixes and non-regression paths');
