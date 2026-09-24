@@ -11,7 +11,7 @@ assert(html.includes('inventoryTombstones1'),'inventory delete tombstones missin
 assert(html.includes('data-a="invdelete:'),'inventory edit sheet needs a delete button');
 assert(mg33.includes('data-a="invdelete:'),'stock list needs a raw inventory delete button');
 assert(mg33.includes('data-v59-cubedel'),'cube inventory needs a delete button');
-assert(index.includes('r=20260924-v79-buyonly1'),'v61 cache bust missing');
+assert(index.includes('r=20260924-v80-simpleprep1'),'v61 cache bust missing');
 assert(sw.includes("const CACHE='dojun-pwa-v"),'v61 PWA cache missing');
 
 const db=new Map();
