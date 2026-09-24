@@ -1,4 +1,4 @@
-const CACHE='dojun-pwa-v79-buyonly1';
+const CACHE='dojun-pwa-v80-makelabel1';
 const CORE=[
   './meal-stock-v66.js','./meal-workflow-v70.js','./legacy-inventory-v61-photo.js',
   './','./index.html','./manifest.webmanifest','./legacy-v70.html',

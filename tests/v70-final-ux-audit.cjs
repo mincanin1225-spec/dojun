@@ -24,6 +24,8 @@ assert(flow.includes('function makeTasks(rows,start)'),'step 3 must aggregate th
 assert(flow.includes('data-v71-makecheck'),'step 3 must use a checkbox-style completion action');
 assert(flow.includes('data-v71-makeg'),'default make quantity must be editable for extra cooking');
 assert(flow.includes('이번 준비 필요'),'make rows must show the exact required amount');
+assert(flow.includes("t.undo?'만들기 취소':'재고로 충분'"),'make status must distinguish inventory-sufficient state from an undo action');
+assert(flow.includes('기존 재고로 충분'),'inventory-sufficient rows must explain why no new cooking is needed');
 assert(flow.includes('function makeTemplate(t)'),'make completion must resolve a safe ingredient-prep recipe');
 assert(flow.includes("key:'make:'+t.key"),'make operations must be keyed to the checklist item');
 assert(flow.includes('const meal=makeTemplate(task)'),'make completion must use the checklist ingredient template');
@@ -50,10 +52,10 @@ assert(shell.includes("function dishSVG(m,w,label='')"),'meal cards must have a 
 assert(shell.includes("dishSVG(m,null,mText(today,i))"),'today meal cards must pass the verified meal text into the visual fallback');
 assert(shell.includes("function miniSVG(m,label='')"),'calendar mini images must have a text-based fallback');
 assert(shell.includes("miniSVG(m0,mText(on,0))"),'calendar planned dates must restore mini meal images from verified text');
-assert(index.includes('./legacy-v70.html?r=20260924-v79-buyonly1'),'index must load v70 shell');
-assert(index.includes('./meal-workflow-v70.js?r=20260924-v79-buyonly1'),'index must load v70 workflow');
-assert(shell.includes("name:'도준이키우기',version:'v79'"),'canonical version must be v70');
-assert(sw.includes("const CACHE='dojun-pwa-v79-buyonly1'"),'v70 cache missing');
+assert(index.includes('./legacy-v70.html?r=20260924-v80-makelabel1'),'index must load v70 shell');
+assert(index.includes('./meal-workflow-v70.js?r=20260924-v80-makelabel1'),'index must load v70 workflow');
+assert(shell.includes("name:'도준이키우기',version:'v80'"),'canonical version must be v70');
+assert(sw.includes("const CACHE='dojun-pwa-v80-makelabel1'"),'v70 cache missing');
 assert(sw.includes("'./legacy-v70.html'")&&sw.includes("'./meal-workflow-v70.js'"),'v70 assets must be precached');
 assert(mg33.includes('4단계 · 이번 주 남은 재고'),'step 4 must be actual remaining inventory');
 assert(mg33.includes('다음 주 1단계 재고 확인'),'step 4 must connect to next-week stock');

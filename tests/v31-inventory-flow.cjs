@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v31.js'),'utf8');
 new Function(patch);
-assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v79-buyonly1'),'v31 patch must be present through the consolidated bundle');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v80-makelabel1'),'v31 patch must be present through the consolidated bundle');
 assert(patch.includes('재료별 총 보유량'),'inventory must headline total owned amount');
 assert(patch.includes('냉장 / 냉동 / 실온'),'storage must be simplified to location');
 assert(patch.includes('stockCode'),'inventory must persist visible stock numbers');
