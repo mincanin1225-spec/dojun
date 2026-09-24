@@ -3,7 +3,7 @@ const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const patch=fs.readFileSync(path.join(root,'legacy-management-v35.js'),'utf8');
 new Function(patch);
-assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v79-buyonly1'),'v35 patch must stay loaded through the consolidated bundle');
+assert(index.includes('legacy-management-v78-bundle.js?r=20260924-v80-makelabel1'),'v35 patch must stay loaded through the consolidated bundle');
 assert(index.indexOf('legacy-management-v78-bundle.js')<index.indexOf('legacy-outing-v36.js'),'management bundle must load before the outing extension');
 assert(patch.includes("const MARK_KEY='dj:batchStockDeduct2'"),'batch deductions need an idempotence marker');
 assert(patch.includes('if(markers[start])return {ok:true,already:true}'),'same batch must not deduct twice');
