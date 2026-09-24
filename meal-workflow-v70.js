@@ -318,8 +318,8 @@
    return '<div class="shop'+(ready?' on':'')+'" style="align-items:center">'+
      '<button type="button" class="bx" aria-label="'+esc(t.name)+' 만들기 상태" '+(ready&&!t.undo?'disabled':'data-v71-makecheck="'+encodeURIComponent(t.key)+'"')+'></button>'+
      '<div class="nm"><b>'+esc(t.name)+'</b><div class="hint">'+esc(qty)+'</div>'+
-       (ready?'<div class="hint" style="margin-top:3px">필요량 준비됨</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span><button type="button" class="btn" data-v63-edit="component:'+encodeURIComponent(t.name)+'" style="padding:6px 10px;font-size:11.5px;flex:none">재료·분량</button></div>')+
-     '</div><div class="qt"'+(ready&&!t.undo?'':' data-v71-makecheck="'+encodeURIComponent(t.key)+'" style="cursor:pointer"')+'>'+(ready?(t.undo?'완료 취소':'준비 완료'):'만들었음')+'</div></div>';
+       (ready?'<div class="hint" style="margin-top:3px">기존 재고로 충분</div>':'<div style="display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="hint">실제 만든 양</span><input data-v71-makeg="'+encodeURIComponent(t.key)+'" type="number" min="0.1" step="0.1" inputmode="decimal" value="'+defaultG+'" style="width:92px;padding:7px 8px;border:1px solid var(--line);border-radius:10px;text-align:right;font:inherit;font-weight:800"><span class="hint">g</span><button type="button" class="btn" data-v63-edit="component:'+encodeURIComponent(t.name)+'" style="padding:6px 10px;font-size:11.5px;flex:none">재료·분량</button></div>')+
+     '</div><div class="qt"'+(ready&&!t.undo?'':' data-v71-makecheck="'+encodeURIComponent(t.key)+'" style="cursor:pointer"')+'>'+(ready?(t.undo?'만들기 취소':'재고로 충분'):'만들었음')+'</div></div>';
  }
  function batchMake(label,start,end,rows){
    const tasks=makeTasks(rows,start),ready=tasks.filter(t=>t.missingG===0&&!t.unknown).length;
