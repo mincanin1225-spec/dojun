@@ -48,7 +48,7 @@ assert.equal(made.remainingCount,1);
 assert(ctx.inventory.chicken.qty<100,'making must deduct raw ingredients');
 
 html=ctx.vShop();
-assert(html.includes('필요량 준비됨'));
+assert(html.includes('기존 재고로 충분'));
 assert(html.includes('완료 취소'),'checked make task must behave like a reversible checklist while untouched');
 const undoKey=[...html.matchAll(/data-v71-makecheck="([^"]+)"/g)].map(x=>x[1]).find(x=>decodeURIComponent(x).endsWith('|닭고기'));assert(undoKey);
 clickMake(undoKey);
