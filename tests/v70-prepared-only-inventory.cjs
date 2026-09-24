@@ -19,8 +19,8 @@ assert(flow.includes('E.undoCook(next,token)'),'untouched legacy whole meals mus
 assert(flow.includes('legacyWholeMeal=true'),'unrestorable historical whole meals must be quarantined from active stock');
 assert(flow.includes('!E.isWholeMealLot(x)'),'prepared summaries must exclude whole-meal inventory');
 
-assert(index.includes('meal-stock-v66.js?r=20260924-v79-buyonly1'));
-assert(index.includes('meal-workflow-v70.js?r=20260924-v79-buyonly1'));
-assert(index.includes("const RELEASE='20260924-v79-buyonly1'"));
-assert(sw.includes("const CACHE='dojun-pwa-v79-buyonly1'"));
+assert(index.includes('meal-stock-v66.js?r=20260924-v80-simpleprep1'));
+assert(index.includes('meal-workflow-v70.js?r=20260924-v80-simpleprep1'));
+assert(index.includes("const RELEASE='20260924-v80-simpleprep1'"));
+assert(sw.includes("const CACHE='dojun-pwa-v80-simpleprep1'"));
 console.log('PASS: only individually prepared foods can be active inventory');
