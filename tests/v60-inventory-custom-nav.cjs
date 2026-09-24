@@ -12,7 +12,7 @@ new Function(mg34);
 new Function(ui47);
 
 assert(core.includes("version:'v69'"),'canonical release must be v61');
-assert(index.includes('r=20260924-v79-buyonly1'),'v61 cache bust must reach injected app assets');
+assert(index.includes('r=20260924-v80-simpleprep1'),'v61 cache bust must reach injected app assets');
 assert(sw.includes("const CACHE='dojun-pwa-v"),'v61 PWA cache marker missing');
 
 assert(core.includes("stockCode:String(v.stockCode||'')"),'inventory cleaning must preserve stable stock codes');
