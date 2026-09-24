@@ -24,6 +24,7 @@ assert(flow.includes('function makeTasks(rows,start)'),'step 3 must aggregate th
 assert(flow.includes('data-v71-makecheck'),'step 3 must use a checkbox-style completion action');
 assert(flow.includes('data-v71-makeg'),'default make quantity must be editable for extra cooking');
 assert(flow.includes('이번 준비 필요'),'make rows must show the exact required amount');
+assert(flow.includes("t.undo?'만들기 취소':'재고로 충분'"),'make status labels must distinguish stock-satisfied from undoable cooking');
 assert(flow.includes('function makeTemplate(t)'),'make completion must resolve a safe ingredient-prep recipe');
 assert(flow.includes("key:'make:'+t.key"),'make operations must be keyed to the checklist item');
 assert(flow.includes('const meal=makeTemplate(task)'),'make completion must use the checklist ingredient template');
